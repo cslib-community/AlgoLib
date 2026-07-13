@@ -17,6 +17,16 @@ where a simple walk is expected.
 * `SimpleWalk.IsPath` — a simple walk with no repeated vertices.
 * `SimplePath` — a simple walk bundled with a proof that its vertices are
   pairwise distinct.
+* `SimplePath.singleton`, `SimplePath.cycleErase` — the two constructors: a
+  one-vertex path, and the path underlying any simple walk.
+* `SimplePath.append`, `SimplePath.glue` — join two paths, keeping resp. dropping
+  the duplicated joining vertex.
+* `SimplePath.reverse`, `SimplePath.dropHead`, `SimplePath.dropTail`,
+  `SimplePath.prefixUntil`, `SimplePath.suffixFrom`, `SimplePath.takeWhile`,
+  `SimplePath.dropWhile`, `SimplePath.splitAt`, `SimplePath.map`,
+  `SimplePath.zip`, `SimplePath.loopErase` — the `SimpleWalk` operations, lifted.
+
+Every operation is the `SimpleWalk` one plus a proof that `nodup` survives.
 -/
 
 variable {α : Type*}
@@ -63,10 +73,36 @@ abbrev length (p : SimplePath α) : ℕ := (vertices p).length
 /-- A path has no repeated vertices. -/
 lemma nodup (p : SimplePath α) : (vertices p).nodup := p.2
 
+attribute [simp, grind] SimplePath.val SimplePath.vertices SimplePath.length
+  SimplePath.head SimplePath.tail SimplePath.support SimplePath.edges SimplePath.arcs
 
 /-- A simple path is, in particular, a simple walk. -/
 instance : Coe (SimplePath α) (SimpleWalk α) :=
   ⟨val⟩
+
+/-! ## Constructors -/
+
+/-- The singleton path at `v`: a single vertex and no edges. -/
+def singleton (v : α) : SimplePath α :=
+  ⟨⟨VertexSeq.singleton v, by simp [VertexSeq.nonstalling]⟩, by simp [SimpleWalk.IsPath,
+    SimpleWalk.nodup, VertexSeq.nodup]⟩
+
+/-- The vertex sequence of a singleton path. This is the bridge that lets `simp`
+see through `SimplePath.singleton` down to the `VertexSeq` layer, where the
+`singleton` API lives. -/
+@[simp, grind =] lemma vertices_singleton (v : α) :
+    (singleton v : SimplePath α).vertices = VertexSeq.singleton v := rfl
+
+@[simp] lemma length_singleton (v : α) : (singleton v : SimplePath α).length = 0 := rfl
+
+@[simp] lemma head_singleton (v : α) : (singleton v : SimplePath α).head = v := rfl
+
+@[simp] lemma tail_singleton (v : α) : (singleton v : SimplePath α).tail = v := rfl
+
+/-- Cycle erasure of any simple walk produces a simple path. -/
+def cycleErase [DecidableEq α] (w : SimpleWalk α) : SimplePath α :=
+  ⟨w.cycleErase, by
+    exact w.val.nodup_cycleErase⟩
 
 /-! ## dropHead, dropTail -/
 
@@ -80,7 +116,7 @@ def dropTail (p : SimplePath α) : SimplePath α :=
   ⟨p.val.dropTail, by
     exact VertexSeq.nodup_dropTail (vertices p) (nodup p)⟩
 
-/-! ## append -/
+/-! ## append, glue -/
 
 /-- Concatenate two vertex-disjoint paths, keeping both joining vertices.
 The disjointness hypothesis is what preserves `nodup`; it also rules out a
@@ -93,18 +129,29 @@ def append (p q : SimplePath α)
         simp [tail, vertices, h])), by
     exact VertexSeq.nodup_append (vertices p) (vertices q) (nodup p) (nodup q) hdisj⟩
 
+/-- The vertex sequence of an append is the append of the vertex sequences. This
+is the bridge that lets `simp` see through `SimplePath.append` down to the
+`VertexSeq` layer, where `head_append` / `tail_append` / `length_append` /
+`mem_append` live. -/
+@[simp, grind =] lemma vertices_append (p q : SimplePath α)
+    (hdisj : ∀ v : α, v ∈ vertices p → v ∈ vertices q → False) :
+    (p.append q hdisj).vertices = (vertices p).append (vertices q) := rfl
+
 /-- Concatenate two paths meeting at a shared vertex, dropping the duplicated
-joining vertex. The remaining vertices of `p` must be disjoint from `q`. -/
+joining vertex. When `p` is nontrivial its remaining vertices must be disjoint
+from `q`; when `p` is a single vertex the result is just `q`, so no disjointness
+is required. Guarding the hypothesis by `length ≠ 0` keeps the singleton-left
+case usable, since `dropTail` leaves a singleton unchanged. -/
 def glue (p q : SimplePath α) (h : tail p = head q)
-    (hdisj : ∀ v : α, v ∈ (vertices p).dropTail → v ∈ vertices q → False) :
+    (hdisj : (vertices p).length ≠ 0 →
+      ∀ v : α, v ∈ (vertices p).dropTail → v ∈ vertices q → False) :
     SimplePath α :=
   ⟨p.val.glue q.val h, by
     unfold SimpleWalk.glue
     by_cases hp : (vertices p).length = 0
     · simpa [vertices, hp] using nodup q
-    · simpa [vertices, hp] using
-        VertexSeq.nodup_append (vertices p).dropTail (vertices q)
-          (VertexSeq.nodup_dropTail (vertices p) (nodup p)) (nodup q) hdisj⟩
+    · simpa [vertices, hp] using VertexSeq.nodup_append _ _
+        (VertexSeq.nodup_dropTail _ (nodup p)) (nodup q) (hdisj hp)⟩
 
 /-! ## reverse -/
 
@@ -162,8 +209,8 @@ def splitAt [DecidableEq α] (p : SimplePath α) (v : α) : List (SimplePath α)
     (fun w (hw : w.nonstalling ∧ w.nodup) => ⟨⟨w, hw.1⟩, hw.2⟩)
     (by
       intro w hw
-      exact ⟨VertexSeq.nonstalling_splitAt (vertices p) p.val.nonstalling v w hw,
-        VertexSeq.nodup_splitAt (vertices p) (nodup p) v w hw⟩)
+      exact ⟨VertexSeq.nonstalling_splitAt (vertices p) p.val.nonstalling v hw,
+        VertexSeq.nodup_splitAt (vertices p) (nodup p) v hw⟩)
 
 /-! ## zip -/
 
@@ -174,7 +221,7 @@ def zip {β : Type*} (p : SimplePath α) (q : SimplePath β) :
   ⟨p.val.zip q.val, by
     exact VertexSeq.nodup_zip (vertices p) (vertices q) (nodup p)⟩
 
-/-! ## loopErase, cycleErase -/
+/-! ## loopErase -/
 
 /-- Remove immediate stalls from a path. Since a path has no repeated vertices,
 this preserves `nodup`. -/
@@ -182,10 +229,8 @@ def loopErase [DecidableEq α] (p : SimplePath α) : SimplePath α :=
   ⟨p.val.loopErase, by
     exact VertexSeq.nodup_loopErase (vertices p) (nodup p)⟩
 
-/-- Cycle erasure of any simple walk produces a simple path. -/
-def cycleErase [DecidableEq α] (w : SimpleWalk α) : SimplePath α :=
-  ⟨w.cycleErase, by
-    exact w.val.cycleErase_nodup⟩
+attribute [simp, grind] SimplePath.reverse SimplePath.dropTail SimplePath.dropHead
+  SimplePath.prefixUntil SimplePath.suffixFrom
 
 /-! ## edges -/
 
@@ -195,7 +240,7 @@ def cycleErase [DecidableEq α] (w : SimpleWalk α) : SimplePath α :=
 
 /-- A path traverses each edge at most once (a path is a trail). -/
 lemma edges_nodup (p : SimplePath α) : (edges p).Nodup :=
-  VertexSeq.nodup_edges_of_nodup (vertices p) (nodup p)
+  VertexSeq.edges_nodup (vertices p) (nodup p)
 
 /-- Reversal reverses the edge list. -/
 @[simp] lemma edges_reverse (p : SimplePath α) :
@@ -228,7 +273,7 @@ lemma edges_suffixFrom_subset [DecidableEq α] (p : SimplePath α) (v : α)
 
 /-- A path traverses each directed arc at most once. -/
 lemma arcs_nodup (p : SimplePath α) : (arcs p).Nodup :=
-  VertexSeq.nodup_arcs_of_nodup (vertices p) (nodup p)
+  VertexSeq.arcs_nodup (vertices p) (nodup p)
 
 /-- Reversal reverses the arc list and swaps every arc's endpoints. -/
 @[simp] lemma arcs_reverse (p : SimplePath α) :

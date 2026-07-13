@@ -11,6 +11,7 @@ import GraphLib.Theory.Structures.VertexSeq.Subseq
 import GraphLib.Theory.Structures.VertexSeq.Erase
 import GraphLib.Theory.Structures.VertexSeq.Edges
 import GraphLib.Theory.Structures.VertexSeq.Index
+import GraphLib.Theory.Structures.VertexSeq.CommonPrefix
 
 /-!
 # Vertex sequences
@@ -33,26 +34,31 @@ re-exports (imports) the `VertexSeq` development, which is split across
 * `Erase` — `loopErase`, `cycleErase`.
 * `Edges` — `edges`, `arcs` (the traversed edges/arcs, as lists).
 * `Index` — `GetElem` and `insert`.
+* `CommonPrefix` — `List.commonPrefix`, the index-free tool used to locate the
+  point where two vertex sequences diverge. It mentions no `VertexSeq` and
+  depends on none of the above; it sits here only for want of a `List` utility
+  module (see `AGENTS/Remark.md`).
 
 Downstream files should keep importing this umbrella; the split is internal.
 
 ## Module dependency graph
 
-Direct imports between the submodules (an arrow `A → B` means "`A` imports
-`B`"). The acyclic spine is `Basic ← Predicates ← Append ← Subseq ← Erase ←
-Edges`, with `MapZip` branching off `Predicates` and `Index` off `Basic`:
+The acyclic spine is `Basic ← Predicates ← Append ← Subseq ← Erase ← Edges`, with
+`Index` branching off `Basic` and `MapZip` off `Predicates` (its `nodup`/
+`nonstalling` preservation lemmas need the predicates). `CommonPrefix` is
+free-standing: it imports only Mathlib.
 ```text
-                       Basic
-                      ╱     ╲
-                Predicates   Index
-                 ╱      ╲
-            Append      MapZip
-              │
-            Subseq
-              │
-            Erase
-              │
-            Edges
+        Basic                 CommonPrefix
+       ╱     ╲                (free-standing)
+  Predicates  Index
+   ╱      ╲
+Append    MapZip
+  │
+Subseq
+  │
+Erase
+  │
+Edges
 ```
-This umbrella imports all eight submodules.
+This umbrella imports all nine submodules.
 -/

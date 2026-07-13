@@ -7,7 +7,6 @@ import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Finite.Basic
 import GraphLib.Graph.Basic
 import GraphLib.Graph.Subgraph
-import GraphLib.Theory.Walks.Basic
 
 /-!
 # Matchings, augmenting paths, Berge's theorem, and friends
@@ -49,24 +48,16 @@ variable {α β : Type*}
 
 structure Matching (G : Graph α β) where
   edges : Set (Edge α β)
-  disjoint : ∀ e ∈ E(G), ∀ f ∈ E(G), e ≠ f → Disjoint e.endpoints.toFinset f.endpoints.toFinset
+  edges_subset : edges ⊆ G.edgeSet
+  disjoint : ∀ e ∈ edges, ∀ f ∈ edges, e ≠ f →
+    ∀ v, v ∈ e.endpoints → v ∉ f.endpoints
 
-def Matching.size (G : Graph α β) (M : Matching G) := M.edges.card
+noncomputable def Matching.size (G : Graph α β) (M : Matching G) : ℕ := M.edges.ncard
 
-def Matching.IsMaximal
+/-!
+The remaining matching operations listed above are intentionally left for a
+future implementation instead of being exposed as declarations without types
+or definitions.
+-/
 
-def Matching.IsMaximum
-
-def Matching.IsPerfect
-
-def Matching.covered
-
-def Path.augmenting
-
-def Path.alternating
-
-def Matching.augment
-
-def Matching.union
-
-def Matching.xor
+end GraphLib

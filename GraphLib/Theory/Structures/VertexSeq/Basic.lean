@@ -72,6 +72,9 @@ plus the length of the prefix. -/
   | .singleton v => [v]
   | .cons w v => w.toList.concat v
 
+@[simp, grind =] lemma length_singleton (u : α) :
+    (VertexSeq.singleton u).length = 0 := rfl
+
 @[simp, grind =] lemma head_singleton (u : α) :
     (VertexSeq.singleton u).head = u := rfl
 
@@ -84,21 +87,6 @@ plus the length of the prefix. -/
 @[simp, grind =] lemma tail_cons (w : VertexSeq α) (u : α) :
     (w.cons u).tail = u := rfl
 
-/-- The `head` belongs to the underlying list of vertices. -/
-@[simp, grind] lemma head_mem (w : VertexSeq α) : w.head ∈ w.toList := by
-  induction w with
-  | singleton _ =>
-    simp [head, toList]
-  | cons w _ ih =>
-    simp [head, toList]
-    exact Or.inl ih
-
-/-- The `tail` belongs to the underlying list of vertices. -/
-@[simp, grind] lemma tail_mem (w : VertexSeq α) : w.tail ∈ w.toList := by
-  cases w with
-  | singleton _ => simp [tail, toList]
-  | cons _ _ => simp [tail, toList]
-
 /-- The underlying list has `length + 1` vertices. -/
 lemma length_toList (w : VertexSeq α) : w.toList.length = w.length + 1 := by
   induction w <;> grind
@@ -107,35 +95,8 @@ lemma length_toList (w : VertexSeq α) : w.toList.length = w.length + 1 := by
 @[grind] theorem toList_injective : Function.Injective (@toList α) := by
   intro x y hxy
   induction x generalizing y with
-  | singleton v =>
-    cases y with
-    | singleton w => simpa [toList] using hxy
-    | cons w u =>
-      exfalso
-      simp only [toList] at hxy
-      have hlen := congrArg List.length hxy
-      simp only [List.length_singleton, List.length_concat] at hlen
-      have := length_toList w
-      omega
-  | cons w v ih =>
-    cases y with
-    | singleton w' =>
-      exfalso
-      simp only [toList] at hxy
-      have hlen := congrArg List.length hxy
-      simp only [List.length_singleton, List.length_concat] at hlen
-      have := length_toList w
-      omega
-    | cons w' v' =>
-      simp only [toList, List.concat_eq_append] at hxy
-      have hlen : w.toList.length = w'.toList.length := by
-        have hl := congrArg List.length hxy
-        simp only [List.length_append, List.length_singleton] at hl
-        omega
-      obtain ⟨hw, hv⟩ := List.append_inj hxy hlen
-      obtain rfl := ih hw
-      simp at hv
-      exact congrArg _ hv
+  | singleton v => cases y <;> grind [toList, length_toList]
+  | cons w v ih => cases y <;> grind [toList, length_toList, List.append_inj]
 
 /-! ## Membership -/
 
@@ -143,6 +104,10 @@ instance : Membership α (VertexSeq α) := ⟨fun w v ↦ v ∈ w.toList⟩
 
 @[simp, grind] theorem mem_def {v : α} (w : VertexSeq α) :
     v ∈ w ↔ v ∈ w.toList := Iff.rfl
+
+/-- A vertex belongs to a singleton sequence exactly when it is that singleton vertex. -/
+@[simp, grind] lemma mem_singleton {v u : α} : v ∈ singleton u ↔ v = u := by
+  simp [mem_def, toList]
 
 @[simp] lemma mem_cons (v u : α) (w : VertexSeq α) :
     v ∈ w :+ u ↔ v ∈ w ∨ v = u := by
@@ -155,6 +120,28 @@ instance : HasSubset (VertexSeq α) := ⟨fun w1 w2 ↦ ∀ v ∈ w1, v ∈ w2�
 
 @[simp, grind] theorem subset_def {w1 w2 : VertexSeq α} :
     w1 ⊆ w2 ↔ ∀ v ∈ w1, v ∈ w2 := Iff.rfl
+
+/-- The `head` belongs to the underlying list of vertices. -/
+@[simp, grind] lemma head_mem (w : VertexSeq α) : w.head ∈ w.toList := by
+  induction w <;> grind
+
+/-- The `tail` belongs to the underlying list of vertices. -/
+@[simp, grind] lemma tail_mem (w : VertexSeq α) : w.tail ∈ w.toList := by
+  cases w with
+  | singleton _ => simp [tail, toList]
+  | cons _ _ => simp [tail, toList]
+
+/-! ## Length-zero sequences -/
+
+/-- A length-zero sequence is a single vertex, so its head and tail agree. -/
+@[simp, grind =] lemma head_eq_tail_of_length_zero (w : VertexSeq α)
+    (h : w.length = 0) : w.head = w.tail := by
+  cases w <;> grind
+
+/-- A length-zero sequence is the singleton at its head. -/
+lemma eq_singleton_of_length_zero (w : VertexSeq α)
+    (h : w.length = 0) : w = singleton w.head := by
+  cases w <;> grind
 
 /-! ## dropHead, dropTail -/
 
@@ -181,27 +168,48 @@ it is a singleton). -/
     w.dropHead.tail = w.tail := by
   fun_induction dropHead w <;> grind
 
+/-- Appending a vertex does not change the head remaining after `dropHead`,
+provided the original sequence is nontrivial. -/
+lemma head_dropHead_cons (w : VertexSeq α) (x : α)
+    (h : w.length ≠ 0) : (w.cons x).dropHead.head = w.dropHead.head := by
+  cases w with
+  | singleton _ => exact (h rfl).elim
+  | cons _ _ => rfl
+
 /-- Dropping the tail of a `cons` recovers the prefix length. -/
 @[simp, grind =] lemma length_dropTail_cons (w : VertexSeq α) (v : α) :
     (w :+ v).dropTail.length = w.length := rfl
 
-/-- A length-zero sequence is a single vertex, so its head and tail agree. -/
-@[simp, grind =] lemma head_eq_tail_of_length_zero (w : VertexSeq α)
-    (h : w.length = 0) : w.head = w.tail := by
-  cases w with
-  | singleton v =>
-      rfl
-  | cons w v =>
-      simp [length] at h
-
 /-- For a non-trivial sequence, dropping the tail drops exactly one edge. -/
-@[simp, grind =] lemma dropTail_length_succ (w : VertexSeq α) (h : w.length ≠ 0) :
+@[simp, grind =] lemma length_dropTail_succ (w : VertexSeq α) (h : w.length ≠ 0) :
     w.dropTail.length + 1 = w.length := by
-  cases w with
-  | singleton v =>
-      exact (h rfl).elim
-  | cons w v =>
-      simp [length, dropTail]
-      omega
+  cases w <;> grind
+
+/-- A `dropHead` result is contained in the original sequence. -/
+@[grind] lemma dropHead_subset (w : VertexSeq α) : w.dropHead ⊆ w := by
+  intro v hv
+  fun_induction dropHead w <;> grind
+
+/-- Dropping the tail keeps every remaining vertex in the sequence. -/
+@[simp] lemma dropTail_subset (w : VertexSeq α) : w.dropTail ⊆ w := by
+  intro v hv
+  cases w <;> grind
+
+/-- After dropping the head of a length-one sequence, the remaining head is
+the original tail. -/
+lemma head_dropHead_eq_tail_of_length_one (w : VertexSeq α)
+    (h : w.length = 1) : w.dropHead.head = w.tail := by
+  cases w <;> grind [eq_singleton_of_length_zero]
+
+/-! ## Head and last of the underlying list -/
+
+/-- The head of the underlying list is the head vertex. -/
+@[simp, grind =] lemma head?_toList (w : VertexSeq α) : w.toList.head? = some w.head := by
+  induction w <;> grind [toList, head, List.head?_append]
+
+/-- The last entry of the underlying list is the tail vertex. -/
+@[simp, grind =] lemma getLast_toList (w : VertexSeq α) (h : w.toList ≠ []) :
+    w.toList.getLast h = w.tail := by
+  induction w <;> grind [toList, tail]
 
 end VertexSeq

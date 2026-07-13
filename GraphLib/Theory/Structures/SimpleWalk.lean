@@ -10,9 +10,24 @@ import GraphLib.Theory.Structures.VertexSeq
 # Simple walks
 
 A `SimpleWalk α` is a `VertexSeq α` whose consecutive vertices differ — i.e.
-a non-stalling sequence. This file also provides the conversions to
-`SimpleGraph` and `SimpleDiGraph` (the non-stalling property is exactly what
-makes the resulting graph loopless).
+a non-stalling sequence.
+
+## Main definitions
+
+* `SimpleWalk α` — a non-stalling vertex sequence.
+* `SimpleWalk.append`, `SimpleWalk.glue` — join two walks, keeping resp. dropping
+  the duplicated joining vertex.
+* `SimpleWalk.reverse`, `SimpleWalk.dropHead`, `SimpleWalk.dropTail`,
+  `SimpleWalk.prefixUntil`, `SimpleWalk.suffixFrom`, `SimpleWalk.takeWhile`,
+  `SimpleWalk.dropWhile`, `SimpleWalk.splitAt`, `SimpleWalk.map`,
+  `SimpleWalk.zip` — the `VertexSeq` operations, lifted.
+* `SimpleWalk.loopErase`, `SimpleWalk.cycleErase` — the erasure operations.
+* `SimpleWalk.edges`, `SimpleWalk.arcs` — the traversed edges/arcs.
+* `SimpleWalk.toSimpleGraph`, `SimpleWalk.toSimpleDiGraph` — the generated
+  graphs. Non-stalling is exactly what makes them loopless.
+
+Every operation is the `VertexSeq` one plus a proof that non-stalling survives,
+and every lemma below is a thin wrapper around its `VertexSeq` counterpart.
 -/
 
 variable {α : Type*}
@@ -59,6 +74,9 @@ abbrev nodup (w : SimpleWalk α) : Prop := w.val.nodup
 /-- The walk is closed: its first and last vertex coincide. -/
 abbrev closed (w : SimpleWalk α) : Prop := w.val.closed
 
+attribute [simp, grind] SimpleWalk.val SimpleWalk.length SimpleWalk.head SimpleWalk.tail
+  SimpleWalk.closed SimpleWalk.nodup SimpleWalk.support SimpleWalk.edges SimpleWalk.arcs
+
 /-- A simple walk is, in particular, a vertex sequence. -/
 instance : Coe (SimpleWalk α) (VertexSeq α) :=
   ⟨val⟩
@@ -75,7 +93,7 @@ singleton). Removing an endpoint cannot introduce a stall. -/
 def dropTail (w : SimpleWalk α) : SimpleWalk α :=
   ⟨w.val.dropTail, by have := w.nonstalling; grind⟩
 
-/-! ## append -/
+/-! ## append, glue -/
 
 /-- Concatenate two simple walks, keeping both joining vertices. The hypothesis
 `p.tail ≠ q.head` ensures the junction does not create a stall. -/
@@ -91,21 +109,14 @@ def glue (p q : SimpleWalk α) (h : p.val.tail = q.val.head) : SimpleWalk α :=
     q
   else
     ⟨p.val.dropTail.append q.val, by
-      have hpns : p.val.dropTail.nonstalling :=
-        VertexSeq.nonstalling_dropTail p.val p.nonstalling
+      have hpns := VertexSeq.nonstalling_dropTail p.val p.nonstalling
       have hjoin : p.val.dropTail.tail ≠ q.val.head := by
         rw [← h]
-        clear h q
         obtain ⟨s, hs⟩ := p
-        induction s with
-        | singleton v =>
-            simp [VertexSeq.length] at hp
-        | cons s v ih =>
-            cases s with
-            | singleton u =>
-                simpa [VertexSeq.dropTail, VertexSeq.tail] using hs.2
-            | cons t u =>
-                simpa [VertexSeq.dropTail, VertexSeq.tail] using hs.2
+        cases s with
+        | singleton v => simp [VertexSeq.length] at hp
+        | cons s v =>
+            cases s <;> simpa [VertexSeq.dropTail, VertexSeq.tail] using hs.2
       exact (VertexSeq.nonstalling_append p.val.dropTail q.val).2
         ⟨hpns, q.nonstalling, hjoin⟩⟩
 
@@ -138,20 +149,7 @@ def suffixFrom [DecidableEq α] (w : SimpleWalk α) (v : α) (h : v ∈ w.val) :
 distinct consecutive vertices stay distinct, so non-stalling is preserved. -/
 def map {β : Type*} (f : α → β) (hf : Function.Injective f) (w : SimpleWalk α) :
     SimpleWalk β :=
-  ⟨w.val.map f, by
-    have hmap : ∀ s : VertexSeq α, s.nonstalling → (s.map f).nonstalling := by
-      intro s hs
-      induction s with
-      | singleton v =>
-          simp [VertexSeq.map, VertexSeq.nonstalling]
-      | cons p v ih =>
-          constructor
-          · exact ih hs.1
-          · intro h
-            have hf_tail : f p.tail = f v := by
-              simpa [VertexSeq.tail_map] using h
-            exact hs.2 (hf hf_tail)
-    exact hmap w.val w.nonstalling⟩
+  ⟨w.val.map f, VertexSeq.nonstalling_map f hf w.val w.nonstalling⟩
 
 /-! ## takeWhile, dropWhile -/
 
@@ -174,7 +172,7 @@ def dropWhile (w : SimpleWalk α) (p : α → Prop) [DecidablePred p]
 piece is a contiguous sub-walk of `w`, hence non-stalling. -/
 def splitAt [DecidableEq α] (w : SimpleWalk α) (v : α) : List (SimpleWalk α) :=
   (w.val.splitAt v).pmap (fun p hp => ⟨p, hp⟩)
-    (VertexSeq.nonstalling_splitAt w.val w.nonstalling v)
+    (fun _ hp => VertexSeq.nonstalling_splitAt w.val w.nonstalling v hp)
 
 /-! ## zip -/
 
@@ -190,12 +188,12 @@ def zip {β : Type*} (w : SimpleWalk α) (w' : SimpleWalk β) :
 /-- Remove immediate stalls. On a simple walk this is the identity, and the
 result is non-stalling by construction. -/
 def loopErase [DecidableEq α] (w : SimpleWalk α) : SimpleWalk α :=
-  ⟨w.val.loopErase, w.val.loopErase_nonstalling⟩
+  ⟨w.val.loopErase, w.val.nonstalling_loopErase⟩
 
 /-- Cycle erasure: whenever a vertex repeats, drop the intermediate detour. The
 result has no repeated vertex, and `nodup` implies `nonstalling`. -/
 def cycleErase [DecidableEq α] (w : SimpleWalk α) : SimpleWalk α :=
-  ⟨w.val.cycleErase, VertexSeq.nodup_nonstalling _ w.val.cycleErase_nodup⟩
+  ⟨w.val.cycleErase, VertexSeq.nonstalling_of_nodup _ w.val.nodup_cycleErase⟩
 
 /-! ## edges
 
@@ -221,13 +219,11 @@ vertex carries no new edge beyond the one already ending `p`. -/
 lemma edges_glue (p q : SimpleWalk α) (h : p.val.tail = q.val.head) :
     (p.glue q h).edges = p.edges ++ q.edges := by
   rw [SimpleWalk.glue]
-  split
-  · next hp => simp [edges, VertexSeq.edges_eq_nil_of_length_eq_zero p.val hp]
-  · next hp =>
-      change (p.val.dropTail.append q.val).edges = p.val.edges ++ q.val.edges
-      rw [VertexSeq.edges_append,
-        VertexSeq.edges_eq_dropTail_concat_of_length_ne_zero p.val hp, ← h,
-        List.concat_eq_append]
+  split <;> rename_i hp
+  · simp [edges, VertexSeq.edges_nil_of_length_zero p.val hp]
+  · change (p.val.dropTail.append q.val).edges = p.val.edges ++ q.val.edges
+    rw [VertexSeq.edges_append, VertexSeq.edges_eq_dropTail_concat p.val hp,
+      ← h, List.concat_eq_append]
 
 /-- On a simple walk `loopErase` is the identity, so it leaves the edges
 unchanged. -/
@@ -260,9 +256,9 @@ lemma edges_suffixFrom_subset [DecidableEq α] (w : SimpleWalk α) (v : α)
   VertexSeq.edges_suffixFrom_subset w.val v h
 
 /-- Any endpoint of a traversed edge is a vertex of the walk. -/
-lemma mem_of_mem_edges {e : Sym2 α} {v : α} (w : SimpleWalk α)
+lemma mem_of_edge_mem {e : Sym2 α} {v : α} (w : SimpleWalk α)
     (he : e ∈ w.edges) (hv : v ∈ e) : v ∈ w.support :=
-  VertexSeq.mem_of_mem_edges w.val he hv
+  VertexSeq.mem_of_edge_mem w.val he hv
 
 /-! ## arcs
 
@@ -288,13 +284,11 @@ vertex carries no new arc beyond the one already ending `p`. -/
 lemma arcs_glue (p q : SimpleWalk α) (h : p.val.tail = q.val.head) :
     (p.glue q h).arcs = p.arcs ++ q.arcs := by
   rw [SimpleWalk.glue]
-  split
-  · next hp => simp [arcs, VertexSeq.arcs_eq_nil_of_length_eq_zero p.val hp]
-  · next hp =>
-      change (p.val.dropTail.append q.val).arcs = p.val.arcs ++ q.val.arcs
-      rw [VertexSeq.arcs_append,
-        VertexSeq.arcs_eq_dropTail_concat_of_length_ne_zero p.val hp, ← h,
-        List.concat_eq_append]
+  split <;> rename_i hp
+  · simp [arcs, VertexSeq.arcs_nil_of_length_zero p.val hp]
+  · change (p.val.dropTail.append q.val).arcs = p.val.arcs ++ q.val.arcs
+    rw [VertexSeq.arcs_append, VertexSeq.arcs_eq_dropTail_concat p.val hp,
+      ← h, List.concat_eq_append]
 
 /-- On a simple walk `loopErase` is the identity, so it leaves the arcs
 unchanged. -/
@@ -327,14 +321,23 @@ lemma arcs_suffixFrom_subset [DecidableEq α] (w : SimpleWalk α) (v : α)
   VertexSeq.arcs_suffixFrom_subset w.val v h
 
 /-- The source of a traversed arc is a vertex of the walk. -/
-lemma fst_mem_of_mem_arcs {a : α × α} (w : SimpleWalk α)
+lemma fst_mem_of_arc_mem {a : α × α} (w : SimpleWalk α)
     (ha : a ∈ w.arcs) : a.1 ∈ w.support :=
-  VertexSeq.fst_mem_of_mem_arcs w.val ha
+  VertexSeq.fst_mem_of_arc_mem w.val ha
 
 /-- The target of a traversed arc is a vertex of the walk. -/
-lemma snd_mem_of_mem_arcs {a : α × α} (w : SimpleWalk α)
+lemma snd_mem_of_arc_mem {a : α × α} (w : SimpleWalk α)
     (ha : a ∈ w.arcs) : a.2 ∈ w.support :=
-  VertexSeq.snd_mem_of_mem_arcs w.val ha
+  VertexSeq.snd_mem_of_arc_mem w.val ha
+
+-- These operations are thin `Subtype` wrappers around their `VertexSeq`
+-- counterparts, so unfolding them is exactly how `simp`/`grind` gets down to the
+-- `VertexSeq` API where the real lemmas live. Tagging the definitions is
+-- deliberate; do not replace it with per-lemma `simp` lemmas.
+attribute [simp, grind] SimpleWalk.reverse SimpleWalk.dropTail SimpleWalk.dropHead
+  SimpleWalk.prefixUntil SimpleWalk.suffixFrom SimpleWalk.loopErase
+
+/-! ## Generated graphs -/
 
 /-- View a simple walk as a `SimpleGraph`. The non-stalling property
 provides the looplessness axiom. -/
@@ -343,33 +346,11 @@ def toSimpleGraph (w : SimpleWalk α) : SimpleGraph α where
   edgeSet := { e | e ∈ w.val.edges }
   incidence' := by
     intro e he v hv
-    obtain ⟨q, hq⟩ := w
-    induction q with
-    | singleton _ => simp [VertexSeq.edges] at he
-    | cons w' u ih =>
-      simp [VertexSeq.edges] at he
-      rcases he with he_old | he_new
-      · have hns : w'.nonstalling := hq.1
-        have hv' : v ∈ w'.toList := ih hns he_old
-        simp [VertexSeq.toList]
-        exact Or.inl hv'
-      · subst he_new
-        simp [Sym2.mem_iff] at hv
-        rcases hv with rfl | rfl
-        · simp [VertexSeq.toList]
-        · simp [VertexSeq.toList]
+    exact VertexSeq.mem_of_edge_mem w.val he hv
   loopless' := by
     intro e he
     obtain ⟨q, hq⟩ := w
-    induction q with
-    | singleton _ => simp [VertexSeq.edges] at he
-    | cons w' u ih =>
-      simp [VertexSeq.edges] at he
-      rcases he with he_old | he_new
-      · exact ih hq.1 he_old
-      · subst he_new
-        simp [Sym2.mk_isDiag_iff]
-        exact hq.2
+    induction q <;> grind [VertexSeq.edges, VertexSeq.mem_edges_cons, Sym2.mk_isDiag_iff]
 
 /-- View a simple walk as a `SimpleDiGraph`. The non-stalling property
 provides the looplessness axiom. -/
@@ -378,30 +359,12 @@ def toSimpleDiGraph (w : SimpleWalk α) : SimpleDiGraph α where
   edgeSet := { a | a ∈ w.val.arcs }
   incidence' := by
     intro a ha
-    obtain ⟨q, hq⟩ := w
-    induction q with
-    | singleton _ => simp [VertexSeq.arcs] at ha
-    | cons w' u ih =>
-      simp [VertexSeq.arcs] at ha
-      rcases ha with ha_old | ha_new
-      · obtain ⟨h1, h2⟩ := ih hq.1 ha_old
-        refine ⟨?_, ?_⟩
-        · simp [VertexSeq.toList]; exact Or.inl h1
-        · simp [VertexSeq.toList]; exact Or.inl h2
-      · subst ha_new
-        refine ⟨?_, ?_⟩
-        · simp [VertexSeq.toList]
-        · simp [VertexSeq.toList]
+    exact ⟨VertexSeq.fst_mem_of_arc_mem w.val ha,
+      VertexSeq.snd_mem_of_arc_mem w.val ha⟩
   loopless' := by
     intro a ha
     obtain ⟨q, hq⟩ := w
-    induction q with
-    | singleton _ => simp [VertexSeq.arcs] at ha
-    | cons w' u ih =>
-      simp [VertexSeq.arcs] at ha
-      rcases ha with ha_old | ha_new
-      · exact ih hq.1 ha_old
-      · subst ha_new; exact hq.2
+    induction q <;> grind [VertexSeq.arcs, VertexSeq.mem_arcs_cons]
 
 /-- The edges of `w.toSimpleGraph` are exactly the edges traversed by `w`. -/
 @[simp] lemma mem_edgeSet_toSimpleGraph (w : SimpleWalk α) {e : Sym2 α} :

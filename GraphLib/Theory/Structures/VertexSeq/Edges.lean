@@ -7,7 +7,7 @@ import Mathlib.Data.Sym.Sym2
 import GraphLib.Theory.Structures.VertexSeq.Erase
 
 /-!
-# Vertex sequences: traversed edges
+# Vertex sequences: traversed edges and arcs
 
 The edges and arcs traversed by a vertex sequence: the consecutive vertex pairs
 of each `cons` step, viewed either as unordered `Sym2 α` edges or as ordered
@@ -63,7 +63,7 @@ pairs `(w.tail, v)` for each `cons` step). -/
     a ∈ (w :+ v).arcs ↔ a ∈ w.arcs ∨ a = (w.tail, v) := by
   simp [arcs, List.concat_eq_append]
 
-/-! ## Length and last edge -/
+/-! ## Lengths and final steps -/
 
 /-- The number of traversed edges equals `length` (one less than the number of
 vertices). -/
@@ -74,7 +74,7 @@ vertices). -/
   | cons w v ih => simp only [edges, length, List.length_concat, ih]; omega
 
 /-- A length-zero sequence (a single vertex) traverses no edges. -/
-@[simp, grind =] lemma edges_eq_nil_of_length_eq_zero (w : VertexSeq α)
+@[simp, grind =] lemma edges_nil_of_length_zero (w : VertexSeq α)
     (h : w.length = 0) : w.edges = [] := by
   cases w with
   | singleton v => rfl
@@ -82,7 +82,7 @@ vertices). -/
 
 /-- For a non-trivial sequence, the traversed edges are those of the
 dropped-tail sequence plus the final edge. -/
-@[grind →] lemma edges_eq_dropTail_concat_of_length_ne_zero (w : VertexSeq α)
+@[grind →] lemma edges_eq_dropTail_concat (w : VertexSeq α)
     (h : w.length ≠ 0) :
     w.edges = w.dropTail.edges.concat s(w.dropTail.tail, w.tail) := by
   cases w with
@@ -98,7 +98,7 @@ vertices). -/
   | cons w v ih => simp only [arcs, length, List.length_concat, ih]; omega
 
 /-- A length-zero sequence (a single vertex) traverses no arcs. -/
-@[simp, grind =] lemma arcs_eq_nil_of_length_eq_zero (w : VertexSeq α)
+@[simp, grind =] lemma arcs_nil_of_length_zero (w : VertexSeq α)
     (h : w.length = 0) : w.arcs = [] := by
   cases w with
   | singleton v => rfl
@@ -106,7 +106,7 @@ vertices). -/
 
 /-- For a non-trivial sequence, the traversed arcs are those of the
 dropped-tail sequence plus the final arc. -/
-@[grind →] lemma arcs_eq_dropTail_concat_of_length_ne_zero (w : VertexSeq α)
+@[grind →] lemma arcs_eq_dropTail_concat (w : VertexSeq α)
     (h : w.length ≠ 0) :
     w.arcs = w.dropTail.arcs.concat (w.dropTail.tail, w.tail) := by
   cases w with
@@ -116,21 +116,21 @@ dropped-tail sequence plus the final arc. -/
 /-! ## Endpoints -/
 
 /-- Any endpoint of a traversed edge is a vertex of the sequence. -/
-@[grind →] lemma mem_of_mem_edges {e : Sym2 α} {x : α} (w : VertexSeq α)
+@[grind →] lemma mem_of_edge_mem {e : Sym2 α} {x : α} (w : VertexSeq α)
     (he : e ∈ w.edges) (hx : x ∈ e) : x ∈ w := by
   induction w with
   | singleton v => simp [edges] at he
   | cons w v ih => grind [mem_edges_cons, mem_cons, tail_mem]
 
 /-- The source of a traversed arc is a vertex of the sequence. -/
-@[grind →] lemma fst_mem_of_mem_arcs {a : α × α} (w : VertexSeq α)
+@[grind →] lemma fst_mem_of_arc_mem {a : α × α} (w : VertexSeq α)
     (ha : a ∈ w.arcs) : a.1 ∈ w := by
   induction w with
   | singleton v => simp [arcs] at ha
   | cons w v ih => grind [mem_arcs_cons, mem_cons, tail_mem]
 
 /-- The target of a traversed arc is a vertex of the sequence. -/
-@[grind →] lemma snd_mem_of_mem_arcs {a : α × α} (w : VertexSeq α)
+@[grind →] lemma snd_mem_of_arc_mem {a : α × α} (w : VertexSeq α)
     (ha : a ∈ w.arcs) : a.2 ∈ w := by
   induction w with
   | singleton v => simp [arcs] at ha
@@ -140,68 +140,43 @@ dropped-tail sequence plus the final arc. -/
 
 /-- A duplicate-free sequence traverses each edge at most once (a path is a
 trail). -/
-@[grind] lemma nodup_edges_of_nodup (w : VertexSeq α) (h : w.nodup) :
+@[grind] lemma edges_nodup (w : VertexSeq α) (h : w.nodup) :
     w.edges.Nodup := by
-  induction w with
-  | singleton v => simp [edges]
-  | cons w v ih =>
-      obtain ⟨hw, hv⟩ := h
-      rw [edges_cons, List.concat_eq_append, List.nodup_append]
-      refine ⟨ih hw, by simp, ?_⟩
-      intro a ha b hb hab
-      simp only [List.mem_singleton] at hb
-      subst hb; subst hab
-      exact hv (mem_of_mem_edges w ha (by simp))
+  induction w <;>
+    grind [edges, edges_cons, List.nodup_append, mem_of_edge_mem]
 
 /-- The only way the edge between a duplicate-free sequence's two endpoints can
 be traversed is if the sequence is a single edge: otherwise the endpoints are
 not consecutive. Used to show a cycle's closing edge is fresh. -/
-@[grind →] lemma length_le_one_of_mem_edges_head_tail (w : VertexSeq α)
+@[grind →] lemma length_le_one_of_closing_edge_mem (w : VertexSeq α)
     (h : w.nodup) (he : s(w.head, w.tail) ∈ w.edges) : w.length ≤ 1 := by
-  cases w with
-  | singleton v => simp [edges] at he
-  | cons w v =>
-      obtain ⟨hw, hv⟩ := h
-      simp only [head_cons, tail_cons, mem_edges_cons] at he
-      rcases he with he | he
-      · exact absurd (mem_of_mem_edges w he (by simp)) hv
-      · have hht : w.head = w.tail := by
-          rw [Sym2.eq_iff] at he
-          rcases he with ⟨h1, _⟩ | ⟨h1, _⟩
-          · exact h1
-          · exact absurd (h1 ▸ head_mem w) hv
-        have : w.length = 0 := length_zero_of_nodup_head_eq_tail w hw hht
-        simp [length, this]
+  cases w <;> grind [edges, mem_edges_cons, mem_of_edge_mem, Sym2.eq_iff]
+
+/-- The endpoint-swapped form of `length_le_one_of_closing_edge_mem`. `Sym2`
+equality is symmetric, but `Sym2.eq_swap` is a permutative rewrite that `grind`
+cannot apply on its own, so callers that meet the closing edge written
+`s(tail, head)` need this version by name.
+
+Deliberately left untagged: as a `@[grind →]` rule it fires on every `Sym2`
+membership and drives `grind` into the `Quot`/`Sym2.Rel` internals, which breaks
+the neighbouring `SimpleCycle.arcs_nodup`. -/
+lemma length_le_one_of_closing_edge_mem_swap (w : VertexSeq α)
+    (h : w.nodup) (he : s(w.tail, w.head) ∈ w.edges) : w.length ≤ 1 :=
+  length_le_one_of_closing_edge_mem w h (by rwa [Sym2.eq_swap])
 
 /-! ## Nodup of arcs -/
 
 /-- A duplicate-free sequence traverses each directed arc at most once. -/
-@[grind] lemma nodup_arcs_of_nodup (w : VertexSeq α) (h : w.nodup) :
+@[grind] lemma arcs_nodup (w : VertexSeq α) (h : w.nodup) :
     w.arcs.Nodup := by
-  induction w with
-  | singleton v => simp [arcs]
-  | cons w v ih =>
-      obtain ⟨hw, hv⟩ := h
-      rw [arcs_cons, List.concat_eq_append, List.nodup_append]
-      refine ⟨ih hw, by simp, ?_⟩
-      intro a ha b hb hab
-      simp only [List.mem_singleton] at hb
-      subst hb; subst hab
-      exact hv (snd_mem_of_mem_arcs w ha)
+  induction w <;>
+    grind [arcs, arcs_cons, List.nodup_append, snd_mem_of_arc_mem]
 
 /-- In a duplicate-free sequence, an arc from the tail back to the head cannot
 occur except in the degenerate length-at-most-one case. -/
-@[grind →] lemma length_le_one_of_mem_arcs_tail_head (w : VertexSeq α)
+@[grind →] lemma length_le_one_of_closing_arc_mem (w : VertexSeq α)
     (h : w.nodup) (ha : (w.tail, w.head) ∈ w.arcs) : w.length ≤ 1 := by
-  cases w with
-  | singleton v => simp [arcs] at ha
-  | cons w v =>
-      obtain ⟨hw, hv⟩ := h
-      simp only [head_cons, tail_cons, mem_arcs_cons] at ha
-      rcases ha with ha | ha
-      · exact absurd (fst_mem_of_mem_arcs w ha) hv
-      · have hhead : w.head = v := congrArg Prod.snd ha
-        exact (hv (by rw [← hhead]; exact head_mem w)).elim
+  cases w <;> grind [arcs, mem_arcs_cons, fst_mem_of_arc_mem]
 
 /-! ## append, reverse -/
 
@@ -243,7 +218,7 @@ occur except in the degenerate length-at-most-one case. -/
       rw [reverse, arcs_append, arcs_cons, ih]
       simp [head_reverse, List.concat_eq_append]
 
-/-! ## Subsequence operations do not introduce new edges -/
+/-! ## Operations do not introduce new edges -/
 
 /-- Dropping the last vertex cannot introduce new traversed edges. -/
 @[grind] lemma edges_dropTail_subset (w : VertexSeq α) :
@@ -281,7 +256,7 @@ occur except in the degenerate length-at-most-one case. -/
   fun_induction cycleErase w <;>
     grind [mem_edges_cons, edges_prefixUntil_subset, tail_cycleErase]
 
-/-! ## Subsequence operations do not introduce new arcs -/
+/-! ## Operations do not introduce new arcs -/
 
 /-- Dropping the last vertex cannot introduce new traversed arcs. -/
 @[grind] lemma arcs_dropTail_subset (w : VertexSeq α) :
