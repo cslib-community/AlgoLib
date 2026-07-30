@@ -1,5 +1,6 @@
 import GraphAlgorithms.SimpleGraphs.WeightedGraphs.WeightedSimpleGraphs
 import GraphAlgorithms.SimpleGraphs.WeightedGraphs.Walk
+import GraphAlgorithms.SimpleGraphs.WeightedGraphs.ParentTree
 import Mathlib.Tactic
 import Mathlib.Order.WithBot
 import Mathlib.Data.Sym.Sym2
@@ -35,7 +36,7 @@ def is_connected (G : WeightedSimpleGraph α) : Prop :=
   edges.filter fun e => G.edgeWeight e = minW
 
 
-lemma crossing_to_min_weight_edges {α: Type* }(G : WeightedSimpleGraph α) (A : Finset (Edge α))
+lemma crossing_to_min_weight_edges {α : Type*} (G : WeightedSimpleGraph α) (A : Finset (Edge α))
     (hA : A.Nonempty) : (minimumWeightEdges G A hA).Nonempty := by
   simp only [minimumWeightEdges, filter_nonempty_iff]
   have hmem := min'_mem (A.image G.edgeWeight) (hA.image G.edgeWeight)
@@ -62,56 +63,26 @@ noncomputable def disjointEdges'
     rw [h1]
     omega
 
-inductive IsDisjointEdgeSet : Finset (Edge α) → Prop
-  | empty
-    : IsDisjointEdgeSet ∅
-  | cons (A : Finset (Edge α)) (e : Edge α)
-      (hw   : IsDisjointEdgeSet A)
-      (hedg : ∀ y ∈ A, e.toFinset ∩ y.toFinset = ∅)
-    : IsDisjointEdgeSet ({e} ∪ A)
 
-lemma IsDisjointEdgeSet.nonempty {A : Finset (Edge α)} (h : IsDisjointEdgeSet A)
-  (hne : A ≠ ∅) : A.Nonempty := by
-  cases h with
-  | empty => contradiction
-  | cons A e hw hedg => exact ⟨e, Finset.mem_union_left _ (Finset.mem_singleton_self e)⟩
 
 @[simp] noncomputable def disjointEdges
     (edges : Finset (Edge α)) :
     Finset (Edge α) :=
   disjointEdges' edges ∅
 
-lemma disjoint_helper_inductive' (A : Finset (Edge α)) (acc : Finset (Edge α))
-    (hacc : IsDisjointEdgeSet acc) :
-    IsDisjointEdgeSet (disjointEdges' A acc) := by
-  induction A, acc using disjointEdges'.induct with
-  | case1 edges acc hne e h1 h2 =>
-    rw [disjointEdges', dif_pos hne]
-    unfold e at *
-    simp only [union_singleton]
-    split_ifs with hif
-    · -- h1 holds
-      have hm : IsDisjointEdgeSet ({e} ∪ acc) := IsDisjointEdgeSet.cons acc e hacc hif
-      rw [Finset.union_comm] at hm
-      have hp := h2 hm
-      unfold e at *
-      rwa [Finset.insert_eq, Finset.union_comm]
-    ·  -- neg h1
-      exact absurd h1 hif
-  | case2 edges acc hne e h1 =>
-    -- hempty : ¬edges.Nonempty
-    rw [disjointEdges',dif_pos hne]
-    unfold e at *
-    grind
-  | case3 edges acc hempty =>
-    -- hempty : ¬edges.Nonempty
-    rw [disjointEdges', dif_neg hempty]
-    exact hacc
-
-lemma disjointEdges_disjoint (A : Finset (Edge α)) :
-    IsDisjointEdgeSet (disjointEdges A) := by
-      rw [disjointEdges]
-      exact disjoint_helper_inductive' A ∅ (IsDisjointEdgeSet.empty)
+lemma disjointEdges_are_disjoint (A acc : Finset (Edge α)) (hA : A.Nonempty) 
+  (h : ∀ x ∈ acc, ∀ y ∈ acc, x.toFinset ∩ y.toFinset ≠ ∅ → x = y)
+  (x y : Edge α) (hx : x ∈ disjointEdges' A acc) (hy : y ∈ disjointEdges' A acc):
+      x.toFinset ∩ y.toFinset ≠ ∅ → x = y := by
+      induction A, acc using disjointEdges'.induct with
+      | case1 edges acc hne e h1 h2 =>
+        intro heq
+        rw [disjointEdges', dif_pos hne] at hx
+        rw [disjointEdges', dif_pos hne] at hy
+        unfold e at *
+        sorry
+      | case2  =>sorry
+      | case3  =>sorry
   
 lemma disjoint_nonempty_imp_nonempty (A acc : Finset (Edge α)) (hA : A.Nonempty) :
     (disjointEdges' A acc).Nonempty := by
@@ -191,14 +162,15 @@ lemma disjoint'_sub (A : Finset (Edge α)) (acc : Finset (Edge α))
 
 noncomputable def prim
     (G : WeightedSimpleGraph α)
-    (edgeSet : Finset (Edge α))
+    (spanningTree : ParentTree α)
     (frontier visited : Finset α)
-    (hfront_sub : frontier ⊆  V(G))
-    (hvisited_sub : visited ⊆  V(G))
+    (hfront_sub : frontier ⊆ V(G))
+    (hvisited_sub : visited ⊆ V(G))
     (h_disj : frontier ∩ visited = ∅)
-    : Finset (Edge α) :=
+    (h_new : visited = G.vertexSet)
+    :  ParentTree α :=
   if frontier = ∅ then
-    edgeSet
+    spanningTree
   else
     let crossing := crossingEdges G frontier visited
 
@@ -215,8 +187,27 @@ noncomputable def prim
 
       let frontier' :=
         (frontier ∪ newNodes.biUnion (fun v => N(G, v))) \ visited'
+      let newTree := spanningTree.appendNodes (newNodes) (fun v => 
+          if hnew: v ∈ newNodes then 
+            let edge := chosen.choose (fun e => v ∈ e) (by 
+            simp [newNodes] at hnew
+            obtain ⟨ a, ha ⟩ := hnew
+            use a
+            simp
+            constructor
+            · grind
+            · intro e hc hin
+              set min_edges := minimumWeightEdges G crossing h
+              have hmin_edge_ne: min_edges.Nonempty := crossing_to_min_weight_edges G crossing h
+              simp only [chosen,disjointEdges] at *
+              induction min_edges, ∅  using disjointEdges'.induct with
 
-      prim G (edgeSet ∪ chosen) frontier' visited' (by grind) (by
+                )
+            edge.toFinset.choose (· ∈ visited) (by sorry)
+          else 
+          v) (by sorry)
+
+      prim G newTree frontier' visited' (by grind) (by
         set min_edges := minimumWeightEdges G crossing h with hmin
         have hmin_sub_crossing: min_edges ⊆ crossing := by
           simp [min_edges, crossing]
@@ -236,9 +227,9 @@ noncomputable def prim
               simp at hm
               exact G.incidence e hx.right.left m hm.left
         grind
-      ) (by grind)
+      ) (by grind)  (by sorry)
     else
-      edgeSet
+      spanningTree
 termination_by (V(G) \ visited).card
 decreasing_by
   set min_edges := minimumWeightEdges G crossing h
