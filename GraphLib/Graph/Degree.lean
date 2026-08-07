@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner
 -/
 import GraphLib.Graph.Basic
+import GraphLib.Graph.Adjacency
 import Mathlib.Data.Set.Card
 import Mathlib.Data.ENat.Lattice
 
@@ -240,9 +241,6 @@ noncomputable def SimpleDiGraph.minInDegree (G : SimpleDiGraph α) : ℕ∞ :=
 def SimpleGraph.avgDegree (G : SimpleGraph α) : ℕ :=
   sorry
 
-def SimpleGraph.adj (G : SimpleGraph α) (v w : α) : Prop :=
-  sorry
-
 def SimpleGraph.inc (G : SimpleGraph α) (e : E(G)) (v : )
 
 notation δ(G)
@@ -251,6 +249,5 @@ notation δ-(G)
 notation Δ(G)
 notation Δ+(G)
 notation Δ-(G)
-notation v ∼G w
 
 end GraphLib
