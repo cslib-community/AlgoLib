@@ -1,7 +1,6 @@
 import GraphLib.Graph.Basic
 
 import GraphLib.Theory.Basic
-import GraphLib.Theory.Walks.Basic
 import GraphLib.Theory.Trees.Basic
 import GraphLib.Theory.Connectivity.Basic
 import GraphLib.Theory.Spectral.Basic
