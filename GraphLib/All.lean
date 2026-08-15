@@ -84,6 +84,10 @@ import GraphLib.Theory.Structures.Walk
 import GraphLib.Walk.Walk
 import GraphLib.Theory.Trees.Basic
 
+import GraphLib.Weight.Basic
+import GraphLib.Weight.Network
+import GraphLib.Weight.Walk
+
 /-!
 # GraphLib production import surface
 

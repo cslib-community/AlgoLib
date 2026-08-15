@@ -2,61 +2,56 @@
 
 **Updated:** 2026-08-15
 
-**Current phase:** Phase 7 — `COMPLETE`
+**Current phase:** Phase 8 — `COMPLETE`
 
 **Exit condition satisfied:** Yes
 
 ## Completed
 
-- Added `Connectivity/Reachability.lean` for all four graph types. Reachability uses the appropriate
-  path carrier and has path/walk equivalences, endpoint membership, vertex-restricted reflexivity,
-  transitivity, undirected symmetry, directed reversal, subgraph monotonicity, adjacency closure,
-  and vertex/tag relabel transport.
-- Added `Connectivity/Connected.lean` with vacuous `Preconnected`, nonempty `Connected`, literal
-  component sets, component membership/subset/equality/equal-or-disjoint laws, one-component
-  connectedness, empty-graph conventions, and relabel transport.
-- Added `Connectivity/StronglyConnected.lean` with mutual reachability, nonempty whole-graph strong
-  connectedness, SCC sets and their partition laws, directed reversal, and relabel transport.
-- Added `Connectivity/Acyclic.lean` with direction- and identity-correct cycle absence for all four
-  graph types. Added subgraph/no-edge, reversal, and relabel laws, plus undirected `IsForest :=
-  IsAcyclic` and `IsTree := Connected ∧ IsAcyclic` for simple and general graphs.
-- Moved `SimpleGraph.HasSimpleCycle`/`IsAcyclic` out of the realization layer. Replaced the obsolete
-  connectivity, Forest, and Tree drafts with declaration-free Phase 9 forwarders; removed
-  `SimpleGraph.Contains` and `SimpleGraph.IsConnected`; repaired Girth and forwarding imports; and
-  added the declaration-free `GraphLib.Connectivity` umbrella to `GraphLib.All`.
-- Added `GraphLibTest/Foundation/Connectivity.lean`, covering all public carrier types, empty-graph
-  semantics, reachability endpoints/transitivity/symmetry/reversal, component partition laws, SCC
-  reversal, general loop and parallel-edge cycles, simple cycle length conventions, no-edge
-  acyclicity, and subgraph monotonicity.
+- Added `Weight/Basic.lean` with vertex weights and actual-edge weights/costs for all four graph
+  types, actual-arc capacities for directed graphs, active-carrier `EqOn`, explicit equivalence
+  transport algebra, and relabel/reverse/provenance-map application and congruence laws. General
+  graph data is indexed by complete `Edge` or `Arc` values, never by tags alone.
+- Added `Weight/Walk.lean` with graph-independent walk/path sums over reconstructed actual edges or
+  arcs. Its routine API includes singleton/one-step, append/glue, path/walk compatibility,
+  active-carrier congruence under realization, undirected reversal, transported directed reversal,
+  and relabel laws.
+- Added `Weight/Network.lean` with actual-arc `Network` and `Flow`, finite-incidence outflow/inflow,
+  flow value, feasibility, cuts and cut capacity, active-carrier extensionality, zero-flow
+  feasibility, conservation rewriting, and relabel/reverse transports with source/sink swap.
+- Migrated `Theory/Matching/Basic.lean` from `edges` to actual-carrier `edgeSet`, with
+  `edgeSet_subset : edgeSet ⊆ E(G)` and genuinely finite `edgeFinset`/`size` APIs.
+- Added `Foundation/WeightNetwork.lean`, covering same-tag distinct-edge weights, provenance,
+  relabel/reverse transport, reused-tag traversal sums, actual-arc capacity/flow domains,
+  loop/parallel/antiparallel incidence contributions, cuts, the finite-vertices negative instance,
+  zero flow, and finite matching size. Added the three Phase 8 leaves directly to `GraphLib.All`.
 
 ## Deviations and deferred items
 
-- Repaired a blocking Phase 5 omission: cycle erasure now preserves both endpoints and realization
-  for general walks; `Walk.toPath` exposes both endpoint laws; and simple-walk glue/map endpoint
-  projections are available. These are the smallest earlier-spine repairs needed to prove Phase 7
-  reachability transitivity and the walk/path equivalences.
-- Cycle-carrier relabel construction remains private to `Connectivity/Acyclic.lean`; Phase 7 exposes
-  the required graph-level existence and acyclicity invariance without expanding the earlier raw
-  carrier API.
-- No required Phase 7 item was deferred. Plan-permitted quotient/executable component enumeration,
-  condensation algorithms, unique-path tree theory, topological ordering, feedback sets, and
-  advanced cycle theory remain deferred.
+- No earlier-phase repair or Phase 8 deviation was needed. Same-carrier induce/restrict/delete
+  operations reuse attached functions directly, so no duplicate transport API was added for them.
+- Plan-permitted bundled attached-data wrappers, vertex-visit weights, distance/shortest-path
+  theory, residual networks, max-flow/min-cut theory, and flow algorithms remain deferred.
+- The Phase 9 `Weight.lean` umbrella was intentionally not created; Phase 8 leaves are direct
+  `GraphLib.All` imports until final umbrella cleanup.
 - Existing unrelated linter warnings and the two pre-existing
-  `DataStructures/InverseAckermann/Nivasch.lean` `sorry` declarations remain. Phase 7 added no
+  `DataStructures/InverseAckermann/Nivasch.lean` `sorry` declarations remain. Phase 8 added no
   production `sorry`.
 
 ## Validation
 
-- Incremental builds of every new connectivity leaf, migration forwarder, Girth, and the Phase 7
-  foundation test succeeded.
+- Incremental builds of `GraphLib.Weight.Basic`, `GraphLib.Weight.Walk`,
+  `GraphLib.Weight.Network`, and `GraphLibTest.Foundation.WeightNetwork` succeeded.
 - `lake build GraphLib GraphLib.All GraphLibTest.ImportAll GraphLib.Walk.InSimpleGraph
   GraphLib.Walk.InSimpleDiGraph GraphLib.Theory.Girth GraphLib.Theory.MooreBound
-  GraphLibTest.Foundation.Walk GraphLibTest.Foundation.Connectivity`: success (1186 jobs).
-- Searches found no Phase 7 production `sorry`, `SimpleGraph.Contains`, `SimpleGraph.IsConnected`,
-  or connectivity/acyclicity definitions outside the canonical `Connectivity` modules.
-  `git diff --check` passes.
+  GraphLibTest.Foundation.Basic GraphLibTest.Foundation.Transformations
+  GraphLibTest.Foundation.Walk GraphLibTest.Foundation.FiniteDegree
+  GraphLibTest.Foundation.Connectivity GraphLibTest.Foundation.WeightNetwork`: success (1196 jobs).
+- Searches found no Phase 8 production `sorry`, forbidden weighted/capacitated graph type,
+  tag-keyed general attached data, residual/contraction API, speculative finite view, stale matching
+  field use, or premature `Weight.lean` umbrella. `git diff --check` passes.
 
 ## Next action
 
-Begin Phase 8 only: implement attached data, traversal weights, networks, and the matching stress
-test at the Phase 8 boundary.
+Begin Phase 9 only: add the selected constructors, finalize truthful umbrellas and test targets,
+and remove the temporary forwarding modules described by the final plan.
