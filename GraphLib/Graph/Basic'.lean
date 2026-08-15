@@ -73,7 +73,6 @@ structure DiGraph (α β : Type*) where
   /-- Both endpoints of every edge are vertices. Prefer `DiGraph.incidence`. -/
   incidence' : ∀ e ∈ edgeSet, e.endpoints.1 ∈ vertexSet ∧ e.endpoints.2 ∈ vertexSet
 
-
 /-- An undirected graph on `α` with adjacency relation `Adj`, containing no loops or
 multi-edges. Both endpoints of every adjacent pair lie in `vertexSet`. -/
 structure SimpleGraph (α : Type*) extends _root_.SimpleGraph α where
@@ -85,8 +84,6 @@ structure SimpleGraph (α : Type*) extends _root_.SimpleGraph α where
 /-- The edge set of a `SimpleGraph`, as unordered pairs of adjacent vertices. -/
 def SimpleGraph.edgeSet {α} (G : SimpleGraph α) : Set (Sym2 α) :=
   Sym2.fromRel (G.symm)
-
-
 
 /-- A directed graph on `α` with adjacency relation `Adj`, containing no loops or
 multi-edges. Both endpoints of every adjacent pair lie in `vertexSet`. -/
