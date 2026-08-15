@@ -2,56 +2,53 @@
 
 **Updated:** 2026-08-15
 
-**Current phase:** Phase 8 — `COMPLETE`
+**Current phase:** Phase 9 — `COMPLETE`
 
 **Exit condition satisfied:** Yes
 
 ## Completed
 
-- Added `Weight/Basic.lean` with vertex weights and actual-edge weights/costs for all four graph
-  types, actual-arc capacities for directed graphs, active-carrier `EqOn`, explicit equivalence
-  transport algebra, and relabel/reverse/provenance-map application and congruence laws. General
-  graph data is indexed by complete `Edge` or `Arc` values, never by tags alone.
-- Added `Weight/Walk.lean` with graph-independent walk/path sums over reconstructed actual edges or
-  arcs. Its routine API includes singleton/one-step, append/glue, path/walk compatibility,
-  active-carrier congruence under realization, undirected reversal, transported directed reversal,
-  and relabel laws.
-- Added `Weight/Network.lean` with actual-arc `Network` and `Flow`, finite-incidence outflow/inflow,
-  flow value, feasibility, cuts and cut capacity, active-carrier extensionality, zero-flow
-  feasibility, conservation rewriting, and relabel/reverse transports with source/sink swap.
-- Migrated `Theory/Matching/Basic.lean` from `edges` to actual-carrier `edgeSet`, with
-  `edgeSet_subset : edgeSet ⊆ E(G)` and genuinely finite `edgeFinset`/`size` APIs.
-- Added `Foundation/WeightNetwork.lean`, covering same-tag distinct-edge weights, provenance,
-  relabel/reverse transport, reused-tag traversal sums, actual-arc capacity/flow domains,
-  loop/parallel/antiparallel incidence contributions, cuts, the finite-vertices negative instance,
-  zero flow, and finite matching size. Added the three Phase 8 leaves directly to `GraphLib.All`.
+- Added `Graph/Constructions.lean` with the selected Phase 9 constructors for all four graph types:
+  empty and edgeless graphs, general graphs from bundled-edge or bundled-arc sets and singletons,
+  simple single-edge or single-arc graphs, and simple complete graphs. Their API includes carrier,
+  incidence, adjacency, equality, and finiteness simp lemmas and instances.
+- Finalized declaration-free `Graph`, `Walk`, `Connectivity`, and `Weight` umbrellas. The root
+  `GraphLib` imports exactly those stable foundation umbrellas, while `GraphLib.All` adds the stable
+  data-structure and validated theory leaves.
+- Added the root `GraphLibTest` umbrella and `Foundation/Constructions.lean`, including tests for
+  generated endpoint carriers, reuse of bundled tags without identity loss, adjacency behavior,
+  constructor equalities, and finite carriers.
+- Removed 37 obsolete declaration-free theory forwarding modules and 10 stale empty algorithm or
+  future-theory umbrellas. Mature walk, Girth, and Moore-bound modules remain at their canonical
+  paths and compile through the final umbrellas.
 
 ## Deviations and deferred items
 
-- No earlier-phase repair or Phase 8 deviation was needed. Same-carrier induce/restrict/delete
-  operations reuse attached functions directly, so no duplicate transport API was added for them.
-- Plan-permitted bundled attached-data wrappers, vertex-visit weights, distance/shortest-path
-  theory, residual networks, max-flow/min-cut theory, and flow algorithms remain deferred.
-- The Phase 9 `Weight.lean` umbrella was intentionally not created; Phase 8 leaves are direct
-  `GraphLib.All` imports until final umbrella cleanup.
-- Existing unrelated linter warnings and the two pre-existing
-  `DataStructures/InverseAckermann/Nivasch.lean` `sorry` declarations remain. Phase 8 added no
-  production `sorry`.
+- No earlier-phase repair or Phase 9 API deviation was needed. The broader constructor catalog
+  listed as deferred by the plan remains deferred.
+- `DataStructures/InverseAckermann/Nivasch.lean` remains an unfinished research module with its two
+  pre-existing `sorry` declarations and is explicitly outside the stable production surface;
+  `GraphLib.All` includes the sorry-free `InverseAckermann.Basic` leaf only. The contraction-oriented
+  `Theory/Minors/Basic.lean` placeholder and `DataStructures/UnionFind/Blueprint.lean` also remain
+  outside that surface, as required by the plan.
+- `Prototypes/RepresentationStress.lean` is a non-production research client of obsolete APIs. It
+  was not migrated because the phase forbids unrelated research-file changes.
+- Existing unrelated linter warnings remain. Phase 9 added no production `sorry`.
 
 ## Validation
 
-- Incremental builds of `GraphLib.Weight.Basic`, `GraphLib.Weight.Walk`,
-  `GraphLib.Weight.Network`, and `GraphLibTest.Foundation.WeightNetwork` succeeded.
-- `lake build GraphLib GraphLib.All GraphLibTest.ImportAll GraphLib.Walk.InSimpleGraph
-  GraphLib.Walk.InSimpleDiGraph GraphLib.Theory.Girth GraphLib.Theory.MooreBound
-  GraphLibTest.Foundation.Basic GraphLibTest.Foundation.Transformations
-  GraphLibTest.Foundation.Walk GraphLibTest.Foundation.FiniteDegree
-  GraphLibTest.Foundation.Connectivity GraphLibTest.Foundation.WeightNetwork`: success (1196 jobs).
-- Searches found no Phase 8 production `sorry`, forbidden weighted/capacitated graph type,
-  tag-keyed general attached data, residual/contraction API, speculative finite view, stale matching
-  field use, or premature `Weight.lean` umbrella. `git diff --check` passes.
+- `lake build GraphLib GraphLib.All GraphLibTest GraphLibTest.ImportAll
+  GraphLib.Walk.InSimpleGraph GraphLib.Walk.InSimpleDiGraph GraphLib.Theory.Girth
+  GraphLib.Theory.MooreBound GraphLib.Graph.Basic GraphLib.Graph.Adjacency GraphLib.Graph.Finite
+  GraphLib.Graph.Constructions GraphLib.Weight.Basic GraphLib.Weight.Walk GraphLib.Weight.Network`:
+  success (1182 jobs).
+- A direct `lake build` of all 76 stable production and test module targets succeeded (1182 jobs).
+- Naming and scope searches found no forbidden legacy names, forwarding imports, implicit simple to
+  general coercions, or contraction modules in the stable source and test surfaces. The stable
+  production surface is free of `sorry`, and `git diff --check` passes.
 
 ## Next action
 
-Begin Phase 9 only: add the selected constructors, finalize truthful umbrellas and test targets,
-and remove the temporary forwarding modules described by the final plan.
+The nine-phase graph-foundation construction is complete. Keep future work on deferred research or
+new algorithms separate from the stable umbrella surface unless it first satisfies production
+quality and no-`sorry` requirements.
