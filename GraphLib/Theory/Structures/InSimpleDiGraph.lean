@@ -28,11 +28,11 @@ simple walks to a `SimpleDiGraph`.
 * Constructor characterizations: `singleton_iff`, `cons_iff`.
 * Vertex membership: `head_mem`, `tail_mem`, `mem_vertexSet`.
 * Arc-list characterization: `iff_arcs`, `arc_mem`, and the
-  generated-graph characterization `iff_toSimpleDiGraph_subgraphOf`.
+  generated-graph characterization `iff_toSimpleDiGraph_le`.
 * Closure under direction-preserving `VertexSeq` operations: `prepend`,
   `append`, `dropHead`, `dropTail`, `prefixUntil`, `suffixFrom`, `takeWhile`,
   `dropWhile`, `loopErase`, `cycleErase`, and monotonicity `mono` under
-  `SimpleDiGraph.subgraphOf`.
+  the canonical subgraph order `≤`.
 * Thin `IsSimpleWalkIn` wrappers for the corresponding `SimpleWalk`
   operations.
 * `nonstalling` — a realized sequence never stalls, because adjacency in a
@@ -100,12 +100,12 @@ step is an arc. -/
     (hw : G.IsVertexSeqIn w) : w.tail ∈ V(G) := by
   induction hw with
   | singleton v hv => exact hv
-  | cons w u hw ha ih => exact ha.right_mem
+  | cons w u hw ha ih => exact ha.target_mem
 
 /-- Every vertex of a realized sequence is a vertex of `G`. -/
 @[grind →] lemma mem_vertexSet (G : SimpleDiGraph α) {w : VertexSeq α}
     (hw : G.IsVertexSeqIn w) : ∀ v ∈ w, v ∈ V(G) := by
-  induction hw <;> grind [SimpleDiGraph.Adj.right_mem]
+  induction hw <;> grind [SimpleDiGraph.Adj.target_mem]
 
 /-- A realized sequence never stalls: consecutive vertices differ, because
 adjacency in a simple directed graph forces distinct endpoints. Hence it
@@ -131,7 +131,7 @@ underlies a `SimpleWalk`. -/
 @[grind →] lemma prepend (G : SimpleDiGraph α) {w : VertexSeq α}
     (hw : G.IsVertexSeqIn w) {u : α} (ha : G.Adj u w.head) :
     G.IsVertexSeqIn ((VertexSeq.singleton u).append w) :=
-  append G (.singleton u ha.left_mem) hw ha
+  append G (.singleton u ha.source_mem) hw ha
 
 /-- Dropping the last vertex preserves realization. -/
 @[grind →] lemma dropTail (G : SimpleDiGraph α) {w : VertexSeq α}
@@ -145,16 +145,17 @@ underlies a `SimpleWalk`. -/
   | singleton v hv => exact .singleton v hv
   | cons w u hw ha ih =>
       cases w with
-      | singleton x => exact .singleton u ha.right_mem
+      | singleton x => exact .singleton u ha.target_mem
       | cons t x => exact .cons _ u ih (by rw [VertexSeq.tail_dropHead]; exact ha)
 
 /-- Realization is monotone under passing to a supergraph. -/
 @[grind →] lemma mono (G H : SimpleDiGraph α) {w : VertexSeq α}
-    (hw : H.IsVertexSeqIn w) (hsub : SimpleDiGraph.subgraphOf H G) :
+    (hw : H.IsVertexSeqIn w) (hsub : H ≤ G) :
     G.IsVertexSeqIn w := by
   induction hw with
-  | singleton v hv => exact .singleton v (hsub.1 hv)
-  | cons w u hw ha ih => exact .cons w u ih (hsub.2 ha)
+  | singleton v hv => exact .singleton v (hsub.vertexSet_subset hv)
+  | cons w u hw ha ih =>
+      exact .cons w u ih (ha.mono hsub)
 
 /-- Taking the prefix up to the first occurrence of `v` preserves realization. -/
 @[grind →] lemma prefixUntil [DecidableEq α] (G : SimpleDiGraph α) {w : VertexSeq α}
@@ -176,7 +177,7 @@ realization. -/
   | cons w u hw ha ih =>
       intro v h
       by_cases h2 : v ∈ w <;>
-        grind [VertexSeq.tail_suffixFrom, SimpleDiGraph.Adj.right_mem]
+        grind [VertexSeq.tail_suffixFrom, SimpleDiGraph.Adj.target_mem]
 
 /-- Taking the longest prefix on which `p` holds (plus its first failure)
 preserves realization. -/
@@ -205,7 +206,7 @@ lemma dropWhile (G : SimpleDiGraph α) {w : VertexSeq α}
       · rw [dif_pos hc]
         exact .cons (w.dropWhile p hc) u (ih hc)
           (by rw [VertexSeq.tail_dropWhile]; exact ha)
-      · rw [dif_neg hc]; exact .singleton u ha.right_mem
+      · rw [dif_neg hc]; exact .singleton u ha.target_mem
 
 /-- If `G` has no arcs, every realized sequence has length zero. -/
 lemma length_zero_of_no_edges (G : SimpleDiGraph α) (hE : E(G) = ∅)
@@ -244,15 +245,19 @@ theorem iff_arcs (G : SimpleDiGraph α) (w : VertexSeq α) :
         rw [VertexSeq.mem_arcs_cons] at hmem
         rcases hmem with hmem | rfl
         · exact ih a hmem
-        · exact ha
+        · exact (G.adj_iff w.tail u).1 ha
   · induction w with
     | singleton v => intro h; exact .singleton v h.1
     | cons w u ih =>
         intro h
         rw [cons_iff]
-        refine ⟨ih ⟨h.1, fun a ha => h.2 a ?_⟩, h.2 (w.tail, u) ?_⟩
-        · rw [VertexSeq.mem_arcs_cons]; exact Or.inl ha
-        · rw [VertexSeq.mem_arcs_cons]; exact Or.inr rfl
+        refine ⟨ih ⟨h.1, fun a ha => h.2 a (by
+          rw [VertexSeq.mem_arcs_cons]
+          exact Or.inl ha)⟩, ?_⟩
+        apply (G.adj_iff w.tail u).2
+        exact h.2 (w.tail, u) (by
+          rw [VertexSeq.mem_arcs_cons]
+          exact Or.inr rfl)
 
 /-- Any arc traversed by a realized vertex sequence is an edge of the graph. -/
 @[grind →] lemma arc_mem (G : SimpleDiGraph α) {w : VertexSeq α}
@@ -264,7 +269,7 @@ the graph. -/
 @[grind →] lemma last_adj (G : SimpleDiGraph α)
     {w : VertexSeq α} (hw : G.IsVertexSeqIn w) (h : w.length ≠ 0) :
     G.Adj w.dropTail.tail w.tail := by
-  change (w.dropTail.tail, w.tail) ∈ E(G)
+  apply (G.adj_iff _ _).2
   exact arc_mem G hw
     (by
       rw [VertexSeq.arcs_eq_dropTail_concat w h]
@@ -329,8 +334,8 @@ lemma arcs_subset_edgeSet (G : SimpleDiGraph α) {w : SimpleWalk α}
 
 /-- The simple directed graph generated by a realized simple walk is a subgraph
 of `G`. -/
-lemma toSimpleDiGraph_subgraphOf (G : SimpleDiGraph α) {w : SimpleWalk α}
-    (hw : G.IsSimpleWalkIn w) : SimpleDiGraph.subgraphOf w.toSimpleDiGraph G := by
+lemma toSimpleDiGraph_le (G : SimpleDiGraph α) {w : SimpleWalk α}
+    (hw : G.IsSimpleWalkIn w) : w.toSimpleDiGraph ≤ G := by
   refine ⟨?_, ?_⟩
   · intro v hv
     exact mem_vertexSet G hw v (by simpa using hv)
@@ -339,19 +344,19 @@ lemma toSimpleDiGraph_subgraphOf (G : SimpleDiGraph α) {w : SimpleWalk α}
 
 /-- If the simple directed graph generated by a simple walk is a subgraph of
 `G`, then the walk is realized in `G`. -/
-lemma of_toSimpleDiGraph_subgraphOf (G : SimpleDiGraph α) {w : SimpleWalk α}
-    (hsub : SimpleDiGraph.subgraphOf w.toSimpleDiGraph G) : G.IsSimpleWalkIn w := by
+lemma of_toSimpleDiGraph_le (G : SimpleDiGraph α) {w : SimpleWalk α}
+    (hsub : w.toSimpleDiGraph ≤ G) : G.IsSimpleWalkIn w := by
   rw [iff_arcs]
   refine ⟨?_, ?_⟩
-  · exact hsub.1 (by simp [SimpleWalk.support])
+  · exact hsub.vertexSet_subset (by simp [SimpleWalk.support])
   · intro a ha
-    exact hsub.2 (by simpa using ha)
+    exact hsub.edgeSet_subset (by simpa using ha)
 
 /-- A simple walk is realized in `G` exactly when its generated simple directed
 graph is a subgraph of `G`. -/
-theorem iff_toSimpleDiGraph_subgraphOf (G : SimpleDiGraph α) (w : SimpleWalk α) :
-    G.IsSimpleWalkIn w ↔ SimpleDiGraph.subgraphOf w.toSimpleDiGraph G :=
-  ⟨toSimpleDiGraph_subgraphOf G, of_toSimpleDiGraph_subgraphOf G⟩
+theorem iff_toSimpleDiGraph_le (G : SimpleDiGraph α) (w : SimpleWalk α) :
+    G.IsSimpleWalkIn w ↔ w.toSimpleDiGraph ≤ G :=
+  ⟨toSimpleDiGraph_le G, of_toSimpleDiGraph_le G⟩
 
 /-! ## Closure under walk operations -/
 
@@ -404,7 +409,7 @@ lemma cycleErase [DecidableEq α] (G : SimpleDiGraph α) {w : SimpleWalk α}
 
 /-- Realization is monotone under passing to a supergraph. -/
 @[grind →] lemma mono (G H : SimpleDiGraph α) {w : SimpleWalk α}
-    (hw : H.IsSimpleWalkIn w) (hsub : SimpleDiGraph.subgraphOf H G) :
+    (hw : H.IsSimpleWalkIn w) (hsub : H ≤ G) :
     G.IsSimpleWalkIn w :=
   IsVertexSeqIn.mono G H hw hsub
 

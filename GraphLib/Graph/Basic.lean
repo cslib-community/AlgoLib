@@ -1,152 +1,134 @@
 /-
 Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Basil Rohner, Sorrachai Yingchareonthawornchai
+Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
 import Mathlib.Data.Sym.Sym2
 
 /-!
 # Graph structures
 
-This file introduces a small hierarchy of graph-like combinatorial structures on a vertex
-type `α`. Each structure carries its vertex and edge sets explicitly.
+This file defines the four graph carriers used by GraphLib. Every graph stores its vertex set
+explicitly. General graphs store bundled actual edges or arcs, while simple graphs use their
+endpoint pairs as actual edges.
 
-## Design rationale
+For `Edge α β` and `Arc α β`, the entire bundled value is the actual identity. The value of type
+`β` is only a tag used to discriminate otherwise equal bundles; it need not be globally unique.
+Accordingly, `E(G)` always denotes actual edges or arcs. The explicitly lossy endpoint images of
+a general graph are `Graph.edgeEndpointPairSet` and `DiGraph.arcEndpointPairSet`.
 
-We intentionally diverge from Mathlib's graph definitions (`Mathlib.Combinatorics.Graph.Basic`,
-`Mathlib.Combinatorics.SimpleGraph.Basic`),
-prioritizing representations that support algorithmic reasoning. In graph algorithm design,
-it is common to manipulate graphs dynamically (adding or removing nodes/edges, contracting
-edges, etc.). We therefore use set-based definitions for both vertex and edge sets with
-minimal additional axioms, reducing early proof obligations and keeping proofs closer to
-their textbook counterparts.
-
-## Main definitions
-
-* `Edge α β`: an undirected edge with a label of type `β` and endpoints as a `Sym2 α`.
-* `Arc α β`: a directed edge with a label of type `β` and endpoints as `α × α`.
-* `Graph α β`: a general graph whose edges are `Edge α β` values. Parallel edges and
-  loops are permitted.
-* `SimpleGraph α`: a simple graph with edges as `Sym2 α`, no loops.
-* `DiGraph α β`: a directed graph whose edges are `Arc α β` values. Parallel edges
-  and loops are permitted.
-* `SimpleDiGraph α`: a simple directed graph with edges as `α × α`, no loops.
-
-## Notation
-
-* `V(G)`: the vertex set of `G`, via `HasVertexSet`.
-* `E(G)`: the edge set of `G`, via `HasEdgeSet`.
-
-## Main API
-
-The structure fields are named with a `'` suffix (e.g. `incidence'`, `loopless'`). The
-preferred API restates these in terms of `V(G)` and `E(G)`:
-
-* `Graph.incidence`, `SimpleGraph.incidence`, `DiGraph.incidence`, `SimpleDiGraph.incidence`
-* `SimpleGraph.loopless`, `SimpleDiGraph.loopless`
-
-## Main forgetful maps
-
-* `SimpleGraph.toGraph`: forget the looplessness axiom of a simple graph.
-* `SimpleDiGraph.toDiGraph`: forget the looplessness axiom of a simple directed graph.
-
-The corresponding `Coe` instances are registered.
+The conversions `SimpleGraph.toGraph` and `SimpleDiGraph.toDiGraph` are intentionally explicit:
+they change the representation of an edge and are not coercions.
 -/
 
 namespace GraphLib
 variable {α β : Type*}
 
-/-- An undirected edge with a label of type `β` and an unordered pair of endpoints. -/
+/-- An undirected actual edge. Its full `(tag, endpoints)` bundle is its identity; the tag need
+not be globally unique. -/
 structure Edge (α β : Type*) where
-  /-- The edge label, used to distinguish parallel edges. -/
-  endpointsLabel : β
+  /-- A discriminator within the bundled edge, not a globally unique edge identity. -/
+  tag : β
   /-- The unordered pair of endpoints. -/
   endpoints : Sym2 α
 deriving DecidableEq
 
-/-- A directed edge with a label of type `β` and an ordered pair of endpoints. -/
+/-- A directed actual arc. Its full `(tag, endpoints)` bundle is its identity; the tag need not
+be globally unique. -/
 structure Arc (α β : Type*) where
-  /-- The edge label, used to distinguish parallel edges. -/
-  endpointsLabel : β
+  /-- A discriminator within the bundled arc, not a globally unique arc identity. -/
+  tag : β
   /-- The ordered pair `(source, target)` of endpoints. -/
   endpoints : α × α
 deriving DecidableEq
 
-/-- A general graph on vertex type `α` with edge labels in `β`. Each edge bundles a label
-and an unordered pair of endpoints. Parallel edges and loops are permitted, and both the
-vertex and edge sets may be infinite. -/
+namespace Edge
+
+/-- Two bundled edges are equal when both their tags and endpoint pairs are equal. -/
+@[ext] theorem ext {e f : Edge α β} (htag : e.tag = f.tag)
+    (hendpoints : e.endpoints = f.endpoints) : e = f := by
+  cases e
+  cases f
+  simp_all
+
+end Edge
+
+namespace Arc
+
+/-- Two bundled arcs are equal when both their tags and ordered endpoint pairs are equal. -/
+@[ext] theorem ext {a b : Arc α β} (htag : a.tag = b.tag)
+    (hendpoints : a.endpoints = b.endpoints) : a = b := by
+  cases a
+  cases b
+  simp_all
+
+/-- The source vertex of a directed arc. -/
+@[simp] def source (a : Arc α β) : α := a.endpoints.1
+
+/-- The target vertex of a directed arc. -/
+@[simp] def target (a : Arc α β) : α := a.endpoints.2
+
+@[simp] theorem source_mk (tag : β) (u v : α) : source (Arc.mk tag (u, v)) = u := rfl
+
+@[simp] theorem target_mk (tag : β) (u v : α) : target (Arc.mk tag (u, v)) = v := rfl
+
+end Arc
+
+/-- A general undirected graph. Its edge set contains actual bundled `Edge` values, so parallel
+edges and loops are preserved and both carrier sets may be infinite. -/
 structure Graph (α β : Type*) where
   /-- The set of vertices. -/
   vertexSet : Set α
-  /-- The set of edges. -/
+  /-- The set of actual bundled edges. -/
   edgeSet : Set (Edge α β)
-  /-- Every endpoint of an edge is a vertex. Prefer `Graph.incidence`. -/
-  incidence' : ∀ e ∈ edgeSet, ∀ v ∈ e.endpoints, v ∈ vertexSet
+  /-- Every endpoint of an edge is a vertex. -/
+  endpoints_mem : ∀ e ∈ edgeSet, ∀ v ∈ e.endpoints, v ∈ vertexSet
 
-/-- A simple graph on `α` with edges as unordered pairs of distinct vertices. -/
+/-- A simple undirected graph whose actual edges are unordered pairs of distinct vertices. -/
 @[grind]
 structure SimpleGraph (α : Type*) where
   /-- The set of vertices. -/
   vertexSet : Set α
-  /-- The set of edges, each an unordered pair of vertices. -/
+  /-- The set of actual edges, represented by unordered endpoint pairs. -/
   edgeSet : Set (Sym2 α)
-  /-- Both endpoints of every edge are vertices. Prefer `SimpleGraph.incidence`. -/
-  incidence' : ∀ e ∈ edgeSet, ∀ v ∈ e, v ∈ vertexSet
-  /-- No edge is a loop. Prefer `SimpleGraph.loopless`. -/
-  loopless' : ∀ e ∈ edgeSet, ¬ e.IsDiag
+  /-- Every endpoint of an edge is a vertex. -/
+  endpoints_mem : ∀ e ∈ edgeSet, ∀ v ∈ e, v ∈ vertexSet
+  /-- No edge is a loop. -/
+  loopless : ∀ e ∈ edgeSet, ¬ e.IsDiag
 
-/-- A directed graph on vertex type `α` with edge labels in `β`. Each edge bundles a label
-and an ordered pair of endpoints. Parallel edges and loops are permitted, and both the
-vertex and edge sets may be infinite. -/
+/-- A general directed graph. Its edge set contains actual bundled `Arc` values, so parallel arcs
+and loops are preserved and both carrier sets may be infinite. -/
 structure DiGraph (α β : Type*) where
   /-- The set of vertices. -/
   vertexSet : Set α
-  /-- The set of edges. -/
+  /-- The set of actual bundled arcs. -/
   edgeSet : Set (Arc α β)
-  /-- Both endpoints of every edge are vertices. Prefer `DiGraph.incidence`. -/
-  incidence' : ∀ e ∈ edgeSet, e.endpoints.1 ∈ vertexSet ∧ e.endpoints.2 ∈ vertexSet
+  /-- The source of every arc is a vertex. -/
+  source_mem : ∀ a ∈ edgeSet, a.source ∈ vertexSet
+  /-- The target of every arc is a vertex. -/
+  target_mem : ∀ a ∈ edgeSet, a.target ∈ vertexSet
 
-/-- A simple directed graph on `α` with edges as ordered pairs of distinct vertices. -/
+/-- A simple directed graph whose actual arcs are ordered pairs of distinct vertices. -/
 structure SimpleDiGraph (α : Type*) where
   /-- The set of vertices. -/
   vertexSet : Set α
-  /-- The set of directed edges. -/
+  /-- The set of actual arcs, represented by ordered endpoint pairs. -/
   edgeSet : Set (α × α)
-  /-- Both endpoints of every directed edge are vertices. Prefer `SimpleDiGraph.incidence`. -/
-  incidence' : ∀ e ∈ edgeSet, e.1 ∈ vertexSet ∧ e.2 ∈ vertexSet
-  /-- No directed edge is a loop. Prefer `SimpleDiGraph.loopless`. -/
-  loopless' : ∀ e ∈ edgeSet, e.1 ≠ e.2
-
-/-- Forget the looplessness axiom of a `SimpleGraph`, viewing it as a `Graph` whose edges
-are `Edge α (Sym2 α)` with the pair as both label and endpoints. -/
-def SimpleGraph.toGraph (G : SimpleGraph α) : Graph α (Sym2 α) where
-  vertexSet := G.vertexSet
-  edgeSet := (fun e => ⟨e, e⟩) '' G.edgeSet
-  incidence' := by
-    rintro _ ⟨e, he, rfl⟩ v hv
-    exact G.incidence' e he v hv
-
-/-- Forget the looplessness axiom of a `SimpleDiGraph`, viewing it as a `DiGraph` whose
-edges are `Arc α (α × α)` with the pair as both label and endpoints. -/
-def SimpleDiGraph.toDiGraph (G : SimpleDiGraph α) : DiGraph α (α × α) where
-  vertexSet := G.vertexSet
-  edgeSet := (fun e => ⟨e, e⟩) '' G.edgeSet
-  incidence' := by
-    rintro _ ⟨e, he, rfl⟩
-    exact G.incidence' e he
-
-instance : Coe (SimpleGraph α) (Graph α (Sym2 α)) := ⟨SimpleGraph.toGraph⟩
-
-instance : Coe (SimpleDiGraph α) (DiGraph α (α × α)) := ⟨SimpleDiGraph.toDiGraph⟩
+  /-- The source of every arc is a vertex. -/
+  source_mem : ∀ a ∈ edgeSet, a.1 ∈ vertexSet
+  /-- The target of every arc is a vertex. -/
+  target_mem : ∀ a ∈ edgeSet, a.2 ∈ vertexSet
+  /-- No arc is a loop. -/
+  loopless : ∀ a ∈ edgeSet, a.1 ≠ a.2
 
 /-- Typeclass for graph-like structures that have a vertex set. -/
 class HasVertexSet (G : Type*) (V : outParam Type*) where
   /-- The vertex set of the graph. -/
   vertexSet : G → V
 
-/-- Typeclass for graph-like structures that have an edge set. -/
+/-- Typeclass for graph-like structures that have an actual edge set. -/
 class HasEdgeSet (G : Type*) (E : outParam Type*) where
-  /-- The edge set of the graph. -/
+  /-- The set of actual edges or arcs of the graph. -/
   edgeSet : G → E
 
 @[simp] instance {α β : Type*} : HasVertexSet (Graph α β) (Set α) :=
@@ -161,47 +143,146 @@ class HasEdgeSet (G : Type*) (E : outParam Type*) where
 @[simp] instance {α : Type*} : HasVertexSet (SimpleDiGraph α) (Set α) :=
   ⟨SimpleDiGraph.vertexSet⟩
 
-@[simp] instance {α β : Type*} : HasEdgeSet (Graph α β) (Set (Sym2 α)) :=
-  ⟨fun G => Edge.endpoints '' G.edgeSet⟩
+@[simp] instance {α β : Type*} : HasEdgeSet (Graph α β) (Set (Edge α β)) :=
+  ⟨Graph.edgeSet⟩
 
 @[simp] instance {α : Type*} : HasEdgeSet (SimpleGraph α) (Set (Sym2 α)) :=
   ⟨SimpleGraph.edgeSet⟩
 
-@[simp] instance {α β : Type*} : HasEdgeSet (DiGraph α β) (Set (α × α)) :=
-  ⟨fun G => Arc.endpoints '' G.edgeSet⟩
+@[simp] instance {α β : Type*} : HasEdgeSet (DiGraph α β) (Set (Arc α β)) :=
+  ⟨DiGraph.edgeSet⟩
 
 @[simp] instance {α : Type*} : HasEdgeSet (SimpleDiGraph α) (Set (α × α)) :=
   ⟨SimpleDiGraph.edgeSet⟩
 
 /-- Notation for the vertex set of a graph. -/
 scoped notation "V(" G ")" => HasVertexSet.vertexSet G
-/-- Notation for the edge set of a graph. -/
+
+/-- Notation for the set of actual edges or arcs of a graph. -/
 scoped notation "E(" G ")" => HasEdgeSet.edgeSet G
 
-theorem Graph.incidence (G : Graph α β) {e : Sym2 α} (he : e ∈ E(G))
-    {v : α} (hv : v ∈ e) : v ∈ V(G) := by
-  obtain ⟨e', he', rfl⟩ := he
-  exact G.incidence' e' he' v hv
+open scoped GraphLib
 
-theorem SimpleGraph.incidence (G : SimpleGraph α) {e : Sym2 α} (he : e ∈ E(G))
-    {v : α} (hv : v ∈ e) : v ∈ V(G) :=
-  G.incidence' e he v hv
+@[simp] theorem Graph.mem_vertexSet (G : Graph α β) (v : α) :
+    v ∈ V(G) ↔ v ∈ G.vertexSet := Iff.rfl
 
-theorem SimpleGraph.loopless (G : SimpleGraph α) {e : Sym2 α} (he : e ∈ E(G)) :
-    ¬ e.IsDiag :=
-  G.loopless' e he
+@[simp] theorem SimpleGraph.mem_vertexSet (G : SimpleGraph α) (v : α) :
+    v ∈ V(G) ↔ v ∈ G.vertexSet := Iff.rfl
 
-theorem DiGraph.incidence (G : DiGraph α β) {e : α × α} (he : e ∈ E(G)) :
-    e.1 ∈ V(G) ∧ e.2 ∈ V(G) := by
-  obtain ⟨e', he', rfl⟩ := he
-  exact G.incidence' e' he'
+@[simp] theorem DiGraph.mem_vertexSet (G : DiGraph α β) (v : α) :
+    v ∈ V(G) ↔ v ∈ G.vertexSet := Iff.rfl
 
-theorem SimpleDiGraph.incidence (G : SimpleDiGraph α) {e : α × α} (he : e ∈ E(G)) :
-    e.1 ∈ V(G) ∧ e.2 ∈ V(G) :=
-  G.incidence' e he
+@[simp] theorem SimpleDiGraph.mem_vertexSet (G : SimpleDiGraph α) (v : α) :
+    v ∈ V(G) ↔ v ∈ G.vertexSet := Iff.rfl
 
-theorem SimpleDiGraph.loopless (G : SimpleDiGraph α) {e : α × α} (he : e ∈ E(G)) :
-    e.1 ≠ e.2 :=
-  G.loopless' e he
+@[simp] theorem Graph.mem_edgeSet (G : Graph α β) (e : Edge α β) :
+    e ∈ E(G) ↔ e ∈ G.edgeSet := Iff.rfl
+
+@[simp] theorem SimpleGraph.mem_edgeSet (G : SimpleGraph α) (e : Sym2 α) :
+    e ∈ E(G) ↔ e ∈ G.edgeSet := Iff.rfl
+
+@[simp] theorem DiGraph.mem_edgeSet (G : DiGraph α β) (a : Arc α β) :
+    a ∈ E(G) ↔ a ∈ G.edgeSet := Iff.rfl
+
+@[simp] theorem SimpleDiGraph.mem_edgeSet (G : SimpleDiGraph α) (a : α × α) :
+    a ∈ E(G) ↔ a ∈ G.edgeSet := Iff.rfl
+
+/-! ## Extensionality -/
+
+/-- General graphs are equal when their vertex sets and actual bundled edge sets are equal. -/
+@[ext] theorem Graph.ext {G H : Graph α β} (hV : V(G) = V(H)) (hE : E(G) = E(H)) :
+    G = H := by
+  rcases G with ⟨GV, GE, Gendpoints⟩
+  rcases H with ⟨HV, HE, Hendpoints⟩
+  change GV = HV at hV
+  change GE = HE at hE
+  subst HV
+  subst HE
+  rfl
+
+/-- Simple graphs are equal when their vertex sets and actual edge sets are equal. -/
+@[ext] theorem SimpleGraph.ext {G H : SimpleGraph α} (hV : V(G) = V(H))
+    (hE : E(G) = E(H)) : G = H := by
+  rcases G with ⟨GV, GE, Gendpoints, Gloopless⟩
+  rcases H with ⟨HV, HE, Hendpoints, Hloopless⟩
+  change GV = HV at hV
+  change GE = HE at hE
+  subst HV
+  subst HE
+  rfl
+
+/-- General directed graphs are equal when their vertex sets and actual bundled arc sets are
+equal. -/
+@[ext] theorem DiGraph.ext {G H : DiGraph α β} (hV : V(G) = V(H)) (hE : E(G) = E(H)) :
+    G = H := by
+  rcases G with ⟨GV, GE, Gsource, Gtarget⟩
+  rcases H with ⟨HV, HE, Hsource, Htarget⟩
+  change GV = HV at hV
+  change GE = HE at hE
+  subst HV
+  subst HE
+  rfl
+
+/-- Simple directed graphs are equal when their vertex sets and actual arc sets are equal. -/
+@[ext] theorem SimpleDiGraph.ext {G H : SimpleDiGraph α} (hV : V(G) = V(H))
+    (hE : E(G) = E(H)) : G = H := by
+  rcases G with ⟨GV, GE, Gsource, Gtarget, Gloopless⟩
+  rcases H with ⟨HV, HE, Hsource, Htarget, Hloopless⟩
+  change GV = HV at hV
+  change GE = HE at hE
+  subst HV
+  subst HE
+  rfl
+
+/-- The lossy image of a general graph's actual edges under the endpoint projection. Parallel
+edges with common endpoints are merged in this view. -/
+def Graph.edgeEndpointPairSet (G : Graph α β) : Set (Sym2 α) :=
+  Edge.endpoints '' E(G)
+
+/-- The lossy image of a general directed graph's actual arcs under the endpoint projection.
+Parallel arcs with common source and target are merged in this view. -/
+def DiGraph.arcEndpointPairSet (G : DiGraph α β) : Set (α × α) :=
+  Arc.endpoints '' E(G)
+
+@[simp] theorem Graph.mem_edgeEndpointPairSet (G : Graph α β) (p : Sym2 α) :
+    p ∈ G.edgeEndpointPairSet ↔ ∃ e ∈ E(G), e.endpoints = p := Iff.rfl
+
+@[simp] theorem DiGraph.mem_arcEndpointPairSet (G : DiGraph α β) (p : α × α) :
+    p ∈ G.arcEndpointPairSet ↔ ∃ a ∈ E(G), a.endpoints = p := Iff.rfl
+
+/-- Explicitly view a simple graph as a general graph by bundling each endpoint pair as both tag
+and endpoints. This conversion changes the edge representation and is intentionally not a
+coercion. -/
+def SimpleGraph.toGraph (G : SimpleGraph α) : Graph α (Sym2 α) where
+  vertexSet := G.vertexSet
+  edgeSet := (fun e => ⟨e, e⟩) '' G.edgeSet
+  endpoints_mem := by
+    rintro _ ⟨e, he, rfl⟩ v hv
+    exact G.endpoints_mem e he v hv
+
+/-- Explicitly view a simple directed graph as a general directed graph by bundling each ordered
+pair as both tag and endpoints. This conversion changes the arc representation and is
+intentionally not a coercion. -/
+def SimpleDiGraph.toDiGraph (G : SimpleDiGraph α) : DiGraph α (α × α) where
+  vertexSet := G.vertexSet
+  edgeSet := (fun a => ⟨a, a⟩) '' G.edgeSet
+  source_mem := by
+    rintro _ ⟨a, ha, rfl⟩
+    exact G.source_mem a ha
+  target_mem := by
+    rintro _ ⟨a, ha, rfl⟩
+    exact G.target_mem a ha
+
+@[simp] theorem SimpleGraph.vertexSet_toGraph (G : SimpleGraph α) :
+    V(G.toGraph) = V(G) := rfl
+
+@[simp] theorem SimpleGraph.edgeSet_toGraph (G : SimpleGraph α) :
+    E(G.toGraph) = (fun e => Edge.mk e e) '' E(G) := rfl
+
+@[simp] theorem SimpleDiGraph.vertexSet_toDiGraph (G : SimpleDiGraph α) :
+    V(G.toDiGraph) = V(G) := rfl
+
+@[simp] theorem SimpleDiGraph.edgeSet_toDiGraph (G : SimpleDiGraph α) :
+    E(G.toDiGraph) = (fun a => Arc.mk a a) '' E(G) := rfl
 
 end GraphLib

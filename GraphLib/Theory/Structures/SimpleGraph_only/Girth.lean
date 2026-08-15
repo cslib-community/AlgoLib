@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
+Authors: Weixuan Yuan
 -/
 import GraphLib.Theory.Structures.InSimpleGraph
 import GraphLib.Theory.Structures.SimpleGraph_only.Bipartite
@@ -254,7 +254,7 @@ lemma finite_of_two_le_degree (G : SimpleGraph α) (hV : V(G).Finite)
 
 /-- Passing to a subgraph can only increase the girth. -/
 @[grind →] lemma le_of_subgraph (G H : SimpleGraph α)
-    (hsub : SimpleGraph.subgraphOf H G) : G.girth ≤ H.girth := by
+    (hsub : H ≤ G) : G.girth ≤ H.girth := by
   by_cases hH : H.girth = ⊤
   · rw [hH]; exact le_top
   · obtain ⟨c, hc, hlen⟩ := exists_cycle H hH

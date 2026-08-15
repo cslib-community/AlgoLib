@@ -175,11 +175,12 @@ lemma cycleErase [DecidableEq α] (G : SimpleGraph α) {w : VertexSeq α}
 
 /-- Realization is monotone under passing to a supergraph. -/
 @[grind →] lemma mono (G H : SimpleGraph α) {w : VertexSeq α}
-    (hw : H.IsVertexSeqIn w) (hsub : SimpleGraph.subgraphOf H G) :
+    (hw : H.IsVertexSeqIn w) (hsub : H ≤ G) :
     G.IsVertexSeqIn w := by
   induction hw with
-  | singleton v hv => exact .singleton v (hsub.1 hv)
-  | cons w u hw he ih => exact .cons w u ih (hsub.2 he)
+  | singleton v hv => exact .singleton v (hsub.vertexSet_subset hv)
+  | cons w u hw he ih =>
+      exact .cons w u ih (he.mono hsub)
 
 /-! ## Edge-free graphs -/
 
@@ -204,9 +205,13 @@ theorem iff_edges (G : SimpleGraph α) (w : VertexSeq α) :
     | cons w u ih =>
         intro h
         rw [cons_iff]
-        refine ⟨ih ⟨h.1, fun e he => h.2 e ?_⟩, h.2 s(w.tail, u) ?_⟩
-        · rw [VertexSeq.mem_edges_cons]; exact Or.inl he
-        · rw [VertexSeq.mem_edges_cons]; exact Or.inr rfl
+        refine ⟨ih ⟨h.1, fun e he => h.2 e (by
+          rw [VertexSeq.mem_edges_cons]
+          exact Or.inl he)⟩, ?_⟩
+        apply (G.adj_iff w.tail u).2
+        exact h.2 s(w.tail, u) (by
+          rw [VertexSeq.mem_edges_cons]
+          exact Or.inr rfl)
 
 /-- Any edge traversed by a realized vertex sequence is an edge of the graph. -/
 @[grind →] lemma edge_mem (G : SimpleGraph α) {w : VertexSeq α}
@@ -218,6 +223,7 @@ the graph. -/
 @[grind →] lemma last_adj (G : SimpleGraph α)
     {w : VertexSeq α} (hw : G.IsVertexSeqIn w) (h : w.length ≠ 0) :
     G.Adj w.dropTail.tail w.tail := by
+  apply (G.adj_iff _ _).2
   apply edge_mem G hw
   rw [VertexSeq.edges_eq_dropTail_concat w h]
   simp [List.concat_eq_append]

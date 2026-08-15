@@ -3,55 +3,14 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import GraphLib.Graph.Basic
+import GraphLib.Graph.Incidence
 
 /-!
 # Adjacency
 
-This file equips each of the four graph structures from
-`GraphLib.Graph.Basic` (`Graph`, `SimpleGraph`, `DiGraph`, `SimpleDiGraph`)
-with an adjacency relation `Adj` on vertices, together with its basic API.
-
-`Adj` is the primitive vertex relation that downstream files build on: a
-walk lives in a graph when consecutive vertices are adjacent, a proper
-colouring assigns distinct colours to adjacent vertices, and so on. We
-therefore place it directly above `GraphLib.Graph.Basic` and below
-`GraphLib.Graph.Degree`, where the neighbour and degree functions are
-defined in terms of the same edge-membership conditions.
-
-## Main definitions
-
-* `Graph.Adj` — `u` and `v` are adjacent when a single edge has them as
-  endpoints; loops may make a vertex adjacent to itself.
-* `SimpleGraph.Adj` — `u` and `v` are adjacent when the unordered pair
-  `s(u, v)` is an edge, necessarily with distinct endpoints.
-* `DiGraph.Adj`, `SimpleDiGraph.Adj` — there is an arc *from* `u` *to* `v`.
-  Directed adjacency is not symmetric.
-
-## Main API
-
-* `Adj.symm`, `adj_comm` — symmetry of adjacency, for the undirected
-  types `Graph` and `SimpleGraph` only.
-* `Adj.ne` — adjacent vertices are distinct. Available only for the simple
-  types, where it follows from looplessness; for the multigraph types a
-  loop genuinely makes a vertex adjacent to itself, so no such lemma holds.
-* `Adj.left_mem`, `Adj.right_mem` — the endpoints of an adjacency are
-  vertices of the graph.
-
-## Design choices
-
-* **One definition per graph type.** As elsewhere in `GraphLib.Graph`, we
-  spell out `Adj` separately for each of the four structures rather than
-  factoring through a typeclass, keeping each definition concrete.
-* **Adjacency is pure edge-existence; it does not exclude loops.** `Adj` is
-  simply "there is an edge joining the two vertices". For the simple types
-  irreflexivity is automatic from looplessness, but for the multigraph
-  types (`Graph`, `DiGraph`) a loop at `v` makes `Adj v v` hold. Excluding
-  the vertex itself is the job of the *open* neighbourhood, not of the
-  adjacency relation, so the `\ {v}` lives in `GraphLib.Graph.Degree`.
-* **Directed adjacency is asymmetric.** `DiGraph.Adj G u v` and
-  `SimpleDiGraph.Adj G u v` mean there is an arc with source `u` and
-  target `v`; no `symm` lemma is provided for them.
+Adjacency is derived from an actual edge or arc witness. It forgets which witness was used, but
+does not redefine the edge carrier or collapse parallel actual values. For directed graphs,
+`G.Adj u v` means that an actual arc runs from source `u` to target `v`.
 -/
 
 namespace GraphLib
@@ -61,99 +20,154 @@ open scoped GraphLib
 
 /-! ## Adjacency relations -/
 
-/-- Two vertices are *adjacent* in the multigraph `G` when some edge has
-them as its endpoints. A loop at `v` makes `v` adjacent to itself. -/
+/-- Vertices `u` and `v` are adjacent in a general graph when an actual edge links them. A loop
+at `v` witnesses `G.Adj v v`. -/
 @[grind] def Graph.Adj (G : Graph α β) (u v : α) : Prop :=
-  ∃ e ∈ E(G), u ∈ e ∧ v ∈ e
+  ∃ e, G.IsLink e u v
 
-/-- Two vertices are *adjacent* in the simple graph `G` when `s(u, v)` is an
-edge. -/
+/-- Vertices `u` and `v` are adjacent in a simple graph when an actual edge links them. -/
 @[grind] def SimpleGraph.Adj (G : SimpleGraph α) (u v : α) : Prop :=
-  s(u, v) ∈ E(G)
+  ∃ e, G.IsLink e u v
 
-/-- There is an *arc* from `u` to `v` in the directed multigraph `G` when
-some edge points from `u` to `v`. A loop at `v` is a self-arc. -/
+/-- There is directed adjacency from `u` to `v` when an actual arc has source `u` and target
+`v`. A loop at `v` witnesses `G.Adj v v`. -/
 @[grind] def DiGraph.Adj (G : DiGraph α β) (u v : α) : Prop :=
-  (u, v) ∈ E(G)
+  ∃ a, G.IsArc a u v
 
-/-- There is an *arc* from `u` to `v` in the simple directed graph `G` when
-`(u, v)` is an edge. -/
+/-- There is directed adjacency from `u` to `v` in a simple directed graph when an actual arc
+has source `u` and target `v`. -/
 @[grind] def SimpleDiGraph.Adj (G : SimpleDiGraph α) (u v : α) : Prop :=
-  (u, v) ∈ E(G)
+  ∃ a, G.IsArc a u v
 
-/-! ## Symmetry (undirected types) -/
+theorem Graph.adj_iff_exists_isLink (G : Graph α β) (u v : α) :
+    G.Adj u v ↔ ∃ e, G.IsLink e u v := Iff.rfl
 
-/-- Adjacency in a multigraph is symmetric. -/
-@[symm, grind →] lemma Graph.Adj.symm {G : Graph α β} {u v : α} (h : G.Adj u v) :
+theorem SimpleGraph.adj_iff_exists_isLink (G : SimpleGraph α) (u v : α) :
+    G.Adj u v ↔ ∃ e, G.IsLink e u v := Iff.rfl
+
+theorem DiGraph.adj_iff_exists_isArc (G : DiGraph α β) (u v : α) :
+    G.Adj u v ↔ ∃ a, G.IsArc a u v := Iff.rfl
+
+theorem SimpleDiGraph.adj_iff_exists_isArc (G : SimpleDiGraph α) (u v : α) :
+    G.Adj u v ↔ ∃ a, G.IsArc a u v := Iff.rfl
+
+/-- In a simple graph, adjacency is equivalent to direct endpoint-pair membership. -/
+@[simp, grind =] theorem SimpleGraph.adj_iff (G : SimpleGraph α) (u v : α) :
+    G.Adj u v ↔ s(u, v) ∈ E(G) := by
+  constructor
+  · rintro ⟨e, he, hends⟩
+    rwa [hends] at he
+  · intro h
+    exact ⟨s(u, v), h, rfl⟩
+
+/-- In a simple directed graph, adjacency is equivalent to direct ordered-pair membership. -/
+@[simp, grind =] theorem SimpleDiGraph.adj_iff (G : SimpleDiGraph α) (u v : α) :
+    G.Adj u v ↔ (u, v) ∈ E(G) := by
+  constructor
+  · rintro ⟨a, ha, hs, ht⟩
+    rcases a with ⟨x, y⟩
+    simp only at hs ht
+    subst x
+    subst y
+    exact ha
+  · intro h
+    exact ⟨(u, v), h, rfl, rfl⟩
+
+/-! ## Witness extraction and introduction -/
+
+theorem Graph.Adj.exists_isLink {G : Graph α β} {u v : α} (h : G.Adj u v) :
+    ∃ e, G.IsLink e u v := h
+
+theorem SimpleGraph.Adj.exists_isLink {G : SimpleGraph α} {u v : α} (h : G.Adj u v) :
+    ∃ e, G.IsLink e u v := h
+
+theorem DiGraph.Adj.exists_isArc {G : DiGraph α β} {u v : α} (h : G.Adj u v) :
+    ∃ a, G.IsArc a u v := h
+
+theorem SimpleDiGraph.Adj.exists_isArc {G : SimpleDiGraph α} {u v : α} (h : G.Adj u v) :
+    ∃ a, G.IsArc a u v := h
+
+theorem Graph.IsLink.adj {G : Graph α β} {e : Edge α β} {u v : α}
+    (h : G.IsLink e u v) : G.Adj u v := ⟨e, h⟩
+
+theorem SimpleGraph.IsLink.adj {G : SimpleGraph α} {e : Sym2 α} {u v : α}
+    (h : G.IsLink e u v) : G.Adj u v := ⟨e, h⟩
+
+theorem DiGraph.IsArc.adj {G : DiGraph α β} {a : Arc α β} {u v : α}
+    (h : G.IsArc a u v) : G.Adj u v := ⟨a, h⟩
+
+theorem SimpleDiGraph.IsArc.adj {G : SimpleDiGraph α} {a : α × α} {u v : α}
+    (h : G.IsArc a u v) : G.Adj u v := ⟨a, h⟩
+
+/-! ## Symmetry for undirected graphs -/
+
+@[symm, grind →] theorem Graph.Adj.symm {G : Graph α β} {u v : α} (h : G.Adj u v) :
     G.Adj v u := by
-  obtain ⟨e, he, hu, hv⟩ := h
-  exact ⟨e, he, hv, hu⟩
+  obtain ⟨e, hlink⟩ := h
+  exact hlink.symm.adj
 
-/-- Adjacency in a multigraph is symmetric. -/
-lemma Graph.adj_comm (G : Graph α β) (u v : α) : G.Adj u v ↔ G.Adj v u :=
-  ⟨Graph.Adj.symm, Graph.Adj.symm⟩
+theorem Graph.adj_comm (G : Graph α β) (u v : α) : G.Adj u v ↔ G.Adj v u :=
+  ⟨Adj.symm, Adj.symm⟩
 
-/-- Adjacency in a simple graph is symmetric. -/
-@[symm, grind →] lemma SimpleGraph.Adj.symm {G : SimpleGraph α} {u v : α} (h : G.Adj u v) :
-    G.Adj v u := by
-  change s(v, u) ∈ E(G)
-  rw [show s(v, u) = s(u, v) from Sym2.eq_swap]
-  exact h
+@[symm, grind →] theorem SimpleGraph.Adj.symm {G : SimpleGraph α} {u v : α}
+    (h : G.Adj u v) : G.Adj v u := by
+  obtain ⟨e, hlink⟩ := h
+  exact hlink.symm.adj
 
-/-- Adjacency in a simple graph is symmetric. -/
-lemma SimpleGraph.adj_comm (G : SimpleGraph α) (u v : α) : G.Adj u v ↔ G.Adj v u :=
-  ⟨SimpleGraph.Adj.symm, SimpleGraph.Adj.symm⟩
+theorem SimpleGraph.adj_comm (G : SimpleGraph α) (u v : α) : G.Adj u v ↔ G.Adj v u :=
+  ⟨Adj.symm, Adj.symm⟩
 
-/-! ## Adjacent vertices are distinct
+/-! ## Looplessness for simple graphs -/
 
-These hold only for the simple types, where looplessness rules out loops.
-For the multigraph types a loop makes a vertex adjacent to itself, so the
-analogous statements are false. -/
-
-/-- Adjacent vertices in a simple graph are distinct, by looplessness. -/
-@[grind →] lemma SimpleGraph.Adj.ne {G : SimpleGraph α} {u v : α} (h : G.Adj u v) : u ≠ v := by
-  have hnd := G.loopless h
+@[grind →] theorem SimpleGraph.Adj.ne {G : SimpleGraph α} {u v : α} (h : G.Adj u v) :
+    u ≠ v := by
+  have hnd := G.loopless s(u, v) ((G.adj_iff u v).mp h)
   rwa [Sym2.mk_isDiag_iff] at hnd
 
-/-- The endpoints of an arc in a simple directed graph are distinct, by
-looplessness. -/
-@[grind →] lemma SimpleDiGraph.Adj.ne {G : SimpleDiGraph α} {u v : α} (h : G.Adj u v) : u ≠ v :=
-  G.loopless h
+@[grind →] theorem SimpleDiGraph.Adj.ne {G : SimpleDiGraph α} {u v : α}
+    (h : G.Adj u v) : u ≠ v :=
+  G.loopless (u, v) ((G.adj_iff u v).mp h)
 
-/-! ## Endpoints are vertices -/
+/-! ## Adjacent vertices belong to the graph -/
 
-/-- The left endpoint of an adjacency is a vertex of the multigraph. -/
-@[grind →] lemma Graph.Adj.left_mem {G : Graph α β} {u v : α} (h : G.Adj u v) : u ∈ V(G) := by
-  obtain ⟨e, he, hu, _⟩ := h
-  exact G.incidence he hu
+@[grind →] theorem Graph.Adj.left_mem {G : Graph α β} {u v : α} (h : G.Adj u v) :
+    u ∈ V(G) := by
+  obtain ⟨_, hlink⟩ := h
+  exact hlink.left_mem
 
-/-- The right endpoint of an adjacency is a vertex of the multigraph. -/
-@[grind →] lemma Graph.Adj.right_mem {G : Graph α β} {u v : α} (h : G.Adj u v) : v ∈ V(G) := by
-  obtain ⟨e, he, _, hv⟩ := h
-  exact G.incidence he hv
+@[grind →] theorem Graph.Adj.right_mem {G : Graph α β} {u v : α} (h : G.Adj u v) :
+    v ∈ V(G) := by
+  obtain ⟨_, hlink⟩ := h
+  exact hlink.right_mem
 
-/-- The left endpoint of an adjacency is a vertex of the simple graph. -/
-@[grind →] lemma SimpleGraph.Adj.left_mem {G : SimpleGraph α} {u v : α} (h : G.Adj u v) :
-    u ∈ V(G) := G.incidence h (by simp)
+@[grind →] theorem SimpleGraph.Adj.left_mem {G : SimpleGraph α} {u v : α}
+    (h : G.Adj u v) : u ∈ V(G) := by
+  obtain ⟨_, hlink⟩ := h
+  exact hlink.left_mem
 
-/-- The right endpoint of an adjacency is a vertex of the simple graph. -/
-@[grind →] lemma SimpleGraph.Adj.right_mem {G : SimpleGraph α} {u v : α} (h : G.Adj u v) :
-    v ∈ V(G) := G.incidence h (by simp)
+@[grind →] theorem SimpleGraph.Adj.right_mem {G : SimpleGraph α} {u v : α}
+    (h : G.Adj u v) : v ∈ V(G) := by
+  obtain ⟨_, hlink⟩ := h
+  exact hlink.right_mem
 
-/-- The source of an arc is a vertex of the directed multigraph. -/
-@[grind →] lemma DiGraph.Adj.left_mem {G : DiGraph α β} {u v : α} (h : G.Adj u v) : u ∈ V(G) :=
-  (G.incidence h).1
+@[grind →] theorem DiGraph.Adj.source_mem {G : DiGraph α β} {u v : α} (h : G.Adj u v) :
+    u ∈ V(G) := by
+  obtain ⟨_, harc⟩ := h
+  exact harc.source_mem
 
-/-- The target of an arc is a vertex of the directed multigraph. -/
-@[grind →] lemma DiGraph.Adj.right_mem {G : DiGraph α β} {u v : α} (h : G.Adj u v) : v ∈ V(G) :=
-  (G.incidence h).2
+@[grind →] theorem DiGraph.Adj.target_mem {G : DiGraph α β} {u v : α} (h : G.Adj u v) :
+    v ∈ V(G) := by
+  obtain ⟨_, harc⟩ := h
+  exact harc.target_mem
 
-/-- The source of an arc is a vertex of the simple directed graph. -/
-@[grind →] lemma SimpleDiGraph.Adj.left_mem {G : SimpleDiGraph α} {u v : α} (h : G.Adj u v) :
-    u ∈ V(G) := (G.incidence h).1
+@[grind →] theorem SimpleDiGraph.Adj.source_mem {G : SimpleDiGraph α} {u v : α}
+    (h : G.Adj u v) : u ∈ V(G) := by
+  obtain ⟨_, harc⟩ := h
+  exact harc.source_mem
 
-/-- The target of an arc is a vertex of the simple directed graph. -/
-@[grind →] lemma SimpleDiGraph.Adj.right_mem {G : SimpleDiGraph α} {u v : α} (h : G.Adj u v) :
-    v ∈ V(G) := (G.incidence h).2
+@[grind →] theorem SimpleDiGraph.Adj.target_mem {G : SimpleDiGraph α} {u v : α}
+    (h : G.Adj u v) : v ∈ V(G) := by
+  obtain ⟨_, harc⟩ := h
+  exact harc.target_mem
 
 end GraphLib

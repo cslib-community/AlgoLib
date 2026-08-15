@@ -64,7 +64,7 @@ instance SimpleGraph.instFiniteEdgeSet (G : SimpleGraph α) [hfin : Finite G.ver
     Finite G.edgeSet := by
   have hVfin : G.vertexSet.Finite := hfin
   have hsubset : G.edgeSet ⊆ {e : Sym2 α | ∀ v ∈ e, v ∈ G.vertexSet} :=
-    fun e he v hv => G.incidence' e he v hv
+    fun e he v hv => G.endpoints_mem e he v hv
   exact ((sym2_of_subset_finite G.vertexSet hVfin).subset hsubset).to_subtype
 
 /-- Finiteness of the vertex set transfers to the edge set. -/
@@ -74,8 +74,8 @@ instance SimpleDiGraph.instFiniteEdgeSet (G : SimpleDiGraph α) [hfin : Finite G
   haveI : Fintype G.vertexSet := Fintype.ofFinite _
   haveI : Fintype (G.vertexSet × G.vertexSet) := inferInstance
   apply Finite.of_injective (β := G.vertexSet × G.vertexSet) fun e =>
-    (⟨e.val.1, (G.incidence' _ e.property).1⟩,
-     ⟨e.val.2, (G.incidence' _ e.property).2⟩)
+    (⟨e.val.1, G.source_mem _ e.property⟩,
+     ⟨e.val.2, G.target_mem _ e.property⟩)
   rintro ⟨⟨a, b⟩, ha⟩ ⟨⟨c, d⟩, hc⟩ heq
   simp only [Prod.mk.injEq, Subtype.mk.injEq] at heq
   apply Subtype.ext
@@ -180,9 +180,9 @@ private lemma SimpleGraph.edge_lift (G : SimpleGraph α) {e : Sym2 α} (he : e �
     ∃ s : Sym2 G.vertexSet, ¬ s.IsDiag ∧ s.map Subtype.val = e := by
   induction e with
   | h x y =>
-    refine ⟨s(⟨x, G.incidence' _ he x (by simp)⟩,
-              ⟨y, G.incidence' _ he y (by simp)⟩), ?_, by simp [Sym2.map_pair_eq]⟩
-    have hne : ¬ (s(x, y) : Sym2 α).IsDiag := G.loopless' _ he
+    refine ⟨s(⟨x, G.endpoints_mem _ he x (by simp)⟩,
+              ⟨y, G.endpoints_mem _ he y (by simp)⟩), ?_, by simp [Sym2.map_pair_eq]⟩
+    have hne : ¬ (s(x, y) : Sym2 α).IsDiag := G.loopless _ he
     simp [Sym2.mk_isDiag_iff, Subtype.ext_iff] at hne ⊢
     exact hne
 
@@ -234,9 +234,9 @@ theorem SimpleDiGraph.card_edgeFinset_le_two_card_choose_two
   -- Build the injection `E(G) ↪ {p : V × V // p.1 ≠ p.2}`.
   let f : G.edgeFinset → {p : G.vertexSet × G.vertexSet // p.1 ≠ p.2} := fun e =>
     let he := G.mem_edgeFinset.mp e.property
-    ⟨(⟨e.val.1, (G.incidence' _ he).1⟩, ⟨e.val.2, (G.incidence' _ he).2⟩), by
+    ⟨(⟨e.val.1, G.source_mem _ he⟩, ⟨e.val.2, G.target_mem _ he⟩), by
       simp only [ne_eq, Subtype.mk.injEq]
-      exact G.loopless' _ he⟩
+      exact G.loopless _ he⟩
   have f_inj : Function.Injective f := by
     rintro ⟨⟨a, b⟩, h1⟩ ⟨⟨c, d⟩, h2⟩ heq
     simp only [f, Subtype.mk.injEq, Prod.mk.injEq, Subtype.mk.injEq] at heq
@@ -337,8 +337,8 @@ def SimpleDiGraph.computeEdgeFinset (G : SimpleDiGraph α)
   refine ⟨fun h => h.2, fun he => ⟨?_, he⟩⟩
   induction e with
   | h x y =>
-    refine ⟨s(⟨x, G.incidence' _ he x (by simp)⟩,
-              ⟨y, G.incidence' _ he y (by simp)⟩),
+    refine ⟨s(⟨x, G.endpoints_mem _ he x (by simp)⟩,
+              ⟨y, G.endpoints_mem _ he y (by simp)⟩),
             ?_, by simp [Sym2.map_pair_eq]⟩
     intro a ha
     simp only [Sym2.mem_iff] at ha
@@ -351,7 +351,7 @@ def SimpleDiGraph.computeEdgeFinset (G : SimpleDiGraph α)
   simp only [computeEdgeFinset, Finset.mem_filter, Finset.mem_image,
     Finset.mem_product, Finset.mem_univ, true_and, and_true]
   refine ⟨fun h => h.2, fun he => ⟨?_, he⟩⟩
-  refine ⟨(⟨e.1, (G.incidence' _ he).1⟩, ⟨e.2, (G.incidence' _ he).2⟩), ?_⟩
+  refine ⟨(⟨e.1, G.source_mem _ he⟩, ⟨e.2, G.target_mem _ he⟩), ?_⟩
   rfl
 
 /-- The computable and noncomputable edge finsets agree. -/

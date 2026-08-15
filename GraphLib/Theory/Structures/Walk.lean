@@ -420,7 +420,7 @@ visited by the walk. -/
 def toGraph (w : Walk α ε) : Graph α ε where
   vertexSet := { v | v ∈ w.toVertexList }
   edgeSet := { e | e ∈ w.edges }
-  incidence' := by
+  endpoints_mem := by
     intro e he v hv
     induction w with
     | singleton _ => simp [edges] at he
@@ -442,20 +442,29 @@ visited by the walk. -/
 def toDiGraph (w : Walk α ε) : DiGraph α ε where
   vertexSet := { v | v ∈ w.toVertexList }
   edgeSet := { a | a ∈ w.arcs }
-  incidence' := by
+  source_mem := by
     intro a ha
     induction w with
     | singleton _ => simp [arcs] at ha
     | cons w' u e' ih =>
       simp [arcs] at ha
       rcases ha with ha_old | ha_new
-      · obtain ⟨h1, h2⟩ := ih ha_old
-        refine ⟨?_, ?_⟩
-        · simp [toVertexList]; left; exact h1
-        · simp [toVertexList]; left; exact h2
+      · have h := ih ha_old
+        simp [toVertexList]
+        exact Or.inl h
       · subst ha_new
-        refine ⟨?_, ?_⟩
-        · simp [toVertexList]
-        · simp [toVertexList]
+        simp [Arc.source, toVertexList]
+  target_mem := by
+    intro a ha
+    induction w with
+    | singleton _ => simp [arcs] at ha
+    | cons w' u e' ih =>
+      simp [arcs] at ha
+      rcases ha with ha_old | ha_new
+      · have h := ih ha_old
+        simp [toVertexList]
+        exact Or.inl h
+      · subst ha_new
+        simp [Arc.target, toVertexList]
 
 end Walk

@@ -14,19 +14,23 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "cslib"
 scope = "leanprover"
+rev = "608cbe1b629a276abd3f2081f9b42dc766d8fd78"
 
 [[require]]
 name = "checkdecls"
 scope = "PatrickMassot"
-rev = "master"
+rev = "3d425859e73fcfbef85b9638c2a91708ef4a22d4"
 
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.30.0-rc2"
+rev = "d802ffd29db1f5dc5a29206b1a8af62bfcc234a3"
 
 [[lean_lib]]
 name = "GraphLib"
 
 [[lean_lib]]
 name = "GraphAlgorithms"
+
+[[lean_lib]]
+name = "GraphLibTest"

@@ -64,13 +64,13 @@ namespace IsSimpleCycleIn
   IsSimpleWalkIn.edge_mem G hc he
 
 /-- The generated graph of a realized cycle is a subgraph of `G`. -/
-lemma toSimpleGraph_subgraphOf (G : SimpleGraph α) {c : SimpleCycle α}
-    (hc : G.IsSimpleCycleIn c) : SimpleGraph.subgraphOf c.val.toSimpleGraph G :=
-  IsSimpleWalkIn.toSimpleGraph_subgraphOf G hc
+lemma toSimpleGraph_le (G : SimpleGraph α) {c : SimpleCycle α}
+    (hc : G.IsSimpleCycleIn c) : c.val.toSimpleGraph ≤ G :=
+  IsSimpleWalkIn.toSimpleGraph_le G hc
 
 /-- Realization is monotone under passing to a supergraph. -/
 @[grind →] lemma mono (G H : SimpleGraph α) {c : SimpleCycle α}
-    (hc : H.IsSimpleCycleIn c) (hsub : SimpleGraph.subgraphOf H G) :
+    (hc : H.IsSimpleCycleIn c) (hsub : H ≤ G) :
     G.IsSimpleCycleIn c :=
   IsSimpleWalkIn.mono G H hc hsub
 
@@ -194,14 +194,14 @@ end IsSimpleCycleIn
 
 /-- A simple cycle in a subgraph is also a simple cycle in the ambient graph. -/
 lemma hasSimpleCycle_of_subgraph (G H : SimpleGraph α)
-    (hsub : SimpleGraph.subgraphOf H G) (hH : H.HasSimpleCycle) :
+    (hsub : H ≤ G) (hH : H.HasSimpleCycle) :
     G.HasSimpleCycle := by
   obtain ⟨c, hc⟩ := hH
   exact ⟨c, IsSimpleCycleIn.mono G H hc hsub⟩
 
 /-- If `H` is a subgraph of the acyclic ambient graph `G`, then `H` is acyclic. -/
 lemma isAcyclic_of_subgraph (G H : SimpleGraph α)
-    (hsub : SimpleGraph.subgraphOf H G) (hG : G.IsAcyclic) :
+    (hsub : H ≤ G) (hG : G.IsAcyclic) :
     H.IsAcyclic := by
   intro hH
   exact hG (hasSimpleCycle_of_subgraph G H hsub hH)

@@ -344,10 +344,10 @@ provides the looplessness axiom. -/
 def toSimpleGraph (w : SimpleWalk α) : SimpleGraph α where
   vertexSet := { v | v ∈ w.val.toList }
   edgeSet := { e | e ∈ w.val.edges }
-  incidence' := by
+  endpoints_mem := by
     intro e he v hv
     exact VertexSeq.mem_of_edge_mem w.val he hv
-  loopless' := by
+  loopless := by
     intro e he
     obtain ⟨q, hq⟩ := w
     induction q <;> grind [VertexSeq.edges, VertexSeq.mem_edges_cons, Sym2.mk_isDiag_iff]
@@ -357,11 +357,13 @@ provides the looplessness axiom. -/
 def toSimpleDiGraph (w : SimpleWalk α) : SimpleDiGraph α where
   vertexSet := { v | v ∈ w.val.toList }
   edgeSet := { a | a ∈ w.val.arcs }
-  incidence' := by
+  source_mem := by
     intro a ha
-    exact ⟨VertexSeq.fst_mem_of_arc_mem w.val ha,
-      VertexSeq.snd_mem_of_arc_mem w.val ha⟩
-  loopless' := by
+    exact VertexSeq.fst_mem_of_arc_mem w.val ha
+  target_mem := by
+    intro a ha
+    exact VertexSeq.snd_mem_of_arc_mem w.val ha
+  loopless := by
     intro a ha
     obtain ⟨q, hq⟩ := w
     induction q <;> grind [VertexSeq.arcs, VertexSeq.mem_arcs_cons]
