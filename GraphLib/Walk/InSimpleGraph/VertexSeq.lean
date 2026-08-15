@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
 import GraphLib.Graph.Adjacency
+import GraphLib.Graph.Delete
+import GraphLib.Graph.Map
 import GraphLib.Graph.Subgraph
 import GraphLib.Walk.VertexSeq
 
@@ -26,7 +28,7 @@ Part of the `InSimpleGraph` folder; see the umbrella module
 `GraphLib.Walk.InSimpleGraph` for the overview.
 -/
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 namespace GraphLib
 
@@ -212,6 +214,52 @@ theorem iff_edges (G : SimpleGraph α) (w : VertexSeq α) :
         exact h.2 s(w.tail, u) (by
           rw [VertexSeq.mem_edges_cons]
           exact Or.inr rfl)
+
+/-! ## Graph transformations -/
+
+/-- Inducing a graph preserves exactly the sequences whose vertices lie in the set. -/
+theorem induce_iff (G : SimpleGraph α) (S : Set α) (w : VertexSeq α) :
+    (G.induce S).IsVertexSeqIn w ↔ G.IsVertexSeqIn w ∧ ∀ v ∈ w, v ∈ S := by
+  constructor
+  · intro h
+    exact ⟨mono G (G.induce S) h (G.induce_le S), fun v hv =>
+      ((G.mem_vertexSet_induce S v).1 (mem_vertexSet (G.induce S) h hv)).1⟩
+  · rintro ⟨hG, hS⟩
+    rw [iff_edges]
+    refine ⟨(G.mem_vertexSet_induce S w.head).2 ⟨hS _ (by simp), head_mem G hG⟩, ?_⟩
+    intro e he
+    rw [G.mem_edgeSet_induce]
+    exact ⟨((iff_edges G w).1 hG).2 e he,
+      fun v hv => hS v (VertexSeq.mem_of_edge_mem w he hv)⟩
+
+/-- Restricting edges preserves exactly the sequences whose traversed edges survive. -/
+theorem restrictEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (w : VertexSeq α) :
+    (G.restrictEdges F).IsVertexSeqIn w ↔
+      G.IsVertexSeqIn w ∧ ∀ e ∈ w.edges, e ∈ F := by
+  simp only [iff_edges, G.mem_vertexSet_restrictEdges, G.mem_edgeSet_restrictEdges]
+  aesop
+
+/-- Deleting edges preserves exactly the sequences avoiding those edges. -/
+theorem deleteEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (w : VertexSeq α) :
+    (G.deleteEdges F).IsVertexSeqIn w ↔
+      G.IsVertexSeqIn w ∧ ∀ e ∈ w.edges, e ∉ F := by
+  simp only [iff_edges, G.vertexSet_deleteEdges, G.mem_edgeSet_deleteEdges]
+  aesop
+
+/-- Deleting vertices preserves exactly the sequences avoiding the deleted set. -/
+theorem deleteVerts_iff (G : SimpleGraph α) (S : Set α) (w : VertexSeq α) :
+    (G.deleteVerts S).IsVertexSeqIn w ↔
+      G.IsVertexSeqIn w ∧ ∀ v ∈ w, v ∉ S := by
+  simpa [Set.mem_compl_iff] using induce_iff G Sᶜ w
+
+/-- Vertex relabeling transports a realized sequence. -/
+theorem relabelVertices {G : SimpleGraph α} {w : VertexSeq α} (f : α ≃ γ)
+    (h : G.IsVertexSeqIn w) : (G.relabelVertices f).IsVertexSeqIn (w.map f) := by
+  induction h with
+  | singleton v hv => exact .singleton (f v) ⟨v, hv, rfl⟩
+  | cons w u hw hadj ih =>
+      exact .cons (w.map f) (f u) ih (by
+        simpa using ((G.relabelVertices_adj f w.tail u).2 hadj))
 
 /-- Any edge traversed by a realized vertex sequence is an edge of the graph. -/
 @[grind →] lemma edge_mem (G : SimpleGraph α) {w : VertexSeq α}

@@ -33,13 +33,24 @@ import GraphLib.Theory.Structures.Eulerian
 import GraphLib.Theory.Structures.Forest
 import GraphLib.Theory.Structures.Hamiltonian
 import GraphLib.Theory.Structures.InGraph
+import GraphLib.Walk.Circuit
+import GraphLib.Walk.Coverage
+import GraphLib.Walk.Cycle
+import GraphLib.Walk.InDiGraph
+import GraphLib.Walk.InGraph
 import GraphLib.Walk.InSimpleDiGraph
+import GraphLib.Walk.InSimpleDiGraph.Cycle
+import GraphLib.Walk.InSimpleDiGraph.Path
+import GraphLib.Walk.InSimpleDiGraph.VertexSeq
+import GraphLib.Walk.InSimpleDiGraph.Walk
 import GraphLib.Walk.InSimpleGraph
 import GraphLib.Walk.InSimpleGraph.Cycle
 import GraphLib.Walk.InSimpleGraph.Path
 import GraphLib.Walk.InSimpleGraph.VertexSeq
 import GraphLib.Walk.InSimpleGraph.Walk
 import GraphLib.Theory.Structures.Path
+import GraphLib.Walk.Path
+import GraphLib.Walk.SimpleDiCycle
 import GraphLib.Walk.SimpleCycle
 import GraphLib.Theory.Coloring.Bipartite
 import GraphLib.Theory.Girth
@@ -52,6 +63,7 @@ import GraphLib.Theory.MooreBound.RootedLayers
 import GraphLib.Walk.SimplePath
 import GraphLib.Walk.SimpleWalk
 import GraphLib.Theory.Structures.Trail
+import GraphLib.Walk.Trail
 import GraphLib.Theory.Structures.Tree
 import GraphLib.Walk.VertexSeq
 import GraphLib.Walk.VertexSeq.Append
@@ -64,6 +76,7 @@ import GraphLib.Walk.VertexSeq.MapZip
 import GraphLib.Walk.VertexSeq.Predicates
 import GraphLib.Walk.VertexSeq.Subseq
 import GraphLib.Theory.Structures.Walk
+import GraphLib.Walk.Walk
 import GraphLib.Theory.Trees.Basic
 
 /-!

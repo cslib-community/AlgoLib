@@ -18,7 +18,7 @@ Part of the `InSimpleGraph` folder; see the umbrella module
 `GraphLib.Walk.InSimpleGraph`.
 -/
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 namespace GraphLib
 
@@ -69,6 +69,39 @@ edge it traverses is an edge of `G`. -/
 theorem iff_edges (G : SimpleGraph α) (w : SimpleWalk α) :
     G.IsSimpleWalkIn w ↔ w.head ∈ V(G) ∧ ∀ e ∈ w.edges, e ∈ E(G) :=
   IsVertexSeqIn.iff_edges G w.val
+
+/-- Realization depends only on the ambient vertex and edge sets. -/
+theorem congr {G H : SimpleGraph α} {w : SimpleWalk α}
+    (hV : V(G) = V(H)) (hE : E(G) = E(H)) :
+    G.IsSimpleWalkIn w ↔ H.IsSimpleWalkIn w := by
+  rw [iff_edges G w, iff_edges H w, hV, hE]
+
+/-! ## Graph transformations -/
+
+theorem induce_iff (G : SimpleGraph α) (S : Set α) (w : SimpleWalk α) :
+    (G.induce S).IsSimpleWalkIn w ↔
+      G.IsSimpleWalkIn w ∧ ∀ v ∈ w.support, v ∈ S :=
+  IsVertexSeqIn.induce_iff G S w.val
+
+theorem restrictEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (w : SimpleWalk α) :
+    (G.restrictEdges F).IsSimpleWalkIn w ↔
+      G.IsSimpleWalkIn w ∧ ∀ e ∈ w.edges, e ∈ F :=
+  IsVertexSeqIn.restrictEdges_iff G F w.val
+
+theorem deleteEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (w : SimpleWalk α) :
+    (G.deleteEdges F).IsSimpleWalkIn w ↔
+      G.IsSimpleWalkIn w ∧ ∀ e ∈ w.edges, e ∉ F :=
+  IsVertexSeqIn.deleteEdges_iff G F w.val
+
+theorem deleteVerts_iff (G : SimpleGraph α) (S : Set α) (w : SimpleWalk α) :
+    (G.deleteVerts S).IsSimpleWalkIn w ↔
+      G.IsSimpleWalkIn w ∧ ∀ v ∈ w.support, v ∉ S :=
+  IsVertexSeqIn.deleteVerts_iff G S w.val
+
+theorem relabelVertices {G : SimpleGraph α} {w : SimpleWalk α} (f : α ≃ γ)
+    (h : G.IsSimpleWalkIn w) :
+    (G.relabelVertices f).IsSimpleWalkIn (SimpleWalk.map f f.injective w) :=
+  IsVertexSeqIn.relabelVertices f h
 
 /-! ## Traversed edges and the generated simple graph -/
 
