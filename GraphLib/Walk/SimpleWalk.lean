@@ -122,6 +122,19 @@ def glue (p q : SimpleWalk α) (h : p.val.tail = q.val.head) : SimpleWalk α :=
       exact (VertexSeq.nonstalling_append p.val.dropTail q.val).2
         ⟨hpns, q.nonstalling, hjoin⟩⟩
 
+@[simp] theorem head_glue (p q : SimpleWalk α) (h : p.tail = q.head) :
+    (p.glue q h).head = p.head := by
+  rw [SimpleWalk.glue]
+  split
+  · rename_i hp
+    exact ((VertexSeq.head_eq_tail_of_length_zero p.val hp).trans h).symm
+  · simp
+
+@[simp] theorem tail_glue (p q : SimpleWalk α) (h : p.tail = q.head) :
+    (p.glue q h).tail = q.tail := by
+  rw [SimpleWalk.glue]
+  split <;> simp
+
 /-! ## reverse -/
 
 /-- Reverse a simple walk: the head becomes the tail and vice versa. Reversal
@@ -152,6 +165,14 @@ distinct consecutive vertices stay distinct, so non-stalling is preserved. -/
 def map {β : Type*} (f : α → β) (hf : Function.Injective f) (w : SimpleWalk α) :
     SimpleWalk β :=
   ⟨w.val.map f, VertexSeq.nonstalling_map f hf w.val w.nonstalling⟩
+
+@[simp] theorem head_map {β : Type*} (f : α → β) (hf : Function.Injective f)
+    (w : SimpleWalk α) : (w.map f hf).head = f w.head :=
+  VertexSeq.head_map f w.val
+
+@[simp] theorem tail_map {β : Type*} (f : α → β) (hf : Function.Injective f)
+    (w : SimpleWalk α) : (w.map f hf).tail = f w.tail :=
+  VertexSeq.tail_map f w.val
 
 /-! ## takeWhile, dropWhile -/
 

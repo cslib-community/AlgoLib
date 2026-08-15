@@ -445,6 +445,18 @@ instance : GetElem (Walk α β) ℕ α (fun w i => i < w.vertices.length) where
     grind [toVertexSeq, cycleErase, VertexSeq.cycleErase, Walk.mem_def,
       VertexSeq.mem_def, toVertexSeq_toList, toVertexSeq_prefixUntil]
 
+/-- Cycle erasure preserves the initial vertex. -/
+@[simp] theorem head_cycleErase [DecidableEq α] (w : Walk α β) :
+    w.cycleErase.head = w.head := by
+  rw [← toVertexSeq_head, toVertexSeq_cycleErase, VertexSeq.head_cycleErase,
+    toVertexSeq_head]
+
+/-- Cycle erasure preserves the final vertex. -/
+@[simp] theorem tail_cycleErase [DecidableEq α] (w : Walk α β) :
+    w.cycleErase.tail = w.tail := by
+  rw [← toVertexSeq_tail, toVertexSeq_cycleErase, VertexSeq.tail_cycleErase,
+    toVertexSeq_tail]
+
 @[simp] theorem toVertexSeq_append (p q : Walk α β) (t : β) :
     (p.append q t).toVertexSeq = p.toVertexSeq.append q.toVertexSeq := by
   apply VertexSeq.toList_injective

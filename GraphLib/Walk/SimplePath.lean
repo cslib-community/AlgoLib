@@ -107,6 +107,14 @@ def cycleErase [DecidableEq α] (w : SimpleWalk α) : SimplePath α :=
   ⟨w.cycleErase, by
     exact w.val.nodup_cycleErase⟩
 
+@[simp] lemma head_cycleErase [DecidableEq α] (w : SimpleWalk α) :
+    (cycleErase w).head = w.head :=
+  VertexSeq.head_cycleErase w.val
+
+@[simp] lemma tail_cycleErase [DecidableEq α] (w : SimpleWalk α) :
+    (cycleErase w).tail = w.tail :=
+  VertexSeq.tail_cycleErase w.val
+
 /-! ## dropHead, dropTail -/
 
 /-- Drop the first vertex of a path. Removing an endpoint preserves `nodup`. -/

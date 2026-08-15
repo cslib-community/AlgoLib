@@ -29,6 +29,8 @@ def toPath [DecidableEq α] (w : Walk α β) : Path α β :=
     exact VertexSeq.nodup_cycleErase w.toVertexSeq⟩
 
 @[simp] theorem val_toPath [DecidableEq α] (w : Walk α β) : w.toPath.val = w.cycleErase := rfl
+@[simp] theorem head_toPath [DecidableEq α] (w : Walk α β) : w.toPath.val.head = w.head := by
+  rw [val_toPath, Walk.head_cycleErase]
 @[simp] theorem tail_toPath [DecidableEq α] (w : Walk α β) : w.toPath.val.tail = w.tail := by
   rw [val_toPath, ← Walk.toVertexSeq_tail, Walk.toVertexSeq_cycleErase,
     VertexSeq.tail_cycleErase, Walk.toVertexSeq_tail]

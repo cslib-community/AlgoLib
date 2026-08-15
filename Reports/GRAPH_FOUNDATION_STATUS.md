@@ -2,58 +2,61 @@
 
 **Updated:** 2026-08-15
 
-**Current phase:** Phase 6 — `COMPLETE`
+**Current phase:** Phase 7 — `COMPLETE`
 
 **Exit condition satisfied:** Yes
 
 ## Completed
 
-- Added canonical adjacency-fiber neighborhoods for all four graph types in
-  `Graph/Neighborhood.lean`, with membership, containment, outside-vertex emptiness, symmetry or
-  reversal, subgraph monotonicity, and transformation formulas.
-- Rebuilt `Graph/Finite.lean` around mathematical `Set` finiteness and genuine noncomputable
-  `Finset` views. General vertex and actual-edge finiteness remain independent; only simple graph
-  types derive finite edges from finite vertices. Added membership, coercion, subset, and `ncard`
-  bridges for vertex, edge, neighborhood, incidence, and loop finsets.
-- Recreated `Graph/Degree.lean` with finite-local degree. General undirected loops count twice and
-  parallel actual edges separately; directed loops count once in each direction. Added cardinal
-  characterizations, bounds, subgraph and transformation monotonicity, extrema with comparison and
-  attainment, and the two Moore helper lemmas.
-- Added `Graph/DegreeSum.lean` with both undirected handshaking identities, directed in/out degree
-  sums over actual arcs, equality of directed sums, and rational average-degree formulas.
-- Migrated Girth and every MooreBound layer to the canonical neighborhood orientation and
-  instance-bearing finite-local degree boundary. Removed local duplicate degree/neighborhood
-  definitions, moved the Moore helpers, and applied the locked girth top/non-top theorem names.
-- Added `GraphLibTest/Foundation/FiniteDegree.lean`, covering finite vertices with infinite general
-  edges, locally finite degree in an infinite graph, neighborhood loop/parallel semantics, two
-  parallel edges, two loops contributing degree four, directed loop degrees and sums, simple
-  handshake, and compile-time API checks. Updated `GraphLib/All.lean` with the new modules.
+- Added `Connectivity/Reachability.lean` for all four graph types. Reachability uses the appropriate
+  path carrier and has path/walk equivalences, endpoint membership, vertex-restricted reflexivity,
+  transitivity, undirected symmetry, directed reversal, subgraph monotonicity, adjacency closure,
+  and vertex/tag relabel transport.
+- Added `Connectivity/Connected.lean` with vacuous `Preconnected`, nonempty `Connected`, literal
+  component sets, component membership/subset/equality/equal-or-disjoint laws, one-component
+  connectedness, empty-graph conventions, and relabel transport.
+- Added `Connectivity/StronglyConnected.lean` with mutual reachability, nonempty whole-graph strong
+  connectedness, SCC sets and their partition laws, directed reversal, and relabel transport.
+- Added `Connectivity/Acyclic.lean` with direction- and identity-correct cycle absence for all four
+  graph types. Added subgraph/no-edge, reversal, and relabel laws, plus undirected `IsForest :=
+  IsAcyclic` and `IsTree := Connected ∧ IsAcyclic` for simple and general graphs.
+- Moved `SimpleGraph.HasSimpleCycle`/`IsAcyclic` out of the realization layer. Replaced the obsolete
+  connectivity, Forest, and Tree drafts with declaration-free Phase 9 forwarders; removed
+  `SimpleGraph.Contains` and `SimpleGraph.IsConnected`; repaired Girth and forwarding imports; and
+  added the declaration-free `GraphLib.Connectivity` umbrella to `GraphLib.All`.
+- Added `GraphLibTest/Foundation/Connectivity.lean`, covering all public carrier types, empty-graph
+  semantics, reachability endpoints/transitivity/symmetry/reversal, component partition laws, SCC
+  reversal, general loop and parallel-edge cycles, simple cycle length conventions, no-edge
+  acyclicity, and subgraph monotonicity.
 
 ## Deviations and deferred items
 
-- No required Phase 6 item was deferred, no earlier-phase repair was needed, and no semantic
-  redesign was made.
-- Only plan-permitted advanced degree inequalities, parity/density theory, executable refinement
-  contracts, and extended-degree/regularity/complement APIs remain deferred.
+- Repaired a blocking Phase 5 omission: cycle erasure now preserves both endpoints and realization
+  for general walks; `Walk.toPath` exposes both endpoint laws; and simple-walk glue/map endpoint
+  projections are available. These are the smallest earlier-spine repairs needed to prove Phase 7
+  reachability transitivity and the walk/path equivalences.
+- Cycle-carrier relabel construction remains private to `Connectivity/Acyclic.lean`; Phase 7 exposes
+  the required graph-level existence and acyclicity invariance without expanding the earlier raw
+  carrier API.
+- No required Phase 7 item was deferred. Plan-permitted quotient/executable component enumeration,
+  condensation algorithms, unique-path tree theory, topological ordering, feedback sets, and
+  advanced cycle theory remain deferred.
 - Existing unrelated linter warnings and the two pre-existing
-  `DataStructures/InverseAckermann/Nivasch.lean` `sorry` declarations remain. Phase 6 added no
+  `DataStructures/InverseAckermann/Nivasch.lean` `sorry` declarations remain. Phase 7 added no
   production `sorry`.
 
 ## Validation
 
-- Incremental builds of `Neighborhood`, `Finite`, `Degree`, `DegreeSum`, the new foundation test,
-  Girth, and every MooreBound leaf succeeded.
-- `lake build GraphLib.Graph.Neighborhood GraphLib.Graph.Finite GraphLib.Graph.Degree
-  GraphLib.Graph.DegreeSum GraphLibTest.Foundation.FiniteDegree GraphLib.Theory.Girth
-  GraphLib.Theory.MooreBound.Counting GraphLib.Theory.MooreBound.Core
-  GraphLib.Theory.MooreBound.RootedLayers GraphLib.Theory.MooreBound.HalfLayers
-  GraphLib.Theory.MooreBound.Bounds GraphLib.Theory.MooreBound
-  GraphLib.Walk.InSimpleGraph GraphLib.Walk.InSimpleDiGraph
-  GraphLibTest.Foundation.Walk GraphLib GraphLib.All GraphLibTest.ImportAll`: success (1184 jobs).
-- Searches found no Phase 6 production `sorry`, stale girth theorem names, duplicate degree or
-  neighborhood definitions, deprecated `compute*Finset`/`finMaxDegree`/`avgDegree` API, or
-  wrong-returning `*Finset` declaration. `git diff --check` passes.
+- Incremental builds of every new connectivity leaf, migration forwarder, Girth, and the Phase 7
+  foundation test succeeded.
+- `lake build GraphLib GraphLib.All GraphLibTest.ImportAll GraphLib.Walk.InSimpleGraph
+  GraphLib.Walk.InSimpleDiGraph GraphLib.Theory.Girth GraphLib.Theory.MooreBound
+  GraphLibTest.Foundation.Walk GraphLibTest.Foundation.Connectivity`: success (1186 jobs).
+- Searches found no Phase 7 production `sorry`, `SimpleGraph.Contains`, `SimpleGraph.IsConnected`,
+  or connectivity/acyclicity definitions outside the canonical `Connectivity` modules.
+  `git diff --check` passes.
 
 ## Next action
 
-Begin Phase 7 only: implement connectivity and graph structure at the Phase 7 boundary.
+Begin Phase 8 only: implement attached data, traversal weights, networks, and the matching stress
+test at the Phase 8 boundary.

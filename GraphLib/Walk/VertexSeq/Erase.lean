@@ -92,6 +92,11 @@ between its two occurrences. The result satisfies `nodup`. -/
     w.cycleErase.tail = w.tail := by
   fun_induction cycleErase w <;> grind [tail_prefixUntil]
 
+/-- `cycleErase` preserves the head vertex. -/
+@[grind =] lemma head_cycleErase [DecidableEq α] (w : VertexSeq α) :
+    w.cycleErase.head = w.head := by
+  fun_induction cycleErase w <;> grind [head_prefixUntil]
+
 /-- Membership in `cycleErase` implies membership in the original sequence. -/
 @[grind] lemma cycleErase_subset [DecidableEq α] (w : VertexSeq α) :
     w.cycleErase ⊆ w := by

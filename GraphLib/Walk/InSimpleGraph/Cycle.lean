@@ -10,9 +10,9 @@ import Mathlib.Data.Set.Card
 /-!
 # Simple cycles realized in a simple graph
 
-`SimpleGraph.IsSimpleCycleIn G c` says a `SimpleCycle` is realized in `G`,
-together with `HasSimpleCycle` / `IsAcyclic` and the cycle-construction lemmas
-that build a realized cycle out of realized paths.
+`SimpleGraph.IsSimpleCycleIn G c` says a `SimpleCycle` is realized in `G`, together with the
+cycle-construction lemmas that build a realized cycle out of realized paths. Cycle-existence and
+acyclicity predicates live in `GraphLib.Connectivity.Acyclic`.
 
 Part of the `InSimpleGraph` folder; see the umbrella module
 `GraphLib.Walk.InSimpleGraph`.
@@ -20,15 +20,11 @@ Part of the `InSimpleGraph` folder; see the umbrella module
 ## Main definitions
 
 * `SimpleGraph.IsSimpleCycleIn` — a simple cycle realized in a graph.
-* `SimpleGraph.HasSimpleCycle` — the graph contains a realized simple cycle.
-* `SimpleGraph.IsAcyclic` — the graph contains no realized simple cycle.
 
 ## Main results
 
 * `SimpleGraph.IsSimpleCycleIn.ofPathClosing` — close a realized path into a cycle.
 * `SimpleGraph.IsSimpleCycleIn.ofTwoPaths` — obtain a realized cycle from two paths.
-* `SimpleGraph.hasSimpleCycle_of_subgraph` — cycles pass from subgraphs to supergraphs.
-* `SimpleGraph.isAcyclic_of_subgraph` — acyclicity passes from supergraphs to subgraphs.
 -/
 
 variable {α : Type*}
@@ -181,37 +177,6 @@ lemma exists_length_le_add_of_two_paths (G : SimpleGraph α)
     SimpleCycle.length_ofTwoPaths p q hhead htail hne⟩
 
 end IsSimpleCycleIn
-
-/-! ## Acyclicity -/
-
-/-- `G` contains a simple cycle. -/
-@[grind] def HasSimpleCycle (G : SimpleGraph α) : Prop :=
-  ∃ c : SimpleCycle α, G.IsSimpleCycleIn c
-
-/-- `G` is acyclic when it contains no simple cycle. -/
-@[grind] def IsAcyclic (G : SimpleGraph α) : Prop :=
-  ¬ G.HasSimpleCycle
-
-/-- A simple cycle in a subgraph is also a simple cycle in the ambient graph. -/
-lemma hasSimpleCycle_of_subgraph (G H : SimpleGraph α)
-    (hsub : H ≤ G) (hH : H.HasSimpleCycle) :
-    G.HasSimpleCycle := by
-  obtain ⟨c, hc⟩ := hH
-  exact ⟨c, IsSimpleCycleIn.mono G H hc hsub⟩
-
-/-- If `H` is a subgraph of the acyclic ambient graph `G`, then `H` is acyclic. -/
-lemma isAcyclic_of_subgraph (G H : SimpleGraph α)
-    (hsub : H ≤ G) (hG : G.IsAcyclic) :
-    H.IsAcyclic := by
-  intro hH
-  exact hG (hasSimpleCycle_of_subgraph G H hsub hH)
-
-/-- An edge-free graph is acyclic. -/
-@[grind →] lemma isAcyclic_of_no_edges (G : SimpleGraph α) (hE : E(G) = ∅) :
-    G.IsAcyclic := by
-  rintro ⟨c, hc⟩
-  obtain ⟨e, he⟩ := List.exists_mem_of_ne_nil c.edges c.edges_ne_nil
-  simpa only [hE, Set.mem_empty_iff_false] using IsSimpleCycleIn.edge_mem G hc he
 
 end SimpleGraph
 

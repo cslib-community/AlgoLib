@@ -3,7 +3,7 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import GraphLib.Walk.InSimpleGraph
+import GraphLib.Connectivity.Acyclic
 import GraphLib.Graph.Degree
 import GraphLib.Theory.Coloring.Bipartite
 import Mathlib.Data.ENat.Lattice
@@ -15,8 +15,8 @@ import Mathlib.Data.Set.Card
 The girth of a simple graph is the length of its shortest simple cycle.  We use
 `WithTop ℕ`, so acyclic graphs have girth `⊤`.
 
-The realized-cycle predicates `SimpleGraph.IsSimpleCycleIn`, `HasSimpleCycle`
-and `IsAcyclic` live in `GraphLib.Walk.InSimpleGraph`.
+The realization predicate `SimpleGraph.IsSimpleCycleIn` lives in the walk layer; cycle existence
+and acyclicity live in `GraphLib.Connectivity.Acyclic`.
 
 ## Main definitions
 

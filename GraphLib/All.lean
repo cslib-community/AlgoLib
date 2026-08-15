@@ -25,6 +25,8 @@ import GraphLib.Graph.Neighborhood
 import GraphLib.Graph.Reverse
 import GraphLib.Graph.Subgraph
 
+import GraphLib.Connectivity
+
 import GraphLib.Theory.Basic
 import GraphLib.Theory.Coloring.Basic
 import GraphLib.Theory.Connectivity.Basic

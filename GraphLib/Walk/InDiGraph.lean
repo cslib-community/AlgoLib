@@ -167,6 +167,18 @@ theorem suffixFrom [DecidableEq α] {G : DiGraph α β} {w : Walk α β}
   exact ⟨by simpa using h.vertex_mem (show v ∈ w.vertices from hv),
     fun _ ha => h.arc_mem (Walk.arcs_suffixFrom_subset w v hv ha)⟩
 
+/-- Erasing cycles from a realized directed walk preserves realization. -/
+theorem cycleErase [DecidableEq α] {G : DiGraph α β} {w : Walk α β}
+    (h : G.IsWalkIn w) : G.IsWalkIn w.cycleErase := by
+  fun_induction Walk.cycleErase w with
+  | case1 => exact h
+  | case2 w v t hv ih =>
+      exact ih ((DiGraph.IsWalkIn.dropTail h).prefixUntil v hv)
+  | case3 w v t hv ih =>
+      cases h with
+      | cons _ _ _ hw harc =>
+          exact .cons _ _ _ (ih hw) (by simpa using harc)
+
 theorem append {G : DiGraph α β} {p q : Walk α β} (hp : G.IsWalkIn p)
     (hq : G.IsWalkIn q) (t : β)
     (hbridge : G.IsArc ⟨t, (p.tail, q.head)⟩ p.tail q.head) :

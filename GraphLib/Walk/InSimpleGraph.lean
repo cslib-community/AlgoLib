@@ -28,8 +28,7 @@ re-exports (imports) the `InSimpleGraph` development, which is split across
   characterization, and closure under the walk operations (`append`, `glue`, …).
 * `Path` — `IsSimplePathIn`, extension by a fresh adjacent vertex, and the
   vertex-count bound.
-* `Cycle` — `IsSimpleCycleIn`, `HasSimpleCycle`, `IsAcyclic`, and the
-  path-to-cycle construction lemmas.
+* `Cycle` — `IsSimpleCycleIn` and the path-to-cycle construction lemmas.
 
 Downstream files should keep importing this umbrella; the split is internal. The
 submodules form the acyclic spine `VertexSeq ← Walk ← Path ← Cycle`.
@@ -41,8 +40,6 @@ submodules form the acyclic spine `VertexSeq ← Walk ← Path ← Cycle`.
   underlying vertex sequence.
 * `SimpleGraph.IsSimplePathIn G p` — a `SimplePath` is realized in `G`.
 * `SimpleGraph.IsSimpleCycleIn G c` — a `SimpleCycle` is realized in `G`.
-* `SimpleGraph.HasSimpleCycle G` — `G` contains a simple cycle.
-* `SimpleGraph.IsAcyclic G` — `G` contains no simple cycle.
 
 ## Design choices
 

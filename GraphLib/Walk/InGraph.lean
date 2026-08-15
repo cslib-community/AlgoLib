@@ -168,6 +168,18 @@ theorem suffixFrom [DecidableEq α] {G : Graph α β} {w : Walk α β}
   exact ⟨by simpa using h.vertex_mem (show v ∈ w.vertices from hv),
     fun _ he => h.edge_mem (Walk.edges_suffixFrom_subset w v hv he)⟩
 
+/-- Erasing cycles from a realized walk preserves realization. -/
+theorem cycleErase [DecidableEq α] {G : Graph α β} {w : Walk α β}
+    (h : G.IsWalkIn w) : G.IsWalkIn w.cycleErase := by
+  fun_induction Walk.cycleErase w with
+  | case1 => exact h
+  | case2 w v t hv ih =>
+      exact ih ((Graph.IsWalkIn.dropTail h).prefixUntil v hv)
+  | case3 w v t hv ih =>
+      cases h with
+      | cons _ _ _ hw hlink =>
+          exact .cons _ _ _ (ih hw) (by simpa using hlink)
+
 /-- Join two realized walks with a realized bridge edge. -/
 theorem append {G : Graph α β} {p q : Walk α β} (hp : G.IsWalkIn p)
     (hq : G.IsWalkIn q) (t : β)
