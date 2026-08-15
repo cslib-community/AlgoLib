@@ -128,7 +128,7 @@ lemma ncard_rootLayer_zero (G : SimpleGraph α) {x : α} (hx : x ∈ V(G)) :
 lemma neighborSet_subset_rootLayer_one (G : SimpleGraph α) {x : α} (hx : x ∈ V(G)) :
     G.neighborSet x ⊆ rootLayer G x 1 := by
   intro u hu
-  have hxu : G.Adj x u := hu.symm
+  have hxu : G.Adj x u := hu
   have hdisj : ∀ z : α, z ∈ (SimplePath.singleton x).vertices →
       z ∈ (SimplePath.singleton u).vertices → False := by
     grind
@@ -138,13 +138,13 @@ lemma neighborSet_subset_rootLayer_one (G : SimpleGraph α) {x : α} (hx : x ∈
     simp
 
 /-- The first rooted layer has at least the degree of the root. -/
-lemma degree_le_ncard_rootLayer_one (G : SimpleGraph α) (hV : V(G).Finite)
+lemma degree_le_ncard_rootLayer_one (G : SimpleGraph α) [Finite V(G)]
     {x : α} (hx : x ∈ V(G)) :
     G.degree x ≤ (rootLayer G x 1).ncard := by
   have hroot_fin : (rootLayer G x 1).Finite :=
-    hV.subset (rootLayer_subset_vertexSet G x 1)
-  simpa [degree] using
-    Set.ncard_le_ncard (neighborSet_subset_rootLayer_one G hx) hroot_fin
+    G.vertexSet_finite.subset (rootLayer_subset_vertexSet G x 1)
+  rw [← G.ncard_neighborSet_eq_degree]
+  exact Set.ncard_le_ncard (neighborSet_subset_rootLayer_one G hx) hroot_fin
 
 /-! ## Odd rooted-layer counting -/
 
@@ -168,12 +168,13 @@ lemma disjoint_rootLayer_of_ne_of_lt_girth (G : SimpleGraph α) {x : α} {i j : 
 /-- Successive odd Moore layers grow by a factor of at least `δ - 1` after the
 first layer. -/
 lemma mul_ncard_rootLayer_le_succ_of_lt_girth (G : SimpleGraph α)
-    (hV : V(G).Finite) {δ i : ℕ} {x : α}
+    [Finite V(G)] {δ i : ℕ} {x : α}
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * (i + 2) : ℕ∞) < G.girth) :
     (δ - 1) * (rootLayer G x (i + 1)).ncard ≤
       (rootLayer G x (i + 2)).ncard := by
   classical
+  have hV : V(G).Finite := G.vertexSet_finite
   have hLfin : (rootLayer G x (i + 1)).Finite :=
     hV.subset (rootLayer_subset_vertexSet G x (i + 1))
   have hNfin : (rootLayer G x (i + 2)).Finite :=
@@ -197,7 +198,7 @@ lemma mul_ncard_rootLayer_le_succ_of_lt_girth (G : SimpleGraph α)
     intro v hv
     have hvR : IsRootedPath G x (i + 1) v := hv
     rw [hFv v hvR]
-    exact pred_le_ncard_freshNeighborSet G hV hmin hvR.path_isSimplePathIn
+    exact pred_le_ncard_freshNeighborSet G hmin hvR.path_isSimplePathIn
       hvR.path_tail hvR.path_length (by omega) hgirth'
   · -- distinct source vertices produce disjoint child sets: a common fresh neighbour
     -- would give two distinct length-`(i+2)` paths from `x` to it
@@ -216,7 +217,7 @@ lemma mul_ncard_rootLayer_le_succ_of_lt_girth (G : SimpleGraph α)
       (by rw [hvR.path_tail, hv'R.path_tail]; exact hne) hadj hadj' hnot hnot' hgirth'
 
 /-- Nonzero rooted layers in the odd Moore tree have the expected lower bound. -/
-lemma le_ncard_rootLayer_succ (G : SimpleGraph α) (hV : V(G).Finite)
+lemma le_ncard_rootLayer_succ (G : SimpleGraph α) [Finite V(G)]
     {δ i : ℕ} {x : α}
     (hx : x ∈ V(G))
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
@@ -224,7 +225,7 @@ lemma le_ncard_rootLayer_succ (G : SimpleGraph α) (hV : V(G).Finite)
     δ * (δ - 1) ^ i ≤ (rootLayer G x (i + 1)).ncard := by
   induction i with
   | zero =>
-      simpa using (hmin x hx).trans (degree_le_ncard_rootLayer_one G hV hx)
+      simpa using (hmin x hx).trans (degree_le_ncard_rootLayer_one G hx)
   | succ i ih =>
       have hgirthPrev : (2 * (i + 1) : ℕ∞) < G.girth := by
         apply lt_of_le_of_lt _ hgirth
@@ -235,7 +236,7 @@ lemma le_ncard_rootLayer_succ (G : SimpleGraph α) (hV : V(G).Finite)
         simpa [Nat.add_assoc] using hgirth
       have hgrowth :=
         mul_ncard_rootLayer_le_succ_of_lt_girth
-          G hV (δ := δ) (i := i) (x := x) hmin hgirthGrowth
+          G (δ := δ) (i := i) (x := x) hmin hgirthGrowth
       calc
         δ * (δ - 1) ^ (i + 1) = (δ - 1) * (δ * (δ - 1) ^ i) := by
           rw [pow_succ]

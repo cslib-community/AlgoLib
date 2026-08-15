@@ -54,8 +54,7 @@ The odd bound does not require `2 ≤ δ`: its rooted construction starts from t
 given nonempty vertex set. The even bound retains this hypothesis because it is
 needed to obtain the central edge from which the two half-trees grow.
 
-The degree API used here is the temporary `SimpleGraph.neighborSet` /
-`SimpleGraph.degree` API currently available from
-`GraphLib.Theory.Girth`; this development
-deliberately does not depend on `GraphLib.Graph.Degree`.
+The finite-local `SimpleGraph.neighborSet` / `SimpleGraph.degree` API is provided
+by `GraphLib.Graph.Degree`. The Moore statements carry `[Finite V(G)]`, which
+supplies the local neighborhood finiteness needed to elaborate every degree.
 -/

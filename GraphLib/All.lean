@@ -16,9 +16,12 @@ import GraphLib.DataStructures.InverseAckermann.Nivasch
 import GraphLib.Graph.Adjacency
 import GraphLib.Graph.Basic
 import GraphLib.Graph.Delete
+import GraphLib.Graph.Degree
+import GraphLib.Graph.DegreeSum
 import GraphLib.Graph.Finite
 import GraphLib.Graph.Incidence
 import GraphLib.Graph.Map
+import GraphLib.Graph.Neighborhood
 import GraphLib.Graph.Reverse
 import GraphLib.Graph.Subgraph
 

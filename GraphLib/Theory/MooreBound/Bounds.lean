@@ -27,11 +27,12 @@ open MooreBound
 
 /-- Odd-girth version of the Moore bound. -/
 theorem mooreBound_odd (G : SimpleGraph α) (δ r : ℕ)
-    (hV : V(G).Finite)
+    [Finite V(G)]
     (hne : V(G).Nonempty)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * r + 1 : ℕ∞) ≤ G.girth) :
     1 + δ * (∑ i ∈ Finset.range r, (δ - 1) ^ i) ≤ V(G).ncard := by
+  have hV : V(G).Finite := G.vertexSet_finite
   obtain ⟨x, hx⟩ := hne
   -- any index sum that is at most `2 * r` stays strictly below the girth
   have hlt_girth : ∀ n : ℕ, n ≤ 2 * r → (n : ℕ∞) < G.girth := by
@@ -60,7 +61,7 @@ theorem mooreBound_odd (G : SimpleGraph α) (δ r : ℕ)
       ∑ i ∈ Finset.range r, (rootLayer G x (i + 1)).ncard := by
     rw [Finset.mul_sum]
     exact Finset.sum_le_sum
-      (fun i hi => le_ncard_rootLayer_succ G hV hx hmin (by
+      (fun i hi => le_ncard_rootLayer_succ G hx hmin (by
         have hi' : i < r := Finset.mem_range.mp hi
         exact_mod_cast hlt_girth (2 * (i + 1)) (by omega)))
   have hsplit : ∑ i ∈ Finset.range (r + 1), (rootLayer G x i).ncard
@@ -75,13 +76,14 @@ theorem mooreBound_odd (G : SimpleGraph α) (δ r : ℕ)
 
 /-- Even-girth version of the Moore bound. -/
 theorem mooreBound_even (G : SimpleGraph α) (δ r : ℕ)
-    (hV : V(G).Finite)
+    [Finite V(G)]
     (hne : V(G).Nonempty)
     (hδ : 2 ≤ δ)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * r : ℕ∞) ≤ G.girth) :
     2 * (∑ i ∈ Finset.range r, (δ - 1) ^ i) ≤ V(G).ncard := by
   classical
+  have hV : V(G).Finite := G.vertexSet_finite
   -- a central edge `x -- y`
   have hmin2 : ∀ v : α, v ∈ V(G) → 2 ≤ G.degree v :=
     fun v hv => le_trans hδ (hmin v hv)
@@ -129,7 +131,7 @@ theorem mooreBound_even (G : SimpleGraph α) (δ r : ℕ)
     rw [Set.ncard_biUnion_finset_eq_sum (Finset.range r) (fun i => halfLayer G a b i)
       (fun i _ => hV.subset (halfLayer_subset_vertexSet G a b i)) (hSideDisj a b)]
     exact Finset.sum_le_sum
-      (fun i hi => le_ncard_halfLayer G hV hab hmin (by
+      (fun i hi => le_ncard_halfLayer G hab hmin (by
         have hi' : i < r := Finset.mem_range.mp hi
         exact_mod_cast hlt_girth (2 * i) (by omega)))
   have hAlb := hSideLb hxy

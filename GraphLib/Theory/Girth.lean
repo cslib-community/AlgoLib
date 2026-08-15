@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
 import GraphLib.Walk.InSimpleGraph
+import GraphLib.Graph.Degree
 import GraphLib.Theory.Coloring.Bipartite
 import Mathlib.Data.ENat.Lattice
 import Mathlib.Data.Set.Card
@@ -25,9 +26,9 @@ and `IsAcyclic` live in `GraphLib.Walk.InSimpleGraph`.
 
 * `SimpleGraph.girth.ge_iff` / `SimpleGraph.girth.le_iff` — the lower- and
   upper-bound characterizations; nearly everything else is a corollary of these.
-* `SimpleGraph.girth.infinite_iff_isAcyclic` — infinite girth is acyclicity.
+* `SimpleGraph.girth.eq_top_iff_isAcyclic` — infinite girth is acyclicity.
 * `SimpleGraph.girth.exists_cycle` — a finite girth is attained by some cycle.
-* `SimpleGraph.girth.finite_of_two_le_degree` — minimum degree two forces a cycle.
+* `SimpleGraph.girth.ne_top_of_two_le_degree` — minimum degree two forces a cycle.
 * `SimpleGraph.girth.even_of_isBipartite` — the girth of a bipartite graph is
   even. The basic bipartite colouring API lives in
   `GraphLib.Theory.Coloring.Bipartite`; only this girth
@@ -48,28 +49,6 @@ namespace GraphLib
 open scoped GraphLib
 
 namespace SimpleGraph
-
-/-! ## Neighbour sets and degree
-
-TEMPORARY: `neighborSet` and `degree` logically belong in
-`GraphLib/Graph/Degree.lean`, which is being developed by a collaborator. They
-live here only so that `finite_of_two_le_degree` can be stated while `Degree.lean`
-is in flux. Do not treat this placement as a precedent: no further degree API
-should be added here, and these definitions should move to `Graph/Degree.lean`
-once it is ready. -/
-
-/-- The neighbours of `v` in the simple graph `G`.
-
-TEMPORARY placement; belongs in `GraphLib/Graph/Degree.lean` (see section note). -/
-def neighborSet (G : SimpleGraph α) (v : α) : Set α :=
-  {u | G.Adj u v}
-
-/-- The degree of `v` in the simple graph `G`. Returns `0` if `v` has
-infinitely many neighbours.
-
-TEMPORARY placement; belongs in `GraphLib/Graph/Degree.lean` (see section note). -/
-noncomputable def degree (G : SimpleGraph α) (v : α) : ℕ :=
-  (G.neighborSet v).ncard
 
 /-! ## Girth -/
 
@@ -110,20 +89,20 @@ girth is `⊤`. -/
 /-! ## Infinite girth and acyclicity -/
 
 /-- A simple graph is acyclic exactly when its girth is infinite. -/
-@[grind =] lemma infinite_iff_isAcyclic (G : SimpleGraph α) :
+@[grind =] lemma eq_top_iff_isAcyclic (G : SimpleGraph α) :
     G.girth = ⊤ ↔ G.IsAcyclic := by
   simp [girth, iInf_eq_top, IsAcyclic, HasSimpleCycle]
 
 /-- A graph with no simple cycle has infinite girth. -/
-lemma infinite_of_isAcyclic (G : SimpleGraph α) (hG : G.IsAcyclic) :
+lemma eq_top_of_isAcyclic (G : SimpleGraph α) (hG : G.IsAcyclic) :
     G.girth = ⊤ :=
-  (infinite_iff_isAcyclic G).2 hG
+  (eq_top_iff_isAcyclic G).2 hG
 
 /-- A simple graph has finite girth exactly when it contains a simple cycle. -/
-@[grind =] lemma finite_iff_hasSimpleCycle (G : SimpleGraph α) :
+@[grind =] lemma ne_top_iff_hasSimpleCycle (G : SimpleGraph α) :
     G.girth ≠ ⊤ ↔ G.HasSimpleCycle := by
   rw [← not_iff_not]
-  simp [infinite_iff_isAcyclic, IsAcyclic]
+  simp [eq_top_iff_isAcyclic, IsAcyclic]
 
 /-! ## Attainment -/
 
@@ -132,7 +111,7 @@ equal to the girth. -/
 lemma exists_cycle (G : SimpleGraph α) (h : G.girth ≠ ⊤) :
     ∃ c : SimpleCycle α, G.IsSimpleCycleIn c ∧ (c.length : ℕ∞) = G.girth := by
   classical
-  obtain ⟨c₀, hc₀⟩ := (finite_iff_hasSimpleCycle G).1 h
+  obtain ⟨c₀, hc₀⟩ := (ne_top_iff_hasSimpleCycle G).1 h
   have hex : ∃ n : ℕ, ∃ c : SimpleCycle α, G.IsSimpleCycleIn c ∧ c.length = n :=
     ⟨c₀.length, c₀, hc₀, rfl⟩
   obtain ⟨c, hc, hlen⟩ := Nat.find_spec hex
@@ -188,11 +167,12 @@ lemma le_ncard_vertexSet (G : SimpleGraph α) (hV : V(G).Finite)
 
 /-- A finite nonempty simple graph with every vertex of degree at least two has
 finite girth. -/
-lemma finite_of_two_le_degree (G : SimpleGraph α) (hV : V(G).Finite)
+lemma ne_top_of_two_le_degree (G : SimpleGraph α) [Finite V(G)]
     (hne : V(G).Nonempty)
     (hdeg : ∀ v : α, v ∈ V(G) → 2 ≤ G.degree v) :
     G.girth ≠ ⊤ := by
   classical
+  have hV : V(G).Finite := G.vertexSet_finite
   let P : ℕ → Prop :=
     fun n => ∃ p : SimplePath α, G.IsSimplePathIn p ∧ p.length = n
   obtain ⟨v, hv⟩ := hne
@@ -222,11 +202,12 @@ lemma finite_of_two_le_degree (G : SimpleGraph α) (hV : V(G).Finite)
   have htail_mem : p.tail ∈ V(G) := SimpleGraph.IsSimpleWalkIn.tail_mem G hp
   have htail_deg : 1 < (G.neighborSet p.tail).ncard := by
     have htwo := hdeg p.tail htail_mem
-    simpa [degree] using lt_of_lt_of_le Nat.one_lt_two htwo
+    rw [G.ncard_neighborSet_eq_degree]
+    exact lt_of_lt_of_le Nat.one_lt_two htwo
   by_cases hzero : p.length = 0
   · -- `p` is a single vertex, so any neighbour of `p.tail` is fresh.
     obtain ⟨y, hy, _⟩ := Set.exists_ne_of_one_lt_ncard htail_deg p.tail
-    refine (hcontra y hy.symm ?_).elim
+    refine (hcontra y hy ?_).elim
     intro hymem
     have hlen : p.vertices.length = 0 := hzero
     exact hy.ne (by grind)
@@ -242,13 +223,13 @@ lemma finite_of_two_le_degree (G : SimpleGraph α) (hV : V(G).Finite)
           omega
         rcases VertexSeq.eq_tail_or_eq_penultimate_of_length_suffixFrom_le_one
             p.vertices hy_mem hzero hle with htail | hprev
-        · exact hy.ne htail
+        · exact hy.ne htail.symm
         · exact hy_ne_prev hprev
       obtain ⟨c, hc, _⟩ :=
-        IsSimpleCycleIn.exists_length_le_succ_of_adj_mem G hp hy_mem hy.symm hq_len
-      exact (finite_iff_hasSimpleCycle G).2 ⟨c, hc⟩
+        IsSimpleCycleIn.exists_length_le_succ_of_adj_mem G hp hy_mem hy hq_len
+      exact (ne_top_iff_hasSimpleCycle G).2 ⟨c, hc⟩
     · -- `y` is fresh, contradicting maximality.
-      exact (hcontra y hy.symm hy_mem).elim
+      exact (hcontra y hy hy_mem).elim
 
 /-! ## Subgraphs -/
 
@@ -264,8 +245,8 @@ lemma finite_of_two_le_degree (G : SimpleGraph α) (hV : V(G).Finite)
 /-! ## Edge-free graphs -/
 
 /-- An edge-free graph has infinite girth. -/
-lemma infinite_of_no_edges (G : SimpleGraph α) (hE : E(G) = ∅) :
-    G.girth = ⊤ := infinite_of_isAcyclic G (isAcyclic_of_no_edges G hE)
+lemma eq_top_of_no_edges (G : SimpleGraph α) (hE : E(G) = ∅) :
+    G.girth = ⊤ := eq_top_of_isAcyclic G (isAcyclic_of_no_edges G hE)
 
 /-! ## Girth of bipartite graphs -/
 

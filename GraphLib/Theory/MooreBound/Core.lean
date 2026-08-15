@@ -26,45 +26,6 @@ open scoped GraphLib
 
 namespace SimpleGraph
 
-/-! ## Degree helpers
-
-TEMPORARY: these three lemmas are pure `neighborSet` / `degree` API with no
-dependence on the Moore development. They logically belong in
-`GraphLib/Graph/Degree.lean` (alongside the `neighborSet` / `degree` definitions
-they use, which are themselves temporarily housed in
-`GraphLib.Theory.Girth`; see the section note there).
-They live here at the top of the file only so that the Moore proofs below can use
-them while `Degree.lean` is being developed by a collaborator. Do not treat this
-placement as a precedent: no further degree API should be added here, and these
-should move to `Graph/Degree.lean` once it is ready. -/
-
-/-- Every neighbour of a vertex is a vertex of the ambient graph. -/
-lemma neighborSet_subset_vertexSet (G : SimpleGraph α) (v : α) :
-    G.neighborSet v ⊆ V(G) := by
-  intro u hu
-  exact SimpleGraph.Adj.left_mem hu
-
-/-- A vertex with degree at least two has a neighbour different from any fixed
-vertex. -/
-lemma exists_neighbor_ne_of_two_le_degree (G : SimpleGraph α) {v w : α}
-    (hdeg : 2 ≤ G.degree v) :
-    ∃ u : α, G.Adj v u ∧ u ≠ w := by
-  classical
-  obtain ⟨u, hu, huw⟩ := Set.exists_ne_of_one_lt_ncard
-    (by simpa [degree] using lt_of_lt_of_le Nat.one_lt_two hdeg) w
-  exact ⟨u, hu.symm, huw⟩
-
-/-- A nonempty graph whose vertices all have degree at least two contains an
-edge. -/
-lemma exists_adj_of_nonempty_of_two_le_degree (G : SimpleGraph α)
-    (hne : V(G).Nonempty)
-    (hmin : ∀ v : α, v ∈ V(G) → 2 ≤ G.degree v) :
-    ∃ x y : α, G.Adj x y := by
-  obtain ⟨x, hx⟩ := hne
-  obtain ⟨y, hxy, _⟩ := exists_neighbor_ne_of_two_le_degree
-    (G := G) (v := x) (w := x) (hmin x hx)
-  exact ⟨x, y, hxy⟩
-
 namespace MooreBound
 
 /-! ## Fresh neighbours -/
@@ -103,24 +64,26 @@ lemma eq_tail_or_eq_penultimate_of_adj_mem_of_lt_girth (G : SimpleGraph α)
 possibly the penultimate vertex are fresh neighbours. Consequently, the number
 of fresh neighbours is at least `degree - 1`. -/
 lemma pred_degree_le_ncard_freshNeighborSet_of_lt_girth (G : SimpleGraph α)
-    (hV : V(G).Finite) {p : SimplePath α}
+    [Finite V(G)] {p : SimplePath α}
     (hp : G.IsSimplePathIn p) (hpos : p.length ≠ 0)
     (hgirth : ((p.length + 1 : ℕ) : ℕ∞) < G.girth) :
     G.degree p.tail - 1 ≤ (freshNeighborSet G p).ncard := by
   classical
+  have hV : V(G).Finite := G.vertexSet_finite
   let prev : α := p.vertices.dropTail.tail
   have hsubset : G.neighborSet p.tail \ {prev} ⊆ freshNeighborSet G p := by
     rintro u ⟨hu_neigh, hu_ne_prev⟩
-    refine ⟨hu_neigh.symm, ?_⟩
+    refine ⟨hu_neigh, ?_⟩
     intro hu_mem
     rcases eq_tail_or_eq_penultimate_of_adj_mem_of_lt_girth
-        G hp hu_mem hu_neigh.symm hpos hgirth with hu_tail | hu_prev
-    · exact hu_neigh.symm.ne hu_tail.symm
+        G hp hu_mem hu_neigh hpos hgirth with hu_tail | hu_prev
+    · exact hu_neigh.ne hu_tail.symm
     · exact hu_ne_prev hu_prev
   have hfresh_fin : (freshNeighborSet G p).Finite :=
     hV.subset (freshNeighborSet_subset_vertexSet G p)
   calc
-    G.degree p.tail - 1 = (G.neighborSet p.tail).ncard - 1 := rfl
+    G.degree p.tail - 1 = (G.neighborSet p.tail).ncard - 1 := by
+      rw [G.ncard_neighborSet_eq_degree]
     _ ≤ (G.neighborSet p.tail \ {prev}).ncard :=
       Set.pred_ncard_le_ncard_diff_singleton (G.neighborSet p.tail) prev
     _ ≤ (freshNeighborSet G p).ncard :=
@@ -142,7 +105,7 @@ them:
 
 /-- The fresh neighbours of a realized path of length `n ≠ 0` number at least `δ - 1`,
 given the minimum-degree hypothesis and a girth bound comfortably above `n`. -/
-lemma pred_le_ncard_freshNeighborSet (G : SimpleGraph α) (hV : V(G).Finite)
+lemma pred_le_ncard_freshNeighborSet (G : SimpleGraph α) [Finite V(G)]
     {δ n : ℕ} {p : SimplePath α} {v : α}
     (hmin : ∀ w : α, w ∈ V(G) → δ ≤ G.degree w)
     (hp : G.IsSimplePathIn p) (hpt : p.tail = v) (hpl : p.length = n) (hpos : n ≠ 0)
@@ -152,7 +115,7 @@ lemma pred_le_ncard_freshNeighborSet (G : SimpleGraph α) (hV : V(G).Finite)
     have hle : ((p.length + 1 : ℕ) : ℕ∞) ≤ (2 * (n + 1) : ℕ∞) := by
       rw [hpl]; exact_mod_cast (show n + 1 ≤ 2 * (n + 1) by omega)
     exact hle.trans_lt hgirth
-  have hpred := pred_degree_le_ncard_freshNeighborSet_of_lt_girth G hV hp (by omega) hp_girth
+  have hpred := pred_degree_le_ncard_freshNeighborSet_of_lt_girth G hp (by omega) hp_girth
   rw [hpt] at hpred
   have hdeg : δ ≤ G.degree v := hmin v (hpt ▸ IsSimpleWalkIn.tail_mem G hp)
   omega

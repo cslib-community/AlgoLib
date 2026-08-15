@@ -178,15 +178,16 @@ lemma not_adj_banned_of_isAvoidingRootedPath_of_lt_girth (G : SimpleGraph α)
     (IsSimpleCycleIn.ofPathClosing G hq_real hclose hq_two) hgirth) (not_lt_of_ge hcle)
 
 /-- The first half-layer has at least `δ - 1` vertices. -/
-lemma pred_le_ncard_halfLayer_one (G : SimpleGraph α) (hV : V(G).Finite)
+lemma pred_le_ncard_halfLayer_one (G : SimpleGraph α) [Finite V(G)]
     {δ : ℕ} {x banned : α}
     (hxb : G.Adj x banned)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v) :
     δ - 1 ≤ (halfLayer G x banned 1).ncard := by
   classical
+  have hV : V(G).Finite := G.vertexSet_finite
   have hsub : G.neighborSet x \ {banned} ⊆ halfLayer G x banned 1 := by
     rintro u ⟨hux, hub⟩
-    have hxu : G.Adj x u := hux.symm
+    have hxu : G.Adj x u := hux
     have hub' : u ≠ banned := by simpa [Set.mem_singleton_iff] using hub
     have hdisj : ∀ z : α, z ∈ (SimplePath.singleton x).vertices →
         z ∈ (SimplePath.singleton u).vertices → False := by
@@ -199,19 +200,21 @@ lemma pred_le_ncard_halfLayer_one (G : SimpleGraph α) (hV : V(G).Finite)
   have hhalf_fin : (halfLayer G x banned 1).Finite :=
     hV.subset (halfLayer_subset_vertexSet G x banned 1)
   have hpred : G.degree x - 1 ≤ (G.neighborSet x \ {banned}).ncard := by
-    simpa [degree] using Set.pred_ncard_le_ncard_diff_singleton (G.neighborSet x) banned
+    rw [← G.ncard_neighborSet_eq_degree]
+    exact Set.pred_ncard_le_ncard_diff_singleton (G.neighborSet x) banned
   exact (Nat.sub_le_sub_right (hmin x hxb.left_mem) 1).trans
     (hpred.trans (Set.ncard_le_ncard hsub hhalf_fin))
 
 /-- Successive nonzero half-layers grow by a factor of at least `δ - 1`. -/
 lemma mul_ncard_halfLayer_le_succ_of_lt_girth (G : SimpleGraph α)
-    (hV : V(G).Finite) {δ i : ℕ} {x banned : α}
+    [Finite V(G)] {δ i : ℕ} {x banned : α}
     (hxb : G.Adj x banned)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * (i + 2) : ℕ∞) < G.girth) :
     (δ - 1) * (halfLayer G x banned (i + 1)).ncard ≤
       (halfLayer G x banned (i + 2)).ncard := by
   classical
+  have hV : V(G).Finite := G.vertexSet_finite
   have hLfin : (halfLayer G x banned (i + 1)).Finite :=
     hV.subset (halfLayer_subset_vertexSet G x banned (i + 1))
   have hNfin : (halfLayer G x banned (i + 2)).Finite :=
@@ -245,7 +248,7 @@ lemma mul_ncard_halfLayer_le_succ_of_lt_girth (G : SimpleGraph α)
     intro v hv
     have hvO : IsAvoidingRootedPath G x banned (i + 1) v := hv
     rw [hFv v hvO]
-    exact pred_le_ncard_freshNeighborSet G hV hmin hvO.path_isSimplePathIn
+    exact pred_le_ncard_freshNeighborSet G hmin hvO.path_isSimplePathIn
       hvO.path_tail hvO.path_length (by omega) hgirth'
   · -- distinct source vertices produce disjoint child sets
     intro v v' hv hv' hne
@@ -317,7 +320,7 @@ lemma disjoint_halfLayer_opposite_of_lt_girth (G : SimpleGraph α)
 
 /-- Nonzero same-side half-layer growth plus the first-layer estimate give the
 expected lower bound for every half-layer below radius `r`. -/
-lemma le_ncard_halfLayer (G : SimpleGraph α) (hV : V(G).Finite)
+lemma le_ncard_halfLayer (G : SimpleGraph α) [Finite V(G)]
     {δ i : ℕ} {x banned : α}
     (hxb : G.Adj x banned)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
@@ -329,7 +332,7 @@ lemma le_ncard_halfLayer (G : SimpleGraph α) (hV : V(G).Finite)
   | succ i ih =>
       cases i with
       | zero =>
-          simpa using pred_le_ncard_halfLayer_one G hV hxb hmin
+          simpa using pred_le_ncard_halfLayer_one G hxb hmin
       | succ i =>
           have hgirthPrev : (2 * (i + 1) : ℕ∞) < G.girth := by
             apply lt_of_le_of_lt _ hgirth
@@ -340,7 +343,7 @@ lemma le_ncard_halfLayer (G : SimpleGraph α) (hV : V(G).Finite)
             simpa [Nat.add_assoc] using hgirth
           have hgrowth :=
             mul_ncard_halfLayer_le_succ_of_lt_girth
-              G hV (δ := δ) (i := i) (x := x) (banned := banned)
+              G (δ := δ) (i := i) (x := x) (banned := banned)
               hxb hmin hgirthGrowth
           calc
             (δ - 1) ^ (i + 1 + 1) = (δ - 1) * (δ - 1) ^ (i + 1) := by
