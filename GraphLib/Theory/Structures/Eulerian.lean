@@ -5,7 +5,7 @@ Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
 import GraphLib.Graph.Basic
 import GraphLib.Theory.Structures.Walk
-import GraphLib.Theory.Structures.SimpleWalk
+import GraphLib.Walk.SimpleWalk
 
 /-!
 # Eulerian walks
@@ -49,6 +49,6 @@ def IsEulerian (G : SimpleGraph α) (w : SimpleWalk α) : Prop :=
 
 /-- A simple-graph *Eulerian circuit* is an Eulerian simple walk that closes. -/
 def IsEulerianCircuit (G : SimpleGraph α) (w : SimpleWalk α) : Prop :=
-  w.IsEulerian G ∧ w.val.closed
+  IsEulerian G w ∧ w.val.closed
 
 end SimpleWalk

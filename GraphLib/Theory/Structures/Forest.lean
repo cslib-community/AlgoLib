@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
 import GraphLib.Graph.Basic
-import GraphLib.Theory.Structures.SimpleWalk
+import GraphLib.Walk.SimpleWalk
 
 /-!
 # Forests

@@ -5,7 +5,7 @@ Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
 import GraphLib.Graph.Basic
 import GraphLib.Theory.Structures.Walk
-import GraphLib.Theory.Structures.SimpleWalk
+import GraphLib.Walk.SimpleWalk
 
 /-!
 # Hamiltonian walks

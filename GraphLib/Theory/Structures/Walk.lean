@@ -5,7 +5,7 @@ Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
 import Mathlib.Data.Sym.Sym2
 import GraphLib.Graph.Basic
-import GraphLib.Theory.Structures.VertexSeq
+import GraphLib.Walk.VertexSeq
 
 /-!
 # Walks
@@ -18,6 +18,8 @@ edge `e` joining `w.tail` to `v`.
 This file mirrors the API of `VertexSeq` lemma-for-lemma, with the additional
 edge list `toEdgeList` and edge-aware membership.
 -/
+
+open GraphLib
 
 variable {α ε : Type*}
 
@@ -402,8 +404,6 @@ commutes. -/
   grind [VertexSeq.closed, closed]
 
 /-! ## Graph conversion -/
-
-open GraphLib
 
 /-- The list of edges of `w` as labelled, unordered-endpoint `Edge α ε` records. -/
 @[grind] def edges : Walk α ε → List (Edge α ε)
