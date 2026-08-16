@@ -1,22 +1,12 @@
 import Mathlib.Tactic
-import Mathlib.Order.WithBot
-import Mathlib.Data.Sym.Sym2
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.List.Sort
-import Mathlib.Data.List.Chain
-import Mathlib.Data.Real.Basic
-
 import GraphLib.Graph.Basic
 import GraphLib.Graph.Finite
 
--- Arithmatic Helpers
+-- Arithmetic Helpers
 -- Authors: Weixuan Yuan, Yuchen Zhong
 -- LLM: Gemini, GPT-5.5 on codex
 
 namespace GraphLib
-open Finset
-open ProbabilityTheory MeasureTheory
 variable {α : Type*}
 
 lemma sum_sq_pos (G : SimpleGraph α) [Finite G.vertexSet] (x : α → ℝ)

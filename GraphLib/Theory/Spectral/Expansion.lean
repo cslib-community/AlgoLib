@@ -1,8 +1,4 @@
 import Mathlib.Tactic
-import Mathlib.Order.WithBot
-import Mathlib.Data.Sym.Sym2
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Finset.Basic
 
 import GraphLib.Graph.Basic
 import GraphLib.Graph.Finite
