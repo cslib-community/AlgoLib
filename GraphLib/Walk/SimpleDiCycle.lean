@@ -3,7 +3,7 @@ Copyright (c) 2026 Weixuan Yuan. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import GraphLib.Walk.SimpleCycle
+import GraphLib.Walk.SimplePath
 
 /-!
 # Directed simple cycles
@@ -14,7 +14,7 @@ excluded because simple directed graphs have no loops.
 
 namespace GraphLib
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 namespace SimpleWalk
 
@@ -54,6 +54,33 @@ theorem closed (c : SimpleDiCycle α) : c.val.closed := c.2.2.1
 
 /-- The vertex-simple interior. -/
 def interior (c : SimpleDiCycle α) : SimplePath α := ⟨c.val.dropTail, c.2.2.2⟩
+
+/-- Relabel the vertices of a directed simple cycle. -/
+def relabelVertices (c : SimpleDiCycle α) (f : α ≃ γ) : SimpleDiCycle γ := by
+  refine ⟨c.val.map f f.injective, ?_⟩
+  refine ⟨by simpa [SimpleWalk.map] using c.2.1, ?_, ?_⟩
+  · simpa [SimpleWalk.closed, SimpleWalk.map, VertexSeq.closed] using congrArg f c.2.2.1
+  · simpa [SimpleWalk.dropTail, SimpleWalk.map, VertexSeq.dropTail_map] using
+      VertexSeq.nodup_map f f.injective c.val.dropTail.val c.2.2.2
+
+@[simp] theorem val_relabelVertices (c : SimpleDiCycle α) (f : α ≃ γ) :
+    (c.relabelVertices f).val = c.val.map f f.injective := rfl
+
+@[simp] theorem relabelVertices_id (c : SimpleDiCycle α) :
+    c.relabelVertices (Equiv.refl α) = c := by
+  apply Subtype.ext
+  apply Subtype.ext
+  exact VertexSeq.map_id c.vertices
+
+@[simp] theorem relabelVertices_comp {δ : Type*} (c : SimpleDiCycle α)
+    (f : α ≃ γ) (g : γ ≃ δ) :
+    (c.relabelVertices f).relabelVertices g = c.relabelVertices (f.trans g) := by
+  apply Subtype.ext
+  apply Subtype.ext
+  exact (VertexSeq.map_comp f g c.vertices).symm
+
+@[simp] theorem relabelVertices_inverse (c : SimpleDiCycle α) (f : α ≃ γ) :
+    (c.relabelVertices f).relabelVertices f.symm = c := by simp
 
 /-- Reverse the raw orientation of a directed simple cycle. -/
 def reverse (c : SimpleDiCycle α) : SimpleDiCycle α :=

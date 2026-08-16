@@ -45,14 +45,29 @@ example : DiGraph.Flow N = (Arc α β → R) := rfl
 #check Graph.walkWeight
 #check Graph.pathWeight
 #check Graph.pathWeight_congr
+#check Graph.pathWeight_glue
+#check Graph.pathWeight_relabelVertices
+#check DiGraph.pathWeight_glue
+#check DiGraph.pathWeight_relabelTags
 #check SimpleGraph.walkWeight
+#check SimpleGraph.pathWeight_glue
+#check SimpleGraph.pathWeight_relabelVertices
 #check SimpleDiGraph.pathWeight
+#check SimpleDiGraph.pathWeight_glue
+#check SimpleDiGraph.pathWeight_relabelVertices
 #check DiGraph.EdgeWeight.transportReverse_congr
 #check DiGraph.Flow.outflow
 #check DiGraph.Flow.inflow
 #check DiGraph.Flow.flowValue
 #check DiGraph.Flow.flowValue_congr
 #check DiGraph.Flow.IsFeasible
+#check DiGraph.Flow.outflow_transportRelabelVertices
+#check DiGraph.Flow.inflow_transportRelabelTags
+#check DiGraph.Flow.outflow_transportReverse
+#check DiGraph.Flow.flowValue_transportRelabelVertices
+#check DiGraph.Flow.isFeasible_transportRelabelVertices
+#check DiGraph.Flow.isFeasible_transportRelabelTags
+#check DiGraph.Flow.isFeasible_transportReverse
 #check DiGraph.cutArcSet
 #check DiGraph.Network.cutCapacity
 
@@ -213,6 +228,21 @@ example : DiGraph.Flow.IsFeasible network (0 : DiGraph.Flow network) := by
 
 example :
     (DiGraph.Flow.transportReverse network flow) loopArc.reverse = flow loopArc := by simp
+
+example :
+    DiGraph.Flow.outflow network.reverse (DiGraph.Flow.transportReverse network flow) false =
+      DiGraph.Flow.inflow network flow false := by simp
+
+example :
+    DiGraph.Flow.inflow network.reverse (DiGraph.Flow.transportReverse network flow) true =
+      DiGraph.Flow.outflow network flow true := by simp
+
+example : DiGraph.Flow.IsFeasible network.reverse
+    (DiGraph.Flow.transportReverse network (0 : DiGraph.Flow network)) := by
+  apply (DiGraph.Flow.isFeasible_transportReverse network _).2
+  apply DiGraph.Flow.zero_isFeasible
+  intro a ha
+  simp [network, capacity]
 
 end Networks
 

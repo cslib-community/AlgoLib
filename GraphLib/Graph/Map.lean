@@ -69,23 +69,23 @@ def relabelTags (g : β ≃ δ) : Edge α β ≃ Edge α δ where
 @[simp] theorem endpoints_relabelTags (g : β ≃ δ) (e : Edge α β) :
     (relabelTags g e).endpoints = e.endpoints := rfl
 
-@[simp] theorem relabelVertices_refl (e : Edge α β) :
+@[simp] theorem relabelVertices_id (e : Edge α β) :
     relabelVertices (Equiv.refl α) e = e := by ext <;> simp
 
-@[simp] theorem relabelVertices_trans (f : α ≃ γ) (g : γ ≃ δ) (e : Edge α β) :
+@[simp] theorem relabelVertices_comp (f : α ≃ γ) (g : γ ≃ δ) (e : Edge α β) :
     relabelVertices g (relabelVertices f e) = relabelVertices (f.trans g) e := by
   apply Edge.ext <;> simp [Sym2.map_map]
 
-@[simp] theorem relabelVertices_symm (f : α ≃ γ) (e : Edge α β) :
+@[simp] theorem relabelVertices_inverse (f : α ≃ γ) (e : Edge α β) :
     relabelVertices f.symm (relabelVertices f e) = e := by simp
 
-@[simp] theorem relabelTags_refl (e : Edge α β) :
+@[simp] theorem relabelTags_id (e : Edge α β) :
     relabelTags (Equiv.refl β) e = e := by ext <;> simp
 
-@[simp] theorem relabelTags_trans (f : β ≃ γ) (g : γ ≃ δ) (e : Edge α β) :
+@[simp] theorem relabelTags_comp (f : β ≃ γ) (g : γ ≃ δ) (e : Edge α β) :
     relabelTags g (relabelTags f e) = relabelTags (f.trans g) e := by ext <;> simp
 
-@[simp] theorem relabelTags_symm (g : β ≃ δ) (e : Edge α β) :
+@[simp] theorem relabelTags_inverse (g : β ≃ δ) (e : Edge α β) :
     relabelTags g.symm (relabelTags g e) = e := by simp
 
 end Edge
@@ -150,23 +150,23 @@ def relabelTags (g : β ≃ δ) : Arc α β ≃ Arc α δ where
 @[simp] theorem endpoints_relabelTags (g : β ≃ δ) (a : Arc α β) :
     (relabelTags g a).endpoints = a.endpoints := rfl
 
-@[simp] theorem relabelVertices_refl (a : Arc α β) :
+@[simp] theorem relabelVertices_id (a : Arc α β) :
     relabelVertices (Equiv.refl α) a = a := by ext <;> simp
 
-@[simp] theorem relabelVertices_trans (f : α ≃ γ) (g : γ ≃ δ) (a : Arc α β) :
+@[simp] theorem relabelVertices_comp (f : α ≃ γ) (g : γ ≃ δ) (a : Arc α β) :
     relabelVertices g (relabelVertices f a) = relabelVertices (f.trans g) a := by
   ext <;> simp
 
-@[simp] theorem relabelVertices_symm (f : α ≃ γ) (a : Arc α β) :
+@[simp] theorem relabelVertices_inverse (f : α ≃ γ) (a : Arc α β) :
     relabelVertices f.symm (relabelVertices f a) = a := by simp
 
-@[simp] theorem relabelTags_refl (a : Arc α β) :
+@[simp] theorem relabelTags_id (a : Arc α β) :
     relabelTags (Equiv.refl β) a = a := by ext <;> simp
 
-@[simp] theorem relabelTags_trans (f : β ≃ γ) (g : γ ≃ δ) (a : Arc α β) :
+@[simp] theorem relabelTags_comp (f : β ≃ γ) (g : γ ≃ δ) (a : Arc α β) :
     relabelTags g (relabelTags f a) = relabelTags (f.trans g) a := by ext <;> simp
 
-@[simp] theorem relabelTags_symm (g : β ≃ δ) (a : Arc α β) :
+@[simp] theorem relabelTags_inverse (g : β ≃ δ) (a : Arc α β) :
     relabelTags g.symm (relabelTags g a) = a := by simp
 
 end Arc
@@ -227,7 +227,8 @@ namespace Graph
     (e' : Edge γ (Edge α β)) :
     e' ∈ E(G.mapVertices f) ↔ ∃ e ∈ E(G), Edge.mapVertices f e = e' := Iff.rfl
 
-@[simp] theorem mapVertices_edge_mem (G : Graph α β) (f : α → γ) (e : Edge α β) :
+@[simp] theorem mem_edgeSet_mapVertices_apply (G : Graph α β) (f : α → γ)
+    (e : Edge α β) :
     Edge.mapVertices f e ∈ E(G.mapVertices f) ↔ e ∈ E(G) := by
   constructor
   · rintro ⟨e', he', h⟩
@@ -237,7 +238,7 @@ namespace Graph
 theorem mapVertices_isLink (G : Graph α β) (f : α → γ) {e : Edge α β} {u v : α}
     (h : G.IsLink e u v) :
     (G.mapVertices f).IsLink (Edge.mapVertices f e) (f u) (f v) := by
-  refine ⟨(G.mapVertices_edge_mem f e).2 h.edge_mem, ?_⟩
+  refine ⟨(G.mem_edgeSet_mapVertices_apply f e).2 h.edge_mem, ?_⟩
   simp [h.endpoints_eq]
 
 theorem mapVertices_adj (G : Graph α β) (f : α → γ) {u v : α} (h : G.Adj u v) :
@@ -259,7 +260,8 @@ namespace DiGraph
     (a' : Arc γ (Arc α β)) :
     a' ∈ E(G.mapVertices f) ↔ ∃ a ∈ E(G), Arc.mapVertices f a = a' := Iff.rfl
 
-@[simp] theorem mapVertices_edge_mem (G : DiGraph α β) (f : α → γ) (a : Arc α β) :
+@[simp] theorem mem_edgeSet_mapVertices_apply (G : DiGraph α β) (f : α → γ)
+    (a : Arc α β) :
     Arc.mapVertices f a ∈ E(G.mapVertices f) ↔ a ∈ E(G) := by
   constructor
   · rintro ⟨a', ha', h⟩
@@ -269,7 +271,7 @@ namespace DiGraph
 theorem mapVertices_isArc (G : DiGraph α β) (f : α → γ) {a : Arc α β} {u v : α}
     (h : G.IsArc a u v) :
     (G.mapVertices f).IsArc (Arc.mapVertices f a) (f u) (f v) := by
-  exact ⟨(G.mapVertices_edge_mem f a).2 h.edge_mem,
+  exact ⟨(G.mem_edgeSet_mapVertices_apply f a).2 h.edge_mem,
     congrArg f h.source_eq, congrArg f h.target_eq⟩
 
 theorem mapVertices_adj (G : DiGraph α β) (f : α → γ) {u v : α} (h : G.Adj u v) :
@@ -391,7 +393,8 @@ namespace Graph
 @[simp] theorem edgeSet_relabelVertices (G : Graph α β) (f : α ≃ γ) :
     E(G.relabelVertices f) = Edge.relabelVertices f '' E(G) := rfl
 
-@[simp] theorem relabelVertices_edge_mem (G : Graph α β) (f : α ≃ γ) (e : Edge α β) :
+@[simp] theorem mem_edgeSet_relabelVertices (G : Graph α β) (f : α ≃ γ)
+    (e : Edge α β) :
     Edge.relabelVertices f e ∈ E(G.relabelVertices f) ↔ e ∈ E(G) := by
   constructor
   · rintro ⟨d, hd, h⟩
@@ -402,7 +405,7 @@ namespace Graph
     (e : Edge α β) (u v : α) :
     (G.relabelVertices f).IsLink (Edge.relabelVertices f e) (f u) (f v) ↔
       G.IsLink e u v := by
-  simp only [Graph.IsLink, relabelVertices_edge_mem, Edge.endpoints_relabelVertices]
+  simp only [Graph.IsLink, mem_edgeSet_relabelVertices, Edge.endpoints_relabelVertices]
   constructor
   · rintro ⟨he, hends⟩
     refine ⟨he, Sym2.map.injective f.injective ?_⟩
@@ -422,7 +425,7 @@ namespace Graph
 @[simp] theorem relabelVertices_inc (G : Graph α β) (f : α ≃ γ)
     (e : Edge α β) (v : α) :
     (G.relabelVertices f).Inc (Edge.relabelVertices f e) (f v) ↔ G.Inc e v := by
-  simp only [Graph.Inc, relabelVertices_edge_mem, Edge.endpoints_relabelVertices,
+  simp only [Graph.Inc, mem_edgeSet_relabelVertices, Edge.endpoints_relabelVertices,
     Sym2.mem_map]
   constructor
   · rintro ⟨he, u, hu, huv⟩
@@ -438,8 +441,8 @@ theorem relabelVertices_le_relabelVertices {G H : Graph α β} (f : α ≃ γ) :
     · have hm := h.vertexSet_subset (show f v ∈ V(G.relabelVertices f) from ⟨v, hv, rfl⟩)
       obtain ⟨w, hw, heq⟩ := hm
       exact f.injective heq ▸ hw
-    · have hm := h.edgeSet_subset ((G.relabelVertices_edge_mem f e).2 he)
-      exact (H.relabelVertices_edge_mem f e).1 hm
+    · have hm := h.edgeSet_subset ((G.mem_edgeSet_relabelVertices f e).2 he)
+      exact (H.mem_edgeSet_relabelVertices f e).1 hm
   · refine ⟨?_, ?_⟩
     · rintro _ ⟨v, hv, rfl⟩
       exact ⟨v, h.vertexSet_subset hv, rfl⟩
@@ -457,7 +460,7 @@ theorem relabelVertices_le_relabelVertices {G H : Graph α β} (f : α ≃ γ) :
   · simp only [edgeSet_relabelVertices, Set.image_image]
     apply congrArg (fun h => h '' E(G))
     funext e
-    exact Edge.relabelVertices_trans f g e
+    exact Edge.relabelVertices_comp f g e
 
 @[simp] theorem relabelVertices_inverse (G : Graph α β) (f : α ≃ γ) :
     (G.relabelVertices f).relabelVertices f.symm = G := by simp
@@ -468,7 +471,8 @@ theorem relabelVertices_le_relabelVertices {G H : Graph α β} (f : α ≃ γ) :
 @[simp] theorem edgeSet_relabelTags (G : Graph α β) (g : β ≃ δ) :
     E(G.relabelTags g) = Edge.relabelTags g '' E(G) := rfl
 
-@[simp] theorem relabelTags_edge_mem (G : Graph α β) (g : β ≃ δ) (e : Edge α β) :
+@[simp] theorem mem_edgeSet_relabelTags (G : Graph α β) (g : β ≃ δ)
+    (e : Edge α β) :
     Edge.relabelTags g e ∈ E(G.relabelTags g) ↔ e ∈ E(G) := by
   constructor
   · rintro ⟨d, hd, h⟩
@@ -499,8 +503,8 @@ theorem relabelTags_le_relabelTags {G H : Graph α β} (g : β ≃ δ) :
     G.relabelTags g ≤ H.relabelTags g ↔ G ≤ H := by
   constructor <;> intro h
   · refine ⟨h.vertexSet_subset, fun e he => ?_⟩
-    have hm := h.edgeSet_subset ((G.relabelTags_edge_mem g e).2 he)
-    exact (H.relabelTags_edge_mem g e).1 hm
+    have hm := h.edgeSet_subset ((G.mem_edgeSet_relabelTags g e).2 he)
+    exact (H.mem_edgeSet_relabelTags g e).1 hm
   · refine ⟨h.vertexSet_subset, ?_⟩
     rintro _ ⟨e, he, rfl⟩
     exact ⟨e, h.edgeSet_subset he, rfl⟩
@@ -515,7 +519,7 @@ theorem relabelTags_le_relabelTags {G H : Graph α β} (g : β ≃ δ) :
   · simp only [edgeSet_relabelTags, Set.image_image]
     apply congrArg (fun h => h '' E(G))
     funext e
-    exact Edge.relabelTags_trans f g e
+    exact Edge.relabelTags_comp f g e
 
 @[simp] theorem relabelTags_inverse (G : Graph α β) (g : β ≃ δ) :
     (G.relabelTags g).relabelTags g.symm = G := by simp
@@ -530,7 +534,8 @@ namespace DiGraph
 @[simp] theorem edgeSet_relabelVertices (G : DiGraph α β) (f : α ≃ γ) :
     E(G.relabelVertices f) = Arc.relabelVertices f '' E(G) := rfl
 
-@[simp] theorem relabelVertices_edge_mem (G : DiGraph α β) (f : α ≃ γ) (a : Arc α β) :
+@[simp] theorem mem_edgeSet_relabelVertices (G : DiGraph α β) (f : α ≃ γ)
+    (a : Arc α β) :
     Arc.relabelVertices f a ∈ E(G.relabelVertices f) ↔ a ∈ E(G) := by
   constructor
   · rintro ⟨b, hb, h⟩
@@ -564,8 +569,8 @@ theorem relabelVertices_le_relabelVertices {G H : DiGraph α β} (f : α ≃ γ)
     · have hm := h.vertexSet_subset (show f v ∈ V(G.relabelVertices f) from ⟨v, hv, rfl⟩)
       obtain ⟨w, hw, heq⟩ := hm
       exact f.injective heq ▸ hw
-    · have hm := h.edgeSet_subset ((G.relabelVertices_edge_mem f a).2 ha)
-      exact (H.relabelVertices_edge_mem f a).1 hm
+    · have hm := h.edgeSet_subset ((G.mem_edgeSet_relabelVertices f a).2 ha)
+      exact (H.mem_edgeSet_relabelVertices f a).1 hm
   · refine ⟨?_, ?_⟩
     · rintro _ ⟨v, hv, rfl⟩
       exact ⟨v, h.vertexSet_subset hv, rfl⟩
@@ -583,7 +588,7 @@ theorem relabelVertices_le_relabelVertices {G H : DiGraph α β} (f : α ≃ γ)
   · simp only [edgeSet_relabelVertices, Set.image_image]
     apply congrArg (fun h => h '' E(G))
     funext a
-    exact Arc.relabelVertices_trans f g a
+    exact Arc.relabelVertices_comp f g a
 
 @[simp] theorem relabelVertices_inverse (G : DiGraph α β) (f : α ≃ γ) :
     (G.relabelVertices f).relabelVertices f.symm = G := by simp
@@ -594,7 +599,8 @@ theorem relabelVertices_le_relabelVertices {G H : DiGraph α β} (f : α ≃ γ)
 @[simp] theorem edgeSet_relabelTags (G : DiGraph α β) (g : β ≃ δ) :
     E(G.relabelTags g) = Arc.relabelTags g '' E(G) := rfl
 
-@[simp] theorem relabelTags_edge_mem (G : DiGraph α β) (g : β ≃ δ) (a : Arc α β) :
+@[simp] theorem mem_edgeSet_relabelTags (G : DiGraph α β) (g : β ≃ δ)
+    (a : Arc α β) :
     Arc.relabelTags g a ∈ E(G.relabelTags g) ↔ a ∈ E(G) := by
   constructor
   · rintro ⟨b, hb, h⟩
@@ -624,8 +630,8 @@ theorem relabelTags_le_relabelTags {G H : DiGraph α β} (g : β ≃ δ) :
     G.relabelTags g ≤ H.relabelTags g ↔ G ≤ H := by
   constructor <;> intro h
   · refine ⟨h.vertexSet_subset, fun a ha => ?_⟩
-    have hm := h.edgeSet_subset ((G.relabelTags_edge_mem g a).2 ha)
-    exact (H.relabelTags_edge_mem g a).1 hm
+    have hm := h.edgeSet_subset ((G.mem_edgeSet_relabelTags g a).2 ha)
+    exact (H.mem_edgeSet_relabelTags g a).1 hm
   · refine ⟨h.vertexSet_subset, ?_⟩
     rintro _ ⟨a, ha, rfl⟩
     exact ⟨a, h.edgeSet_subset ha, rfl⟩
@@ -640,7 +646,7 @@ theorem relabelTags_le_relabelTags {G H : DiGraph α β} (g : β ≃ δ) :
   · simp only [edgeSet_relabelTags, Set.image_image]
     apply congrArg (fun h => h '' E(G))
     funext a
-    exact Arc.relabelTags_trans f g a
+    exact Arc.relabelTags_comp f g a
 
 @[simp] theorem relabelTags_inverse (G : DiGraph α β) (g : β ≃ δ) :
     (G.relabelTags g).relabelTags g.symm = G := by simp
@@ -655,7 +661,8 @@ namespace SimpleGraph
 @[simp] theorem edgeSet_relabelVertices (G : SimpleGraph α) (f : α ≃ γ) :
     E(G.relabelVertices f) = Sym2.map f '' E(G) := rfl
 
-@[simp] theorem relabelVertices_edge_mem (G : SimpleGraph α) (f : α ≃ γ) (e : Sym2 α) :
+@[simp] theorem mem_edgeSet_relabelVertices (G : SimpleGraph α) (f : α ≃ γ)
+    (e : Sym2 α) :
     Sym2.map f e ∈ E(G.relabelVertices f) ↔ e ∈ E(G) := by
   constructor
   · rintro ⟨d, hd, h⟩
@@ -688,7 +695,7 @@ namespace SimpleGraph
 @[simp] theorem relabelVertices_inc (G : SimpleGraph α) (f : α ≃ γ)
     (e : Sym2 α) (v : α) :
     (G.relabelVertices f).Inc (Sym2.map f e) (f v) ↔ G.Inc e v := by
-  simp only [SimpleGraph.Inc, relabelVertices_edge_mem, Sym2.mem_map]
+  simp only [SimpleGraph.Inc, mem_edgeSet_relabelVertices, Sym2.mem_map]
   constructor
   · rintro ⟨he, u, hu, huv⟩
     exact ⟨he, f.injective huv ▸ hu⟩
@@ -702,8 +709,8 @@ theorem relabelVertices_le_relabelVertices {G H : SimpleGraph α} (f : α ≃ γ
     · have hm := h.vertexSet_subset (show f v ∈ V(G.relabelVertices f) from ⟨v, hv, rfl⟩)
       obtain ⟨w, hw, heq⟩ := hm
       exact f.injective heq ▸ hw
-    · have hm := h.edgeSet_subset ((G.relabelVertices_edge_mem f e).2 he)
-      exact (H.relabelVertices_edge_mem f e).1 hm
+    · have hm := h.edgeSet_subset ((G.mem_edgeSet_relabelVertices f e).2 he)
+      exact (H.mem_edgeSet_relabelVertices f e).1 hm
   · refine ⟨?_, ?_⟩
     · rintro _ ⟨v, hv, rfl⟩
       exact ⟨v, h.vertexSet_subset hv, rfl⟩
@@ -738,7 +745,8 @@ namespace SimpleDiGraph
 @[simp] theorem edgeSet_relabelVertices (G : SimpleDiGraph α) (f : α ≃ γ) :
     E(G.relabelVertices f) = (fun a => (f a.1, f a.2)) '' E(G) := rfl
 
-@[simp] theorem relabelVertices_edge_mem (G : SimpleDiGraph α) (f : α ≃ γ) (a : α × α) :
+@[simp] theorem mem_edgeSet_relabelVertices (G : SimpleDiGraph α) (f : α ≃ γ)
+    (a : α × α) :
     (f a.1, f a.2) ∈ E(G.relabelVertices f) ↔ a ∈ E(G) := by
   constructor
   · rintro ⟨b, hb, h⟩
@@ -779,8 +787,8 @@ theorem relabelVertices_le_relabelVertices {G H : SimpleDiGraph α} (f : α ≃ 
     · have hm := h.vertexSet_subset (show f v ∈ V(G.relabelVertices f) from ⟨v, hv, rfl⟩)
       obtain ⟨w, hw, heq⟩ := hm
       exact f.injective heq ▸ hw
-    · have hm := h.edgeSet_subset ((G.relabelVertices_edge_mem f a).2 ha)
-      exact (H.relabelVertices_edge_mem f a).1 hm
+    · have hm := h.edgeSet_subset ((G.mem_edgeSet_relabelVertices f a).2 ha)
+      exact (H.mem_edgeSet_relabelVertices f a).1 hm
   · refine ⟨?_, ?_⟩
     · rintro _ ⟨v, hv, rfl⟩
       exact ⟨v, h.vertexSet_subset hv, rfl⟩
@@ -820,7 +828,7 @@ namespace Graph
     let e := (Edge.relabelVertices f).symm e'
     have heq : Edge.relabelVertices f e = e' := (Edge.relabelVertices f).apply_symm_apply e'
     rw [← heq]
-    simp only [relabelVertices_edge_mem, mem_edgeSet_induce,
+    simp only [mem_edgeSet_relabelVertices, mem_edgeSet_induce,
       Edge.endpoints_relabelVertices]
     constructor
     · rintro ⟨he, hS⟩
@@ -877,7 +885,7 @@ namespace Graph
     let e := (Edge.relabelTags g).symm e'
     have heq : Edge.relabelTags g e = e' := (Edge.relabelTags g).apply_symm_apply e'
     rw [← heq]
-    simp only [relabelTags_edge_mem, mem_edgeSet_induce, Edge.endpoints_relabelTags]
+    simp only [mem_edgeSet_relabelTags, mem_edgeSet_induce, Edge.endpoints_relabelTags]
 
 @[simp] theorem relabelTags_restrictEdges (G : Graph α β) (g : β ≃ δ)
     (F : Set (Edge α β)) :
@@ -921,7 +929,7 @@ namespace DiGraph
     let a := (Arc.relabelVertices f).symm a'
     have ha : Arc.relabelVertices f a = a' := (Arc.relabelVertices f).apply_symm_apply a'
     rw [← ha]
-    simp only [relabelVertices_edge_mem, mem_edgeSet_induce,
+    simp only [mem_edgeSet_relabelVertices, mem_edgeSet_induce,
       Arc.source_relabelVertices, Arc.target_relabelVertices]
     constructor
     · rintro ⟨haG, hs, ht⟩
@@ -974,7 +982,7 @@ namespace DiGraph
     let a := (Arc.relabelTags g).symm a'
     have ha : Arc.relabelTags g a = a' := (Arc.relabelTags g).apply_symm_apply a'
     rw [← ha]
-    simp only [relabelTags_edge_mem, mem_edgeSet_induce,
+    simp only [mem_edgeSet_relabelTags, mem_edgeSet_induce,
       Arc.source_relabelTags, Arc.target_relabelTags]
 
 @[simp] theorem relabelTags_restrictEdges (G : DiGraph α β) (g : β ≃ δ)
@@ -1019,7 +1027,7 @@ namespace SimpleGraph
     let e := Sym2.map f.symm e'
     have heq : Sym2.map f e = e' := by simp [e, Sym2.map_map]
     rw [← heq]
-    simp only [relabelVertices_edge_mem, mem_edgeSet_induce]
+    simp only [mem_edgeSet_relabelVertices, mem_edgeSet_induce]
     constructor
     · rintro ⟨he, hS⟩
       refine ⟨he, fun x hx => ?_⟩
@@ -1084,7 +1092,7 @@ private theorem pairMap_injective (f : α ≃ γ) :
     let a := (f.symm a'.1, f.symm a'.2)
     have ha : (f a.1, f a.2) = a' := by ext <;> simp [a]
     rw [← ha]
-    simp only [relabelVertices_edge_mem, mem_edgeSet_induce]
+    simp only [mem_edgeSet_relabelVertices, mem_edgeSet_induce]
     constructor
     · rintro ⟨haG, hs, ht⟩
       exact ⟨haG, ⟨a.1, hs, rfl⟩, a.2, ht, rfl⟩
@@ -1231,7 +1239,7 @@ namespace DiGraph
 @[simp] theorem edgeSet_forgetDirection (G : DiGraph α β) :
     E(G.forgetDirection) = (fun a => Edge.mk a s(a.source, a.target)) '' E(G) := rfl
 
-@[simp] theorem forgetDirection_edge_mem (G : DiGraph α β) (a : Arc α β) :
+@[simp] theorem mem_edgeSet_forgetDirection (G : DiGraph α β) (a : Arc α β) :
     Edge.mk a s(a.source, a.target) ∈ E(G.forgetDirection) ↔ a ∈ E(G) := by
   constructor
   · rintro ⟨b, hb, h⟩
@@ -1242,7 +1250,7 @@ namespace DiGraph
 @[simp] theorem forgetDirection_isLink (G : DiGraph α β) (a : Arc α β) (u v : α) :
     G.forgetDirection.IsLink (Edge.mk a s(a.source, a.target)) u v ↔
       G.IsArc a u v ∨ G.IsArc a v u := by
-  simp only [Graph.IsLink, forgetDirection_edge_mem, DiGraph.IsArc]
+  simp only [Graph.IsLink, mem_edgeSet_forgetDirection, DiGraph.IsArc]
   rw [Sym2.eq, Sym2.rel_iff']
   simp only [Prod.mk.injEq, Prod.swap_prod_mk]
   tauto

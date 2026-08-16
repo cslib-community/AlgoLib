@@ -27,7 +27,7 @@ Part of the `InSimpleGraph` folder; see the umbrella module
 * `SimpleGraph.IsSimpleCycleIn.ofTwoPaths` — obtain a realized cycle from two paths.
 -/
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 namespace GraphLib
 
@@ -69,6 +69,26 @@ lemma toSimpleGraph_le (G : SimpleGraph α) {c : SimpleCycle α}
     (hc : H.IsSimpleCycleIn c) (hsub : H ≤ G) :
     G.IsSimpleCycleIn c :=
   IsSimpleWalkIn.mono G H hc hsub
+
+theorem induce_iff (G : SimpleGraph α) (S : Set α) (c : SimpleCycle α) :
+    (G.induce S).IsSimpleCycleIn c ↔
+      G.IsSimpleCycleIn c ∧ ∀ v ∈ c.support, v ∈ S :=
+  IsSimpleWalkIn.induce_iff G S c.val
+
+theorem restrictEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (c : SimpleCycle α) :
+    (G.restrictEdges F).IsSimpleCycleIn c ↔
+      G.IsSimpleCycleIn c ∧ ∀ e ∈ c.edges, e ∈ F :=
+  IsSimpleWalkIn.restrictEdges_iff G F c.val
+
+theorem deleteEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (c : SimpleCycle α) :
+    (G.deleteEdges F).IsSimpleCycleIn c ↔
+      G.IsSimpleCycleIn c ∧ ∀ e ∈ c.edges, e ∉ F :=
+  IsSimpleWalkIn.deleteEdges_iff G F c.val
+
+theorem relabelVertices {G : SimpleGraph α} {c : SimpleCycle α} (f : α ≃ γ)
+    (h : G.IsSimpleCycleIn c) :
+    (G.relabelVertices f).IsSimpleCycleIn (c.relabelVertices f) :=
+  IsSimpleWalkIn.relabelVertices f h
 
 /-- Closing a realized simple path by an edge from its tail to its head gives a
 realized simple cycle. -/

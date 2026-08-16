@@ -248,6 +248,10 @@ def glue (p q : Walk α β) (_h : p.tail = q.head) : Walk α β :=
     (p.glue q h).tags = p.tags ++ q.tags := by
   cases p <;> simp [glue, List.concat_eq_append, List.append_assoc]
 
+@[simp] theorem vertices_glue (p q : Walk α β) (h : p.tail = q.head) :
+    (p.glue q h).vertices = p.vertices.dropLast ++ q.vertices := by
+  cases p <;> simp [glue, vertices, List.concat_eq_append]
+
 /-! ## Reversal -/
 
 /-- Reverse the traversal while leaving its raw tags unchanged. -/
@@ -350,6 +354,14 @@ def mapTags (g : β → δ) : Walk α β → Walk α δ
 theorem mapVertices_mapTags (w : Walk α β) (f : α → γ) (g : β → δ) :
     (w.mapVertices f).mapTags g = (w.mapTags g).mapVertices f := by
   induction w <;> simp_all [mapVertices, mapTags]
+
+@[simp] theorem dropTail_mapVertices (w : Walk α β) (f : α → γ) :
+    (w.mapVertices f).dropTail = w.dropTail.mapVertices f := by
+  cases w <;> rfl
+
+@[simp] theorem dropTail_mapTags (w : Walk α β) (g : β → δ) :
+    (w.mapTags g).dropTail = w.dropTail.mapTags g := by
+  cases w <;> rfl
 
 /-! ## Vertex folds and indexing -/
 

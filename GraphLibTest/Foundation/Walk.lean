@@ -17,7 +17,7 @@ namespace GraphLib
 
 open scoped GraphLib
 
-variable {α : Type*}
+variable {α β γ : Type*}
 
 #check GraphLib.List.commonPrefix
 #check GraphLib.List.commonPrefix_split
@@ -38,6 +38,9 @@ variable {α : Type*}
 #check SimplePath.head
 #check SimplePath.tail
 #check SimplePath.length
+#check Path.glue
+#check Path.relabelVertices
+#check Path.relabelTags
 
 #check SimpleGraph.IsVertexSeqIn.iff_edges
 #check SimpleGraph.IsSimpleWalkIn.append
@@ -47,6 +50,8 @@ variable {α : Type*}
 #check SimpleGraph.IsSimplePathIn.singleton
 #check SimpleGraph.IsSimplePathIn.extendTail
 #check SimpleGraph.IsSimplePathIn.exists_longer_of_adj_not_mem
+#check SimpleGraph.IsSimplePathIn.glue
+#check SimpleDiGraph.IsSimplePathIn.glue
 
 #check SimpleCycle.ofPathClosing
 #check SimpleCycle.ofInternallyDisjointPaths
@@ -54,11 +59,26 @@ variable {α : Type*}
 #check SimpleCycle.length_ofTwoPaths
 #check SimpleCycle.head_ofTwoPaths_mem_left
 #check SimpleCycle.edges_ofTwoPaths_subset
+#check SimpleCycle.relabelVertices
+#check SimpleDiCycle.relabelVertices
+#check Cycle.relabelVertices
+#check Cycle.relabelTags
+#check DiCycle.relabelVertices
+#check DiCycle.relabelTags
 
 #check SimpleGraph.IsSimpleCycleIn.ofPathClosing
 #check SimpleGraph.IsSimpleCycleIn.ofTwoPaths
 #check SimpleGraph.IsSimpleCycleIn.exists_length_le_succ_of_adj_mem
 #check SimpleGraph.IsSimpleCycleIn.exists_length_le_add_of_two_paths
+#check Graph.IsPathIn.glue
+#check Graph.IsPathIn.relabelVertices
+#check Graph.IsCycleIn.relabelTags
+#check DiGraph.IsPathIn.relabelTags
+#check DiGraph.IsCycleIn.relabelVertices
+#check SimpleGraph.IsSimplePathIn.induce_iff
+#check SimpleGraph.IsSimpleCycleIn.deleteEdges_iff
+#check SimpleDiGraph.IsSimplePathIn.relabelVertices
+#check SimpleDiGraph.IsSimpleDiCycleIn.restrictEdges_iff
 
 #check SimpleGraph.girth
 #check SimpleGraph.mooreBound_odd
@@ -73,6 +93,28 @@ example (p : SimplePath α) (v : α) (h : v ∉ p.vertices) :
     (p.extendTail v h).vertices = p.vertices.cons v := rfl
 example (p : SimplePath α) (v : α) (h : v ∉ p.vertices) :
     (p.extendTail v h).tail = v := rfl
+
+example (p q : Path α β) (h : p.tail = q.head)
+    (hdisj : ∀ v ∈ p.vertices.dropLast, v ∈ q.vertices → False) :
+    (p.glue q h hdisj).edges = p.edges ++ q.edges := by simp
+
+example (p : Path α β) (f : α ≃ γ) :
+    (p.relabelVertices f).tail = f p.tail := by simp
+
+example (p : Path α β) (f : α ≃ γ) :
+    (p.relabelVertices f).relabelVertices f.symm = p := by simp
+
+example (c : Cycle α β) (g : β ≃ γ) :
+    (c.relabelTags g).tags = c.tags.map g := by simp
+
+example (c : DiCycle α β) (g : β ≃ γ) :
+    (c.relabelTags g).relabelTags g.symm = c := by simp
+
+example (c : SimpleCycle α) (f : α ≃ γ) :
+    (c.relabelVertices f).relabelVertices f.symm = c := by simp
+
+example (c : SimpleDiCycle α) (f : α ≃ γ) :
+    (c.relabelVertices f).relabelVertices f.symm = c := by simp
 
 /-! Phase 5: general walk identity and convention checks. -/
 
@@ -143,6 +185,13 @@ example (w : Walk α Bool) : w.toGraph.IsWalkIn w :=
 
 example (w : Walk α Bool) : w.toDiGraph.IsWalkIn w :=
   (DiGraph.IsWalkIn.iff_toDiGraph_le w.toDiGraph w).2 le_rfl
+
+example {G : Graph α Bool} {p : Path α Bool} (f : α ≃ α) (h : G.IsPathIn p) :
+    (G.relabelVertices f).IsPathIn (p.relabelVertices f) := h.relabelVertices f
+
+example {G : DiGraph α Bool} {c : DiCycle α Bool} (f : Bool ≃ Bool)
+    (h : G.IsCycleIn c) :
+    (G.relabelTags f).IsCycleIn (c.relabelTags f) := h.relabelTags f
 
 example {G : DiGraph α Bool} {w : Walk α Bool} (h : G.IsWalkIn w) :
     G.reverse.IsWalkIn w.reverse := h.reverse

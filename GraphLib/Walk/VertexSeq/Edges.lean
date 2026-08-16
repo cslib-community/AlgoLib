@@ -125,14 +125,14 @@ dropped-tail sequence plus the final arc. -/
   | cons w v ih => grind [mem_edges_cons, mem_cons, tail_mem]
 
 /-- The source of a traversed arc is a vertex of the sequence. -/
-@[grind →] lemma fst_mem_of_arc_mem {a : α × α} (w : VertexSeq α)
+@[grind →] lemma source_mem_of_arc_mem {a : α × α} (w : VertexSeq α)
     (ha : a ∈ w.arcs) : a.1 ∈ w := by
   induction w with
   | singleton v => simp [arcs] at ha
   | cons w v ih => grind [mem_arcs_cons, mem_cons, tail_mem]
 
 /-- The target of a traversed arc is a vertex of the sequence. -/
-@[grind →] lemma snd_mem_of_arc_mem {a : α × α} (w : VertexSeq α)
+@[grind →] lemma target_mem_of_arc_mem {a : α × α} (w : VertexSeq α)
     (ha : a ∈ w.arcs) : a.2 ∈ w := by
   induction w with
   | singleton v => simp [arcs] at ha
@@ -172,13 +172,13 @@ lemma length_le_one_of_closing_edge_mem_swap (w : VertexSeq α)
 @[grind] lemma arcs_nodup (w : VertexSeq α) (h : w.nodup) :
     w.arcs.Nodup := by
   induction w <;>
-    grind [arcs, arcs_cons, List.nodup_append, snd_mem_of_arc_mem]
+    grind [arcs, arcs_cons, List.nodup_append, target_mem_of_arc_mem]
 
 /-- In a duplicate-free sequence, an arc from the tail back to the head cannot
 occur except in the degenerate length-at-most-one case. -/
 @[grind →] lemma length_le_one_of_closing_arc_mem (w : VertexSeq α)
     (h : w.nodup) (ha : (w.tail, w.head) ∈ w.arcs) : w.length ≤ 1 := by
-  cases w <;> grind [arcs, mem_arcs_cons, fst_mem_of_arc_mem]
+  cases w <;> grind [arcs, mem_arcs_cons, source_mem_of_arc_mem]
 
 /-! ## append, reverse -/
 

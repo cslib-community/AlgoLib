@@ -66,6 +66,12 @@ variable
 #check Graph.degree_deleteEdges
 #check DiGraph.outDegree_deleteVerts
 #check SimpleDiGraph.inDegree_deleteArcsFromTo
+#check DiGraph.outDegree_reverse
+#check DiGraph.inDegree_reverse
+#check SimpleDiGraph.outDegree_reverse
+#check SimpleDiGraph.inDegree_reverse
+#check Graph.restrictEdges_induce
+#check DiGraph.deleteEdges_induce
 
 #check SimpleGraph.girth.eq_top_iff_isAcyclic
 #check SimpleGraph.girth.ne_top_iff_hasSimpleCycle
@@ -82,6 +88,29 @@ example (G : DiGraph α β) [Finite V(G)] : True := by
   fail_if_success
     have _h : Finite E(G) := inferInstance
   trivial
+
+/-- Local finiteness follows all standard finite graph transformations. -/
+example (G : Graph α β) [Finite V(G)] [Finite E(G)] (S : Set α)
+    (F : Set (Edge α β)) (f : α ≃ α) :
+    Finite V((G.induce S).deleteEdges F) ∧
+      Finite E((G.restrictEdges F).relabelVertices f) := by
+  exact ⟨inferInstance, inferInstance⟩
+
+example (G : DiGraph α β) [Finite V(G)] [Finite E(G)] (S : Set α)
+    (F : Set (Arc α β)) (f : β ≃ β) :
+    Finite V((G.deleteVerts S).relabelTags f) ∧
+      Finite E((G.restrictEdges F).reverse) := by
+  exact ⟨inferInstance, inferInstance⟩
+
+example (G : SimpleGraph α) [Finite V(G)] [Finite E(G)] (S : Set α)
+    (F : Set (Sym2 α)) :
+    Finite V(G.deleteVerts S) ∧ Finite E(G.restrictEdges F) := by
+  exact ⟨inferInstance, inferInstance⟩
+
+example (G : SimpleDiGraph α) [Finite V(G)] [Finite E(G)] (S : Set α)
+    (F : Set (α × α)) :
+    Finite V((G.induce S).reverse) ∧ Finite E(G.deleteEdges F) := by
+  exact ⟨inferInstance, inferInstance⟩
 
 end TypeChecks
 

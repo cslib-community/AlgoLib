@@ -26,7 +26,7 @@ namespace GraphLib
 
 open scoped GraphLib
 
-variable {α β : Type*}
+variable {α β γ δ : Type*}
 
 private noncomputable def finiteSetFinset (s : Set α) [Finite s] : Finset α :=
   (Set.toFinite s).toFinset
@@ -78,6 +78,635 @@ theorem DiGraph.edgeSet_finite (G : DiGraph α β) [Finite E(G)] : E(G).Finite :
 /-- A finite actual-arc subtype gives a finite actual-arc set. -/
 theorem SimpleDiGraph.edgeSet_finite (G : SimpleDiGraph α) [Finite E(G)] : E(G).Finite :=
   Set.toFinite E(G)
+
+/-! ### Finiteness inherited by subgraphs -/
+
+/-- A subgraph of a finite-vertex general graph has finitely many vertices. -/
+theorem Graph.IsSubgraph.vertexSet_finite {H G : Graph α β} (h : H ≤ G)
+    [Finite V(G)] : V(H).Finite :=
+  G.vertexSet_finite.subset h.vertexSet_subset
+
+/-- A subgraph of a finite-edge general graph has finitely many actual edges. -/
+theorem Graph.IsSubgraph.edgeSet_finite {H G : Graph α β} (h : H ≤ G)
+    [Finite E(G)] : E(H).Finite :=
+  G.edgeSet_finite.subset h.edgeSet_subset
+
+/-- A subgraph of a finite-vertex simple graph has finitely many vertices. -/
+theorem SimpleGraph.IsSubgraph.vertexSet_finite {H G : SimpleGraph α} (h : H ≤ G)
+    [Finite V(G)] : V(H).Finite :=
+  G.vertexSet_finite.subset h.vertexSet_subset
+
+/-- A subgraph of a finite-edge simple graph has finitely many actual edges. -/
+theorem SimpleGraph.IsSubgraph.edgeSet_finite {H G : SimpleGraph α} (h : H ≤ G)
+    [Finite E(G)] : E(H).Finite :=
+  G.edgeSet_finite.subset h.edgeSet_subset
+
+/-- A subgraph of a finite-vertex general digraph has finitely many vertices. -/
+theorem DiGraph.IsSubgraph.vertexSet_finite {H G : DiGraph α β} (h : H ≤ G)
+    [Finite V(G)] : V(H).Finite :=
+  G.vertexSet_finite.subset h.vertexSet_subset
+
+/-- A subgraph of a finite-arc general digraph has finitely many actual arcs. -/
+theorem DiGraph.IsSubgraph.edgeSet_finite {H G : DiGraph α β} (h : H ≤ G)
+    [Finite E(G)] : E(H).Finite :=
+  G.edgeSet_finite.subset h.edgeSet_subset
+
+/-- A subgraph of a finite-vertex simple digraph has finitely many vertices. -/
+theorem SimpleDiGraph.IsSubgraph.vertexSet_finite {H G : SimpleDiGraph α} (h : H ≤ G)
+    [Finite V(G)] : V(H).Finite :=
+  G.vertexSet_finite.subset h.vertexSet_subset
+
+/-- A subgraph of a finite-arc simple digraph has finitely many actual arcs. -/
+theorem SimpleDiGraph.IsSubgraph.edgeSet_finite {H G : SimpleDiGraph α} (h : H ≤ G)
+    [Finite E(G)] : E(H).Finite :=
+  G.edgeSet_finite.subset h.edgeSet_subset
+
+/-! ### Finiteness through same-carrier restrictions -/
+
+instance Graph.instFiniteVertexSetInduce (G : Graph α β) (S : Set α) [Finite V(G)] :
+    Finite V(G.induce S) := (G.induce_le S).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetInduce (G : Graph α β) (S : Set α) [Finite E(G)] :
+    Finite E(G.induce S) := (G.induce_le S).edgeSet_finite.to_subtype
+
+instance Graph.instFiniteVertexSetRestrictEdges (G : Graph α β) (F : Set (Edge α β))
+    [Finite V(G)] : Finite V(G.restrictEdges F) :=
+  (G.restrictEdges_le F).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetRestrictEdges (G : Graph α β) (F : Set (Edge α β))
+    [Finite E(G)] : Finite E(G.restrictEdges F) :=
+  (G.restrictEdges_le F).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetInduce (G : SimpleGraph α) (S : Set α)
+    [Finite V(G)] : Finite V(G.induce S) :=
+  (G.induce_le S).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetInduce (G : SimpleGraph α) (S : Set α)
+    [Finite E(G)] : Finite E(G.induce S) :=
+  (G.induce_le S).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetRestrictEdges (G : SimpleGraph α) (F : Set (Sym2 α))
+    [Finite V(G)] : Finite V(G.restrictEdges F) :=
+  (G.restrictEdges_le F).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetRestrictEdges (G : SimpleGraph α) (F : Set (Sym2 α))
+    [Finite E(G)] : Finite E(G.restrictEdges F) :=
+  (G.restrictEdges_le F).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetInduce (G : DiGraph α β) (S : Set α) [Finite V(G)] :
+    Finite V(G.induce S) := (G.induce_le S).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetInduce (G : DiGraph α β) (S : Set α) [Finite E(G)] :
+    Finite E(G.induce S) := (G.induce_le S).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetRestrictEdges (G : DiGraph α β) (F : Set (Arc α β))
+    [Finite V(G)] : Finite V(G.restrictEdges F) :=
+  (G.restrictEdges_le F).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetRestrictEdges (G : DiGraph α β) (F : Set (Arc α β))
+    [Finite E(G)] : Finite E(G.restrictEdges F) :=
+  (G.restrictEdges_le F).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetInduce (G : SimpleDiGraph α) (S : Set α)
+    [Finite V(G)] : Finite V(G.induce S) :=
+  (G.induce_le S).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetInduce (G : SimpleDiGraph α) (S : Set α)
+    [Finite E(G)] : Finite E(G.induce S) :=
+  (G.induce_le S).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetRestrictEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) [Finite V(G)] :
+    Finite V(G.restrictEdges F) :=
+  (G.restrictEdges_le F).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetRestrictEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) [Finite E(G)] :
+    Finite E(G.restrictEdges F) :=
+  (G.restrictEdges_le F).edgeSet_finite.to_subtype
+
+/-! ### Finiteness through deletion -/
+
+instance Graph.instFiniteVertexSetDeleteEdges (G : Graph α β) (F : Set (Edge α β))
+    [Finite V(G)] : Finite V(G.deleteEdges F) :=
+  (G.deleteEdges_le F).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetDeleteEdges (G : Graph α β) (F : Set (Edge α β))
+    [Finite E(G)] : Finite E(G.deleteEdges F) :=
+  (G.deleteEdges_le F).edgeSet_finite.to_subtype
+
+instance Graph.instFiniteVertexSetDeleteEdge (G : Graph α β) (e : Edge α β)
+    [Finite V(G)] : Finite V(G.deleteEdge e) :=
+  (G.deleteEdge_le e).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetDeleteEdge (G : Graph α β) (e : Edge α β)
+    [Finite E(G)] : Finite E(G.deleteEdge e) :=
+  (G.deleteEdge_le e).edgeSet_finite.to_subtype
+
+instance Graph.instFiniteVertexSetDeleteVerts (G : Graph α β) (S : Set α)
+    [Finite V(G)] : Finite V(G.deleteVerts S) :=
+  (G.deleteVerts_le S).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetDeleteVerts (G : Graph α β) (S : Set α)
+    [Finite E(G)] : Finite E(G.deleteVerts S) :=
+  (G.deleteVerts_le S).edgeSet_finite.to_subtype
+
+instance Graph.instFiniteVertexSetDeleteVert (G : Graph α β) (v : α)
+    [Finite V(G)] : Finite V(G.deleteVert v) :=
+  (G.deleteVert_le v).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetDeleteVert (G : Graph α β) (v : α)
+    [Finite E(G)] : Finite E(G.deleteVert v) :=
+  (G.deleteVert_le v).edgeSet_finite.to_subtype
+
+instance Graph.instFiniteVertexSetDeleteEdgesBetween (G : Graph α β) (u v : α)
+    [Finite V(G)] : Finite V(G.deleteEdgesBetween u v) :=
+  (G.deleteEdgesBetween_le u v).vertexSet_finite.to_subtype
+
+instance Graph.instFiniteEdgeSetDeleteEdgesBetween (G : Graph α β) (u v : α)
+    [Finite E(G)] : Finite E(G.deleteEdgesBetween u v) :=
+  (G.deleteEdgesBetween_le u v).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetDeleteEdges (G : SimpleGraph α) (F : Set (Sym2 α))
+    [Finite V(G)] : Finite V(G.deleteEdges F) :=
+  (G.deleteEdges_le F).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetDeleteEdges (G : SimpleGraph α) (F : Set (Sym2 α))
+    [Finite E(G)] : Finite E(G.deleteEdges F) :=
+  (G.deleteEdges_le F).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetDeleteEdge (G : SimpleGraph α) (e : Sym2 α)
+    [Finite V(G)] : Finite V(G.deleteEdge e) :=
+  (G.deleteEdge_le e).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetDeleteEdge (G : SimpleGraph α) (e : Sym2 α)
+    [Finite E(G)] : Finite E(G.deleteEdge e) :=
+  (G.deleteEdge_le e).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetDeleteVerts (G : SimpleGraph α) (S : Set α)
+    [Finite V(G)] : Finite V(G.deleteVerts S) :=
+  (G.deleteVerts_le S).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetDeleteVerts (G : SimpleGraph α) (S : Set α)
+    [Finite E(G)] : Finite E(G.deleteVerts S) :=
+  (G.deleteVerts_le S).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetDeleteVert (G : SimpleGraph α) (v : α)
+    [Finite V(G)] : Finite V(G.deleteVert v) :=
+  (G.deleteVert_le v).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetDeleteVert (G : SimpleGraph α) (v : α)
+    [Finite E(G)] : Finite E(G.deleteVert v) :=
+  (G.deleteVert_le v).edgeSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteVertexSetDeleteEdgesBetween (G : SimpleGraph α) (u v : α)
+    [Finite V(G)] : Finite V(G.deleteEdgesBetween u v) :=
+  (G.deleteEdgesBetween_le u v).vertexSet_finite.to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetDeleteEdgesBetween (G : SimpleGraph α) (u v : α)
+    [Finite E(G)] : Finite E(G.deleteEdgesBetween u v) :=
+  (G.deleteEdgesBetween_le u v).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetDeleteEdges (G : DiGraph α β) (F : Set (Arc α β))
+    [Finite V(G)] : Finite V(G.deleteEdges F) :=
+  (G.deleteEdges_le F).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetDeleteEdges (G : DiGraph α β) (F : Set (Arc α β))
+    [Finite E(G)] : Finite E(G.deleteEdges F) :=
+  (G.deleteEdges_le F).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetDeleteEdge (G : DiGraph α β) (a : Arc α β)
+    [Finite V(G)] : Finite V(G.deleteEdge a) :=
+  (G.deleteEdge_le a).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetDeleteEdge (G : DiGraph α β) (a : Arc α β)
+    [Finite E(G)] : Finite E(G.deleteEdge a) :=
+  (G.deleteEdge_le a).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetDeleteVerts (G : DiGraph α β) (S : Set α)
+    [Finite V(G)] : Finite V(G.deleteVerts S) :=
+  (G.deleteVerts_le S).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetDeleteVerts (G : DiGraph α β) (S : Set α)
+    [Finite E(G)] : Finite E(G.deleteVerts S) :=
+  (G.deleteVerts_le S).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetDeleteVert (G : DiGraph α β) (v : α)
+    [Finite V(G)] : Finite V(G.deleteVert v) :=
+  (G.deleteVert_le v).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetDeleteVert (G : DiGraph α β) (v : α)
+    [Finite E(G)] : Finite E(G.deleteVert v) :=
+  (G.deleteVert_le v).edgeSet_finite.to_subtype
+
+instance DiGraph.instFiniteVertexSetDeleteArcsFromTo (G : DiGraph α β) (u v : α)
+    [Finite V(G)] : Finite V(G.deleteArcsFromTo u v) :=
+  (G.deleteArcsFromTo_le u v).vertexSet_finite.to_subtype
+
+instance DiGraph.instFiniteEdgeSetDeleteArcsFromTo (G : DiGraph α β) (u v : α)
+    [Finite E(G)] : Finite E(G.deleteArcsFromTo u v) :=
+  (G.deleteArcsFromTo_le u v).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetDeleteEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) [Finite V(G)] :
+    Finite V(G.deleteEdges F) :=
+  (G.deleteEdges_le F).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetDeleteEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) [Finite E(G)] :
+    Finite E(G.deleteEdges F) :=
+  (G.deleteEdges_le F).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetDeleteEdge (G : SimpleDiGraph α) (a : α × α)
+    [Finite V(G)] : Finite V(G.deleteEdge a) :=
+  (G.deleteEdge_le a).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetDeleteEdge (G : SimpleDiGraph α) (a : α × α)
+    [Finite E(G)] : Finite E(G.deleteEdge a) :=
+  (G.deleteEdge_le a).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetDeleteVerts (G : SimpleDiGraph α) (S : Set α)
+    [Finite V(G)] : Finite V(G.deleteVerts S) :=
+  (G.deleteVerts_le S).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetDeleteVerts (G : SimpleDiGraph α) (S : Set α)
+    [Finite E(G)] : Finite E(G.deleteVerts S) :=
+  (G.deleteVerts_le S).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetDeleteVert (G : SimpleDiGraph α) (v : α)
+    [Finite V(G)] : Finite V(G.deleteVert v) :=
+  (G.deleteVert_le v).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetDeleteVert (G : SimpleDiGraph α) (v : α)
+    [Finite E(G)] : Finite E(G.deleteVert v) :=
+  (G.deleteVert_le v).edgeSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetDeleteArcsFromTo
+    (G : SimpleDiGraph α) (u v : α) [Finite V(G)] :
+    Finite V(G.deleteArcsFromTo u v) :=
+  (G.deleteArcsFromTo_le u v).vertexSet_finite.to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetDeleteArcsFromTo
+    (G : SimpleDiGraph α) (u v : α) [Finite E(G)] :
+    Finite E(G.deleteArcsFromTo u v) :=
+  (G.deleteArcsFromTo_le u v).edgeSet_finite.to_subtype
+
+/-! ### Finiteness through maps, relabelings, and reversal -/
+
+instance Graph.instFiniteVertexSetMapVertices (G : Graph α β) (f : α → γ) [Finite V(G)] :
+    Finite V(G.mapVertices f) := (G.vertexSet_finite.image f).to_subtype
+
+instance Graph.instFiniteEdgeSetMapVertices (G : Graph α β) (f : α → γ) [Finite E(G)] :
+    Finite E(G.mapVertices f) := (G.edgeSet_finite.image (Edge.mapVertices f)).to_subtype
+
+instance DiGraph.instFiniteVertexSetMapVertices (G : DiGraph α β) (f : α → γ) [Finite V(G)] :
+    Finite V(G.mapVertices f) := (G.vertexSet_finite.image f).to_subtype
+
+instance DiGraph.instFiniteEdgeSetMapVertices (G : DiGraph α β) (f : α → γ) [Finite E(G)] :
+    Finite E(G.mapVertices f) := (G.edgeSet_finite.image (Arc.mapVertices f)).to_subtype
+
+instance SimpleGraph.instFiniteVertexSetMapVertices (G : SimpleGraph α) (f : α → γ)
+    [Finite V(G)] : Finite V(G.mapVertices f) :=
+  (G.vertexSet_finite.image f).to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetMapVertices (G : SimpleGraph α) (f : α → γ)
+    [Finite E(G)] : Finite E(G.mapVertices f) := by
+  apply Set.Finite.to_subtype
+  refine (G.edgeSet_finite.image (Sym2.map f)).subset ?_
+  intro e he
+  exact he.1
+
+instance SimpleDiGraph.instFiniteVertexSetMapVertices (G : SimpleDiGraph α) (f : α → γ)
+    [Finite V(G)] : Finite V(G.mapVertices f) :=
+  (G.vertexSet_finite.image f).to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetMapVertices (G : SimpleDiGraph α) (f : α → γ)
+    [Finite E(G)] : Finite E(G.mapVertices f) := by
+  apply Set.Finite.to_subtype
+  refine (G.edgeSet_finite.image fun a => (f a.1, f a.2)).subset ?_
+  intro a ha
+  exact ha.1
+
+instance Graph.instFiniteVertexSetRelabelVertices (G : Graph α β) (f : α ≃ γ)
+    [Finite V(G)] : Finite V(G.relabelVertices f) :=
+  (G.vertexSet_finite.image f).to_subtype
+
+instance Graph.instFiniteEdgeSetRelabelVertices (G : Graph α β) (f : α ≃ γ)
+    [Finite E(G)] : Finite E(G.relabelVertices f) :=
+  (G.edgeSet_finite.image (Edge.relabelVertices f)).to_subtype
+
+instance Graph.instFiniteVertexSetRelabelTags (G : Graph α β) (g : β ≃ δ)
+    [Finite V(G)] : Finite V(G.relabelTags g) := by simpa using (inferInstance : Finite V(G))
+
+instance Graph.instFiniteEdgeSetRelabelTags (G : Graph α β) (g : β ≃ δ)
+    [Finite E(G)] : Finite E(G.relabelTags g) :=
+  (G.edgeSet_finite.image (Edge.relabelTags g)).to_subtype
+
+instance DiGraph.instFiniteVertexSetRelabelVertices (G : DiGraph α β) (f : α ≃ γ)
+    [Finite V(G)] : Finite V(G.relabelVertices f) :=
+  (G.vertexSet_finite.image f).to_subtype
+
+instance DiGraph.instFiniteEdgeSetRelabelVertices (G : DiGraph α β) (f : α ≃ γ)
+    [Finite E(G)] : Finite E(G.relabelVertices f) :=
+  (G.edgeSet_finite.image (Arc.relabelVertices f)).to_subtype
+
+instance DiGraph.instFiniteVertexSetRelabelTags (G : DiGraph α β) (g : β ≃ δ)
+    [Finite V(G)] : Finite V(G.relabelTags g) := by simpa using (inferInstance : Finite V(G))
+
+instance DiGraph.instFiniteEdgeSetRelabelTags (G : DiGraph α β) (g : β ≃ δ)
+    [Finite E(G)] : Finite E(G.relabelTags g) :=
+  (G.edgeSet_finite.image (Arc.relabelTags g)).to_subtype
+
+instance SimpleGraph.instFiniteVertexSetRelabelVertices (G : SimpleGraph α) (f : α ≃ γ)
+    [Finite V(G)] : Finite V(G.relabelVertices f) :=
+  (G.vertexSet_finite.image f).to_subtype
+
+instance SimpleGraph.instFiniteEdgeSetRelabelVertices (G : SimpleGraph α) (f : α ≃ γ)
+    [Finite E(G)] : Finite E(G.relabelVertices f) :=
+  (G.edgeSet_finite.image (Sym2.map f)).to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetRelabelVertices (G : SimpleDiGraph α) (f : α ≃ γ)
+    [Finite V(G)] : Finite V(G.relabelVertices f) :=
+  (G.vertexSet_finite.image f).to_subtype
+
+instance SimpleDiGraph.instFiniteEdgeSetRelabelVertices (G : SimpleDiGraph α) (f : α ≃ γ)
+    [Finite E(G)] : Finite E(G.relabelVertices f) :=
+  (G.edgeSet_finite.image fun a : α × α => (f a.1, f a.2)).to_subtype
+
+instance DiGraph.instFiniteVertexSetReverse (G : DiGraph α β) [Finite V(G)] :
+    Finite V(G.reverse) := by simpa using (inferInstance : Finite V(G))
+
+instance DiGraph.instFiniteEdgeSetReverse (G : DiGraph α β) [Finite E(G)] :
+    Finite E(G.reverse) := (G.edgeSet_finite.image Arc.reverse).to_subtype
+
+instance SimpleDiGraph.instFiniteVertexSetReverse (G : SimpleDiGraph α) [Finite V(G)] :
+    Finite V(G.reverse) := by simpa using (inferInstance : Finite V(G))
+
+instance SimpleDiGraph.instFiniteEdgeSetReverse (G : SimpleDiGraph α) [Finite E(G)] :
+    Finite E(G.reverse) :=
+  (G.edgeSet_finite.image fun a => (a.2, a.1)).to_subtype
+
+/-! ### Local finiteness inherited by subgraphs -/
+
+/-- Local undirected incidence remains finite in a subgraph. -/
+theorem Graph.IsSubgraph.incidenceSet_finite {H G : Graph α β} (h : H ≤ G) (v : α)
+    [Finite (G.incidenceSet v)] : (H.incidenceSet v).Finite :=
+  (Set.toFinite (G.incidenceSet v)).subset fun _ he => h.inc he
+
+/-- A local neighborhood remains finite in a simple subgraph. -/
+theorem SimpleGraph.IsSubgraph.neighborSet_finite {H G : SimpleGraph α} (h : H ≤ G)
+    (v : α) [Finite (G.neighborSet v)] : (H.neighborSet v).Finite :=
+  (Set.toFinite (G.neighborSet v)).subset (H.neighborSet_mono h v)
+
+/-- Local outgoing incidence remains finite in a directed subgraph. -/
+theorem DiGraph.IsSubgraph.outIncidenceSet_finite {H G : DiGraph α β} (h : H ≤ G)
+    (v : α) [Finite (G.outIncidenceSet v)] : (H.outIncidenceSet v).Finite :=
+  (Set.toFinite (G.outIncidenceSet v)).subset fun _ ha =>
+    ⟨h.edgeSet_subset ha.1, ha.2⟩
+
+/-- Local incoming incidence remains finite in a directed subgraph. -/
+theorem DiGraph.IsSubgraph.inIncidenceSet_finite {H G : DiGraph α β} (h : H ≤ G)
+    (v : α) [Finite (G.inIncidenceSet v)] : (H.inIncidenceSet v).Finite :=
+  (Set.toFinite (G.inIncidenceSet v)).subset fun _ ha =>
+    ⟨h.edgeSet_subset ha.1, ha.2⟩
+
+/-- Local outgoing incidence remains finite in a simple directed subgraph. -/
+theorem SimpleDiGraph.IsSubgraph.outIncidenceSet_finite {H G : SimpleDiGraph α} (h : H ≤ G)
+    (v : α) [Finite (G.outIncidenceSet v)] : (H.outIncidenceSet v).Finite :=
+  (Set.toFinite (G.outIncidenceSet v)).subset fun _ ha =>
+    ⟨h.edgeSet_subset ha.1, ha.2⟩
+
+/-- Local incoming incidence remains finite in a simple directed subgraph. -/
+theorem SimpleDiGraph.IsSubgraph.inIncidenceSet_finite {H G : SimpleDiGraph α} (h : H ≤ G)
+    (v : α) [Finite (G.inIncidenceSet v)] : (H.inIncidenceSet v).Finite :=
+  (Set.toFinite (G.inIncidenceSet v)).subset fun _ ha =>
+    ⟨h.edgeSet_subset ha.1, ha.2⟩
+
+instance Graph.instFiniteIncidenceSetInduce (G : Graph α β) (S : Set α) (v : α)
+    [Finite (G.incidenceSet v)] : Finite ((G.induce S).incidenceSet v) :=
+  ((G.induce_le S).incidenceSet_finite v).to_subtype
+
+instance Graph.instFiniteIncidenceSetRestrictEdges
+    (G : Graph α β) (F : Set (Edge α β)) (v : α) [Finite (G.incidenceSet v)] :
+    Finite ((G.restrictEdges F).incidenceSet v) :=
+  ((G.restrictEdges_le F).incidenceSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetInduce (G : SimpleGraph α) (S : Set α) (v : α)
+    [Finite (G.neighborSet v)] : Finite ((G.induce S).neighborSet v) :=
+  ((G.induce_le S).neighborSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetRestrictEdges
+    (G : SimpleGraph α) (F : Set (Sym2 α)) (v : α) [Finite (G.neighborSet v)] :
+    Finite ((G.restrictEdges F).neighborSet v) :=
+  ((G.restrictEdges_le F).neighborSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetInduce (G : DiGraph α β) (S : Set α) (v : α)
+    [Finite (G.outIncidenceSet v)] : Finite ((G.induce S).outIncidenceSet v) :=
+  ((G.induce_le S).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetInduce (G : DiGraph α β) (S : Set α) (v : α)
+    [Finite (G.inIncidenceSet v)] : Finite ((G.induce S).inIncidenceSet v) :=
+  ((G.induce_le S).inIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetRestrictEdges
+    (G : DiGraph α β) (F : Set (Arc α β)) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.restrictEdges F).outIncidenceSet v) :=
+  ((G.restrictEdges_le F).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetRestrictEdges
+    (G : DiGraph α β) (F : Set (Arc α β)) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.restrictEdges F).inIncidenceSet v) :=
+  ((G.restrictEdges_le F).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetInduce
+    (G : SimpleDiGraph α) (S : Set α) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.induce S).outIncidenceSet v) :=
+  ((G.induce_le S).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetInduce
+    (G : SimpleDiGraph α) (S : Set α) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.induce S).inIncidenceSet v) :=
+  ((G.induce_le S).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetRestrictEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.restrictEdges F).outIncidenceSet v) :=
+  ((G.restrictEdges_le F).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetRestrictEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.restrictEdges F).inIncidenceSet v) :=
+  ((G.restrictEdges_le F).inIncidenceSet_finite v).to_subtype
+
+instance Graph.instFiniteIncidenceSetDeleteEdges
+    (G : Graph α β) (F : Set (Edge α β)) (v : α) [Finite (G.incidenceSet v)] :
+    Finite ((G.deleteEdges F).incidenceSet v) :=
+  ((G.deleteEdges_le F).incidenceSet_finite v).to_subtype
+
+instance Graph.instFiniteIncidenceSetDeleteEdge
+    (G : Graph α β) (e : Edge α β) (v : α) [Finite (G.incidenceSet v)] :
+    Finite ((G.deleteEdge e).incidenceSet v) :=
+  ((G.deleteEdge_le e).incidenceSet_finite v).to_subtype
+
+instance Graph.instFiniteIncidenceSetDeleteVerts
+    (G : Graph α β) (S : Set α) (v : α) [Finite (G.incidenceSet v)] :
+    Finite ((G.deleteVerts S).incidenceSet v) :=
+  ((G.deleteVerts_le S).incidenceSet_finite v).to_subtype
+
+instance Graph.instFiniteIncidenceSetDeleteVert
+    (G : Graph α β) (u v : α) [Finite (G.incidenceSet v)] :
+    Finite ((G.deleteVert u).incidenceSet v) :=
+  ((G.deleteVert_le u).incidenceSet_finite v).to_subtype
+
+instance Graph.instFiniteIncidenceSetDeleteEdgesBetween
+    (G : Graph α β) (u w v : α) [Finite (G.incidenceSet v)] :
+    Finite ((G.deleteEdgesBetween u w).incidenceSet v) :=
+  ((G.deleteEdgesBetween_le u w).incidenceSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetDeleteEdges
+    (G : SimpleGraph α) (F : Set (Sym2 α)) (v : α) [Finite (G.neighborSet v)] :
+    Finite ((G.deleteEdges F).neighborSet v) :=
+  ((G.deleteEdges_le F).neighborSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetDeleteEdge
+    (G : SimpleGraph α) (e : Sym2 α) (v : α) [Finite (G.neighborSet v)] :
+    Finite ((G.deleteEdge e).neighborSet v) :=
+  ((G.deleteEdge_le e).neighborSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetDeleteVerts
+    (G : SimpleGraph α) (S : Set α) (v : α) [Finite (G.neighborSet v)] :
+    Finite ((G.deleteVerts S).neighborSet v) :=
+  ((G.deleteVerts_le S).neighborSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetDeleteVert
+    (G : SimpleGraph α) (u v : α) [Finite (G.neighborSet v)] :
+    Finite ((G.deleteVert u).neighborSet v) :=
+  ((G.deleteVert_le u).neighborSet_finite v).to_subtype
+
+instance SimpleGraph.instFiniteNeighborSetDeleteEdgesBetween
+    (G : SimpleGraph α) (u w v : α) [Finite (G.neighborSet v)] :
+    Finite ((G.deleteEdgesBetween u w).neighborSet v) :=
+  ((G.deleteEdgesBetween_le u w).neighborSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetDeleteEdges
+    (G : DiGraph α β) (F : Set (Arc α β)) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteEdges F).outIncidenceSet v) :=
+  ((G.deleteEdges_le F).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetDeleteEdges
+    (G : DiGraph α β) (F : Set (Arc α β)) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteEdges F).inIncidenceSet v) :=
+  ((G.deleteEdges_le F).inIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetDeleteEdge
+    (G : DiGraph α β) (a : Arc α β) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteEdge a).outIncidenceSet v) :=
+  ((G.deleteEdge_le a).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetDeleteEdge
+    (G : DiGraph α β) (a : Arc α β) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteEdge a).inIncidenceSet v) :=
+  ((G.deleteEdge_le a).inIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetDeleteVerts
+    (G : DiGraph α β) (S : Set α) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteVerts S).outIncidenceSet v) :=
+  ((G.deleteVerts_le S).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetDeleteVerts
+    (G : DiGraph α β) (S : Set α) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteVerts S).inIncidenceSet v) :=
+  ((G.deleteVerts_le S).inIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetDeleteVert
+    (G : DiGraph α β) (u v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteVert u).outIncidenceSet v) :=
+  ((G.deleteVert_le u).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetDeleteVert
+    (G : DiGraph α β) (u v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteVert u).inIncidenceSet v) :=
+  ((G.deleteVert_le u).inIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetDeleteArcsFromTo
+    (G : DiGraph α β) (u w v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteArcsFromTo u w).outIncidenceSet v) :=
+  ((G.deleteArcsFromTo_le u w).outIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetDeleteArcsFromTo
+    (G : DiGraph α β) (u w v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteArcsFromTo u w).inIncidenceSet v) :=
+  ((G.deleteArcsFromTo_le u w).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetDeleteEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteEdges F).outIncidenceSet v) :=
+  ((G.deleteEdges_le F).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetDeleteEdges
+    (G : SimpleDiGraph α) (F : Set (α × α)) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteEdges F).inIncidenceSet v) :=
+  ((G.deleteEdges_le F).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetDeleteEdge
+    (G : SimpleDiGraph α) (a : α × α) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteEdge a).outIncidenceSet v) :=
+  ((G.deleteEdge_le a).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetDeleteEdge
+    (G : SimpleDiGraph α) (a : α × α) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteEdge a).inIncidenceSet v) :=
+  ((G.deleteEdge_le a).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetDeleteVerts
+    (G : SimpleDiGraph α) (S : Set α) (v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteVerts S).outIncidenceSet v) :=
+  ((G.deleteVerts_le S).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetDeleteVerts
+    (G : SimpleDiGraph α) (S : Set α) (v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteVerts S).inIncidenceSet v) :=
+  ((G.deleteVerts_le S).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetDeleteVert
+    (G : SimpleDiGraph α) (u v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteVert u).outIncidenceSet v) :=
+  ((G.deleteVert_le u).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetDeleteVert
+    (G : SimpleDiGraph α) (u v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteVert u).inIncidenceSet v) :=
+  ((G.deleteVert_le u).inIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetDeleteArcsFromTo
+    (G : SimpleDiGraph α) (u w v : α) [Finite (G.outIncidenceSet v)] :
+    Finite ((G.deleteArcsFromTo u w).outIncidenceSet v) :=
+  ((G.deleteArcsFromTo_le u w).outIncidenceSet_finite v).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetDeleteArcsFromTo
+    (G : SimpleDiGraph α) (u w v : α) [Finite (G.inIncidenceSet v)] :
+    Finite ((G.deleteArcsFromTo u w).inIncidenceSet v) :=
+  ((G.deleteArcsFromTo_le u w).inIncidenceSet_finite v).to_subtype
+
+instance DiGraph.instFiniteOutIncidenceSetReverse (G : DiGraph α β) (v : α)
+    [Finite (G.inIncidenceSet v)] : Finite (G.reverse.outIncidenceSet v) := by
+  rw [G.outIncidenceSet_reverse]
+  exact ((Set.toFinite (G.inIncidenceSet v)).image Arc.reverse).to_subtype
+
+instance DiGraph.instFiniteInIncidenceSetReverse (G : DiGraph α β) (v : α)
+    [Finite (G.outIncidenceSet v)] : Finite (G.reverse.inIncidenceSet v) := by
+  rw [G.inIncidenceSet_reverse]
+  exact ((Set.toFinite (G.outIncidenceSet v)).image Arc.reverse).to_subtype
+
+instance SimpleDiGraph.instFiniteOutIncidenceSetReverse (G : SimpleDiGraph α) (v : α)
+    [Finite (G.inIncidenceSet v)] : Finite (G.reverse.outIncidenceSet v) := by
+  rw [G.outIncidenceSet_reverse]
+  exact ((Set.toFinite (G.inIncidenceSet v)).image fun a => (a.2, a.1)).to_subtype
+
+instance SimpleDiGraph.instFiniteInIncidenceSetReverse (G : SimpleDiGraph α) (v : α)
+    [Finite (G.outIncidenceSet v)] : Finite (G.reverse.inIncidenceSet v) := by
+  rw [G.inIncidenceSet_reverse]
+  exact ((Set.toFinite (G.outIncidenceSet v)).image fun a => (a.2, a.1)).to_subtype
 
 /-- The unordered pairs whose endpoints lie in a finite set form a finite set. -/
 private theorem sym2OfSubset_finite (S : Set α) (hS : S.Finite) :

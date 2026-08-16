@@ -237,8 +237,8 @@ theorem induce_iff (G : SimpleDiGraph α) (S : Set α) (w : VertexSeq α) :
     refine ⟨(G.mem_vertexSet_induce S w.head).2 ⟨hS _ (by simp), head_mem G hG⟩, ?_⟩
     intro a ha
     rw [G.mem_edgeSet_induce]
-    exact ⟨((iff_arcs G w).1 hG).2 a ha, hS _ (VertexSeq.fst_mem_of_arc_mem w ha),
-      hS _ (VertexSeq.snd_mem_of_arc_mem w ha)⟩
+    exact ⟨((iff_arcs G w).1 hG).2 a ha, hS _ (VertexSeq.source_mem_of_arc_mem w ha),
+      hS _ (VertexSeq.target_mem_of_arc_mem w ha)⟩
 
 /-- Restricting arcs preserves exactly the sequences whose traversed arcs survive. -/
 theorem restrictEdges_iff (G : SimpleDiGraph α) (F : Set (α × α)) (w : VertexSeq α) :

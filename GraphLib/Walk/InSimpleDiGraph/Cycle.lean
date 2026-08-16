@@ -12,7 +12,7 @@ import GraphLib.Walk.SimpleDiCycle
 
 namespace GraphLib
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 open scoped GraphLib
 
@@ -36,6 +36,28 @@ theorem reverse {G : SimpleDiGraph α} {c : SimpleDiCycle α}
 theorem mono (G H : SimpleDiGraph α) {c : SimpleDiCycle α}
     (hc : H.IsSimpleDiCycleIn c) (hHG : H ≤ G) : G.IsSimpleDiCycleIn c :=
   IsSimpleWalkIn.mono G H hc hHG
+
+theorem induce_iff (G : SimpleDiGraph α) (S : Set α) (c : SimpleDiCycle α) :
+    (G.induce S).IsSimpleDiCycleIn c ↔
+      G.IsSimpleDiCycleIn c ∧ ∀ v ∈ c.support, v ∈ S :=
+  IsSimpleWalkIn.induce_iff G S c.val
+
+theorem restrictEdges_iff (G : SimpleDiGraph α) (F : Set (α × α))
+    (c : SimpleDiCycle α) :
+    (G.restrictEdges F).IsSimpleDiCycleIn c ↔
+      G.IsSimpleDiCycleIn c ∧ ∀ a ∈ c.arcs, a ∈ F :=
+  IsSimpleWalkIn.restrictEdges_iff G F c.val
+
+theorem deleteEdges_iff (G : SimpleDiGraph α) (F : Set (α × α))
+    (c : SimpleDiCycle α) :
+    (G.deleteEdges F).IsSimpleDiCycleIn c ↔
+      G.IsSimpleDiCycleIn c ∧ ∀ a ∈ c.arcs, a ∉ F :=
+  IsSimpleWalkIn.deleteEdges_iff G F c.val
+
+theorem relabelVertices {G : SimpleDiGraph α} {c : SimpleDiCycle α} (f : α ≃ γ)
+    (h : G.IsSimpleDiCycleIn c) :
+    (G.relabelVertices f).IsSimpleDiCycleIn (c.relabelVertices f) :=
+  IsSimpleWalkIn.relabelVertices f h
 
 /-- Closing a realized path along a directed adjacency produces a realized directed cycle. -/
 theorem ofPathClosing (G : SimpleDiGraph α) (p : SimplePath α) (hp : G.IsSimplePathIn p)

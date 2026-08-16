@@ -303,6 +303,158 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     (flow : Flow N) (a : Arc α β) : transportReverse N flow a.reverse = flow a := by
   simp [transportReverse]
 
+@[simp] theorem outflow_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R]
+    [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) (v : α) :
+    outflow (N.relabelVertices f) (transportRelabelVertices N f flow) (f v) =
+      outflow N flow v := by
+  classical
+  symm
+  apply Finset.sum_equiv (Arc.relabelVertices f)
+  · intro a
+    simp [DiGraph.mem_outIncidenceFinset]
+  · intro a ha
+    simp
+
+@[simp] theorem inflow_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R]
+    [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) (v : α) :
+    inflow (N.relabelVertices f) (transportRelabelVertices N f flow) (f v) =
+      inflow N flow v := by
+  classical
+  symm
+  apply Finset.sum_equiv (Arc.relabelVertices f)
+  · intro a
+    simp [DiGraph.mem_inIncidenceFinset]
+  · intro a ha
+    simp
+
+@[simp] theorem outflow_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
+    [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) (v : α) :
+    outflow (N.relabelTags f) (transportRelabelTags N f flow) v = outflow N flow v := by
+  classical
+  symm
+  apply Finset.sum_equiv (Arc.relabelTags f)
+  · intro a
+    simp [DiGraph.mem_outIncidenceFinset]
+  · intro a ha
+    simp
+
+@[simp] theorem inflow_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
+    [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) (v : α) :
+    inflow (N.relabelTags f) (transportRelabelTags N f flow) v = inflow N flow v := by
+  classical
+  symm
+  apply Finset.sum_equiv (Arc.relabelTags f)
+  · intro a
+    simp [DiGraph.mem_inIncidenceFinset]
+  · intro a ha
+    simp
+
+@[simp] theorem outflow_transportReverse {G : DiGraph α β} [AddCommMonoid R]
+    [Finite E(G)] (N : Network G R) (flow : Flow N) (v : α) :
+    outflow N.reverse (transportReverse N flow) v = inflow N flow v := by
+  classical
+  symm
+  apply Finset.sum_equiv Arc.reverseEquiv
+  · intro a
+    simp only [DiGraph.mem_inIncidenceFinset, DiGraph.mem_outIncidenceFinset,
+      Arc.reverseEquiv_apply, DiGraph.mem_edgeSet_reverse, Arc.reverse_reverse,
+      Arc.source_reverse]
+  · intro a ha
+    simp
+
+@[simp] theorem inflow_transportReverse {G : DiGraph α β} [AddCommMonoid R]
+    [Finite E(G)] (N : Network G R) (flow : Flow N) (v : α) :
+    inflow N.reverse (transportReverse N flow) v = outflow N flow v := by
+  classical
+  symm
+  apply Finset.sum_equiv Arc.reverseEquiv
+  · intro a
+    simp only [DiGraph.mem_outIncidenceFinset, DiGraph.mem_inIncidenceFinset,
+      Arc.reverseEquiv_apply, DiGraph.mem_edgeSet_reverse, Arc.reverse_reverse,
+      Arc.target_reverse]
+  · intro a ha
+    simp
+
+@[simp] theorem flowValue_transportRelabelVertices {G : DiGraph α β} [AddCommGroup R]
+    [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) :
+    flowValue (N.relabelVertices f) (transportRelabelVertices N f flow) =
+      flowValue N flow := by
+  simp [flowValue]
+
+@[simp] theorem flowValue_transportRelabelTags {G : DiGraph α β} [AddCommGroup R]
+    [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) :
+    flowValue (N.relabelTags f) (transportRelabelTags N f flow) = flowValue N flow := by
+  simp [flowValue]
+
+theorem isFeasible_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R]
+    [PartialOrder R] [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) :
+    IsFeasible (N.relabelVertices f) (transportRelabelVertices N f flow) ↔
+      IsFeasible N flow := by
+  constructor
+  · intro hf
+    refine ⟨?_, ?_⟩
+    · intro a ha
+      simpa using hf.1 (Arc.relabelVertices f a)
+        ((G.mem_edgeSet_relabelVertices f a).2 ha)
+    · intro v hv hsource hsink
+      have hsource' : f v ≠ (N.relabelVertices f).source := by simpa using hsource
+      have hsink' : f v ≠ (N.relabelVertices f).sink := by simpa using hsink
+      simpa using hf.2 (f v) ⟨v, hv, rfl⟩ hsource' hsink'
+  · intro hf
+    refine ⟨?_, ?_⟩
+    · intro a ha
+      change a ∈ Arc.relabelVertices f '' E(G) at ha
+      obtain ⟨b, hb, rfl⟩ := ha
+      simpa using hf.1 b hb
+    · intro v hv hsource hsink
+      obtain ⟨u, hu, rfl⟩ := hv
+      have hsource' : u ≠ N.source := by simpa using hsource
+      have hsink' : u ≠ N.sink := by simpa using hsink
+      simpa using hf.2 u hu hsource' hsink'
+
+theorem isFeasible_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
+    [PartialOrder R] [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) :
+    IsFeasible (N.relabelTags f) (transportRelabelTags N f flow) ↔
+      IsFeasible N flow := by
+  constructor
+  · intro hf
+    refine ⟨?_, ?_⟩
+    · intro a ha
+      simpa using hf.1 (Arc.relabelTags f a) ((G.mem_edgeSet_relabelTags f a).2 ha)
+    · intro v hv hsource hsink
+      simpa using hf.2 v (by simpa using hv) (by simpa using hsource) (by simpa using hsink)
+  · intro hf
+    refine ⟨?_, ?_⟩
+    · intro a ha
+      change a ∈ Arc.relabelTags f '' E(G) at ha
+      obtain ⟨b, hb, rfl⟩ := ha
+      simpa using hf.1 b hb
+    · intro v hv hsource hsink
+      simpa using hf.2 v hv (by simpa using hsource) (by simpa using hsink)
+
+theorem isFeasible_transportReverse {G : DiGraph α β} [AddCommMonoid R]
+    [PartialOrder R] [Finite E(G)] (N : Network G R) (flow : Flow N) :
+    IsFeasible N.reverse (transportReverse N flow) ↔ IsFeasible N flow := by
+  constructor
+  · intro hf
+    refine ⟨?_, ?_⟩
+    · intro a ha
+      simpa using hf.1 a.reverse
+        ((G.mem_edgeSet_reverse a.reverse).2 (by simpa using ha))
+    · intro v hv hsource hsink
+      have htarget := hf.2 v (by simpa using hv) (by simpa using hsink)
+        (by simpa using hsource)
+      simpa using htarget.symm
+  · intro hf
+    refine ⟨?_, ?_⟩
+    · intro a ha
+      have ha' : a.reverse ∈ E(G) := (G.mem_edgeSet_reverse a).1 ha
+      simpa using hf.1 a.reverse ha'
+    · intro v hv hsource hsink
+      have hsource' : v ≠ N.source := by simpa using hsink
+      have hsink' : v ≠ N.sink := by simpa using hsource
+      simpa using (hf.2 v (by simpa using hv) hsource' hsink').symm
+
 end Flow
 
 end DiGraph

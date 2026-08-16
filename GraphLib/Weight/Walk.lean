@@ -6,8 +6,8 @@ Authors: Weixuan Yuan
 import GraphLib.Weight.Basic
 import GraphLib.Walk.InGraph
 import GraphLib.Walk.InDiGraph
-import GraphLib.Walk.InSimpleGraph
-import GraphLib.Walk.InSimpleDiGraph
+import GraphLib.Walk.InSimpleGraph.Path
+import GraphLib.Walk.InSimpleDiGraph.Path
 
 /-!
 # Traversal weights
@@ -69,6 +69,13 @@ theorem pathWeight_append [AddMonoid W] (G : Graph α β) (weight : G.EdgeWeight
       G.pathWeight weight p + weight ⟨t, s(p.tail, q.head)⟩ + G.pathWeight weight q := by
   exact G.walkWeight_append weight p.val q.val t
 
+theorem pathWeight_glue [AddMonoid W] (G : Graph α β) (weight : G.EdgeWeight W)
+    (p q : Path α β) (h : p.tail = q.head)
+    (hdisj : ∀ v ∈ p.vertices.dropLast, v ∈ q.vertices → False) :
+    G.pathWeight weight (p.glue q h hdisj) =
+      G.pathWeight weight p + G.pathWeight weight q :=
+  G.walkWeight_glue weight p.val q.val h
+
 /-- Realized walks have equal sums for weights that agree on the active actual edges. -/
 theorem walkWeight_congr [AddMonoid W] (G : Graph α β) {weight₁ weight₂ : G.EdgeWeight W}
     {w : Walk α β} (hweight : Graph.EdgeWeight.EqOn G weight₁ weight₂)
@@ -127,6 +134,18 @@ theorem walkWeight_relabelTags [AddMonoid W] (G : Graph α β) (f : β ≃ δ)
         (Edge.relabelTags f ⟨t, s(w.tail, v)⟩) = _
       rw [Graph.EdgeWeight.transportRelabelTags_apply]
 
+theorem pathWeight_relabelVertices [AddMonoid W] (G : Graph α β) (f : α ≃ γ)
+    (weight : G.EdgeWeight W) (p : Path α β) :
+    (G.relabelVertices f).pathWeight (Graph.EdgeWeight.transportRelabelVertices G f weight)
+      (p.relabelVertices f) = G.pathWeight weight p :=
+  G.walkWeight_relabelVertices f weight p.val
+
+theorem pathWeight_relabelTags [AddMonoid W] (G : Graph α β) (f : β ≃ δ)
+    (weight : G.EdgeWeight W) (p : Path α β) :
+    (G.relabelTags f).pathWeight (Graph.EdgeWeight.transportRelabelTags G f weight)
+      (p.relabelTags f) = G.pathWeight weight p :=
+  G.walkWeight_relabelTags f weight p.val
+
 end Graph
 
 /-! ## General directed graphs -/
@@ -174,6 +193,13 @@ theorem pathWeight_append [AddMonoid W] (G : DiGraph α β) (weight : G.EdgeWeig
     G.pathWeight weight (p.append q t hdisj) =
       G.pathWeight weight p + weight ⟨t, (p.tail, q.head)⟩ + G.pathWeight weight q := by
   exact G.walkWeight_append weight p.val q.val t
+
+theorem pathWeight_glue [AddMonoid W] (G : DiGraph α β) (weight : G.EdgeWeight W)
+    (p q : Path α β) (h : p.tail = q.head)
+    (hdisj : ∀ v ∈ p.vertices.dropLast, v ∈ q.vertices → False) :
+    G.pathWeight weight (p.glue q h hdisj) =
+      G.pathWeight weight p + G.pathWeight weight q :=
+  G.walkWeight_glue weight p.val q.val h
 
 /-- Realized directed walks have equal sums for weights agreeing on active actual arcs. -/
 theorem walkWeight_congr [AddMonoid W] (G : DiGraph α β)
@@ -240,6 +266,18 @@ theorem walkWeight_relabelTags [AddMonoid W] (G : DiGraph α β) (f : β ≃ δ)
         (Arc.relabelTags f ⟨t, (w.tail, v)⟩) = _
       rw [DiGraph.EdgeWeight.transportRelabelTags_apply]
 
+theorem pathWeight_relabelVertices [AddMonoid W] (G : DiGraph α β) (f : α ≃ γ)
+    (weight : G.EdgeWeight W) (p : Path α β) :
+    (G.relabelVertices f).pathWeight (DiGraph.EdgeWeight.transportRelabelVertices G f weight)
+      (p.relabelVertices f) = G.pathWeight weight p :=
+  G.walkWeight_relabelVertices f weight p.val
+
+theorem pathWeight_relabelTags [AddMonoid W] (G : DiGraph α β) (f : β ≃ δ)
+    (weight : G.EdgeWeight W) (p : Path α β) :
+    (G.relabelTags f).pathWeight (DiGraph.EdgeWeight.transportRelabelTags G f weight)
+      (p.relabelTags f) = G.pathWeight weight p :=
+  G.walkWeight_relabelTags f weight p.val
+
 end DiGraph
 
 /-! ## Simple undirected graphs -/
@@ -295,6 +333,14 @@ theorem pathWeight_append [AddMonoid W] (G : SimpleGraph α) (weight : G.EdgeWei
     exact VertexSeq.head_mem q.vertices
   simpa [pathWeight, SimplePath.append] using G.walkWeight_append weight p.val q.val hne
 
+theorem pathWeight_glue [AddMonoid W] (G : SimpleGraph α) (weight : G.EdgeWeight W)
+    (p q : SimplePath α) (h : p.tail = q.head)
+    (hdisj : p.vertices.length ≠ 0 →
+      ∀ v : α, v ∈ p.vertices.dropTail → v ∈ q.vertices → False) :
+    G.pathWeight weight (p.glue q h hdisj) =
+      G.pathWeight weight p + G.pathWeight weight q :=
+  G.walkWeight_glue weight p.val q.val h
+
 /-- Realized simple walks have equal sums for weights agreeing on active edges. -/
 theorem walkWeight_congr [AddMonoid W] (G : SimpleGraph α)
     {weight₁ weight₂ : G.EdgeWeight W} {w : SimpleWalk α}
@@ -339,6 +385,13 @@ theorem walkWeight_relabelVertices [AddMonoid W] (G : SimpleGraph α) (f : α �
         List.map_cons, List.map_nil, List.sum_append, List.sum_cons, List.sum_nil, add_zero]
       rw [ih hw.1]
       simp
+
+theorem pathWeight_relabelVertices [AddMonoid W] (G : SimpleGraph α) (f : α ≃ γ)
+    (weight : G.EdgeWeight W) (p : SimplePath α) :
+    (G.relabelVertices f).pathWeight
+      (SimpleGraph.EdgeWeight.transportRelabelVertices G f weight)
+      (p.map f f.injective) = G.pathWeight weight p :=
+  G.walkWeight_relabelVertices f weight p.val
 
 end SimpleGraph
 
@@ -395,6 +448,14 @@ theorem pathWeight_append [AddMonoid W] (G : SimpleDiGraph α) (weight : G.EdgeW
     exact VertexSeq.head_mem q.vertices
   simpa [pathWeight, SimplePath.append] using G.walkWeight_append weight p.val q.val hne
 
+theorem pathWeight_glue [AddMonoid W] (G : SimpleDiGraph α) (weight : G.EdgeWeight W)
+    (p q : SimplePath α) (h : p.tail = q.head)
+    (hdisj : p.vertices.length ≠ 0 →
+      ∀ v : α, v ∈ p.vertices.dropTail → v ∈ q.vertices → False) :
+    G.pathWeight weight (p.glue q h hdisj) =
+      G.pathWeight weight p + G.pathWeight weight q :=
+  G.walkWeight_glue weight p.val q.val h
+
 /-- Realized simple directed walks have equal sums for weights agreeing on active arcs. -/
 theorem walkWeight_congr [AddMonoid W] (G : SimpleDiGraph α)
     {weight₁ weight₂ : G.EdgeWeight W} {w : SimpleWalk α}
@@ -443,6 +504,13 @@ theorem walkWeight_relabelVertices [AddMonoid W] (G : SimpleDiGraph α) (f : α 
         List.map_cons, List.map_nil, List.sum_append, List.sum_cons, List.sum_nil, add_zero]
       rw [ih hw.1]
       simp
+
+theorem pathWeight_relabelVertices [AddMonoid W] (G : SimpleDiGraph α) (f : α ≃ γ)
+    (weight : G.EdgeWeight W) (p : SimplePath α) :
+    (G.relabelVertices f).pathWeight
+      (SimpleDiGraph.EdgeWeight.transportRelabelVertices G f weight)
+      (p.map f f.injective) = G.pathWeight weight p :=
+  G.walkWeight_relabelVertices f weight p.val
 
 end SimpleDiGraph
 

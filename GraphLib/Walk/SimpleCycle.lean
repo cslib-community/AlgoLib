@@ -36,7 +36,7 @@ API here only reflects a chosen traversal orientation and is not canonical.
 
 namespace GraphLib
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 namespace SimpleWalk
 
@@ -103,6 +103,33 @@ instance : Coe (SimpleCycle α) (SimpleWalk α) :=
 vertex dropped. -/
 def interior (c : SimpleCycle α) : SimplePath α :=
   ⟨c.val.dropTail, c.2.2.2⟩
+
+/-- Relabel the vertices of a simple cycle. -/
+def relabelVertices (c : SimpleCycle α) (f : α ≃ γ) : SimpleCycle γ := by
+  refine ⟨c.val.map f f.injective, ?_⟩
+  refine ⟨by simpa [SimpleWalk.map] using c.2.1, ?_, ?_⟩
+  · simpa [SimpleWalk.closed, SimpleWalk.map, VertexSeq.closed] using congrArg f c.2.2.1
+  · simpa [SimpleWalk.dropTail, SimpleWalk.map, VertexSeq.dropTail_map] using
+      VertexSeq.nodup_map f f.injective c.val.dropTail.val c.2.2.2
+
+@[simp] theorem val_relabelVertices (c : SimpleCycle α) (f : α ≃ γ) :
+    (c.relabelVertices f).val = c.val.map f f.injective := rfl
+
+@[simp] theorem relabelVertices_id (c : SimpleCycle α) :
+    c.relabelVertices (Equiv.refl α) = c := by
+  apply Subtype.ext
+  apply Subtype.ext
+  exact VertexSeq.map_id c.vertices
+
+@[simp] theorem relabelVertices_comp {δ : Type*} (c : SimpleCycle α)
+    (f : α ≃ γ) (g : γ ≃ δ) :
+    (c.relabelVertices f).relabelVertices g = c.relabelVertices (f.trans g) := by
+  apply Subtype.ext
+  apply Subtype.ext
+  exact (VertexSeq.map_comp f g c.vertices).symm
+
+@[simp] theorem relabelVertices_inverse (c : SimpleCycle α) (f : α ≃ γ) :
+    (c.relabelVertices f).relabelVertices f.symm = c := by simp
 
 attribute [simp, grind] SimpleCycle.val SimpleCycle.vertices SimpleCycle.support
   SimpleCycle.edges SimpleCycle.arcs SimpleCycle.head SimpleCycle.tail SimpleCycle.length

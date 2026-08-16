@@ -1,4 +1,4 @@
-# TARGET_PHASE: Phase 3
+# TARGET_PHASE: Phase 9
 
 Implement **TARGET_PHASE only** from the GraphLib foundation implementation plan. Do not continue to the next phase.
 
@@ -28,6 +28,8 @@ Complete the work assigned to TARGET_PHASE:
 Do not implement later phases opportunistically.
 
 If an earlier-phase defect blocks the current phase, make the smallest necessary repair and record it in the status file.
+
+After completion, push it to Github. The commit message is "Phase" + the number of TARGET_PHASE.
 
 ## Subagents
 

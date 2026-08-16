@@ -1,0 +1,749 @@
+# Task: Design and freeze a fair benchmark protocol for Hierholzer formalization
+
+We are preparing a controlled comparison between two approaches to formalizing graph algorithms in Lean:
+
+1. our current **GraphLib**;
+2. the current graph infrastructure in **Mathlib**.
+
+Later, in **separate Codex tasks**, we will implement Hierholzer's algorithm on both sides, prove correctness, and prove a running-time bound. A final task will compare the two developments.
+
+**This task is Step 1 only. Do not implement Hierholzer's algorithm.**
+
+Your job is to design and freeze a benchmark protocol that is:
+
+* technically realistic for both libraries;
+* symmetric and fair;
+* hard to game after seeing one implementation;
+* precise enough that two independent later agents can implement against exactly the same specification;
+* suitable for evaluating not only final algorithm code, but also representation and proof burden;
+* neutral as to whether GraphLib or Mathlib turns out to be better.
+
+Use **1 main agent + exactly 4 subagents**.
+
+---
+
+# 0. Background and motivation
+
+There is an ongoing design disagreement around graph formalization in CSLib, especially:
+
+* https://github.com/leanprover/cslib/pull/503
+* https://github.com/leanprover/cslib/pull/804
+* https://github.com/leanprover/cslib/pull/805
+
+You should read the relevant technical discussion.
+
+In particular, understand the distinction between:
+
+* a mathematical/specification-level graph object;
+* an executable representation such as adjacency lists, indexed edge occurrences, arrays, cursors, etc.;
+* the claim that an algorithm need not execute directly on the mathematical graph object;
+* the separate question of whether an algorithm-oriented mathematical graph representation nevertheless reduces downstream representation/proof burden.
+
+Do **not** assume either side of this debate is correct.
+
+PR #804/#805 should be treated as evidence about viable design possibilities, not as authoritative prescriptions.
+
+Also inspect the current GraphLib architecture and review reports available in the repository, especially files such as:
+
+* `GRAPHLIB_STRUCTURE_DIAGRAMS.md`
+* `GRAPH_FOUNDATION_REVIEW_AND_REPAIR.md`
+* `NAMING.md`
+* any current GraphLib status / architecture documentation
+
+Use the actual current files if their names or locations differ.
+
+---
+
+# 1. Critical rule: reconnaissance is allowed; implementation is not
+
+You MUST inspect the actual current APIs of both GraphLib and Mathlib before freezing the protocol.
+
+A protocol designed without looking at the libraries may be formally fair but practically impossible or accidentally asymmetric.
+
+However, this task must **not become an early implementation contest**.
+
+Allowed:
+
+* inspect source files and documentation;
+* inspect existing examples;
+* search GitHub / Mathlib / CSLib / relevant Lean projects;
+* inspect existing time-complexity frameworks;
+* inspect #503/#804/#805;
+* make tiny temporary Lean compile probes to confirm that a proposed API or abstraction is actually usable;
+* test typeclass assumptions, finiteness interfaces, available data structures, notation, etc.;
+* sketch possible representation shapes in prose or pseudocode.
+
+Not allowed:
+
+* implement Hierholzer;
+* prove its main correctness theorem;
+* construct a substantial partial implementation;
+* optimize one side by effectively doing Step 2 or Step 3 early;
+* modify GraphLib or Mathlib;
+* commit benchmark-specific implementation code.
+
+Temporary feasibility probes should remain minimal and disposable.
+
+---
+
+# 2. Subagent assignments
+
+Spawn exactly four subagents, with the following roles.
+
+## Subagent A — Time-cost methodology survey
+
+Primary question:
+
+> What is the fairest and most defensible way to formalize and compare the running time of the two Hierholzer implementations?
+
+Survey the actual current Lean ecosystem, especially where relevant:
+
+* `Cslib.Algorithms.Lean.TimeM`;
+* existing CSLib algorithms using `TimeM`, including MergeSort;
+* PR #804 and #805;
+* any relevant AlgoLean material;
+* other Lean projects or papers that formalize algorithmic running time;
+* writer-monad/resource-monad approaches;
+* abstract cost interfaces / RAM-style primitive-operation models;
+* actual executable-data-structure complexity frameworks, if available.
+
+Do not merely list approaches.
+
+For each serious candidate, analyze:
+
+1. what exactly the theorem means;
+2. which assumptions are trusted/manual;
+3. whether operations are manually ticked;
+4. whether the resulting theorem corresponds to the usual textbook RAM analysis;
+5. how data-structure operation costs are represented;
+6. how awkward amortized operations would be;
+7. whether the framework is mature enough for this benchmark;
+8. whether using it would bias GraphLib or Mathlib;
+9. implementation and proof overhead.
+
+Explicitly investigate the known concern that a writer monad such as `TimeM` can assign costs manually rather than derive them from executable semantics.
+
+Recommend a primary methodology, but also identify any secondary metrics that should be reported so that the benchmark does not overclaim what the time theorem proves.
+
+Do not inspect GraphLib vs Mathlib with the goal of choosing a winner.
+
+Deliver a concise report to the main agent.
+
+---
+
+## Subagent B — GraphLib feasibility reconnaissance
+
+Inspect the current GraphLib only, plus generic non-graph Mathlib/CSLib facilities.
+
+Do **not** study Mathlib graph implementations as an alternative architecture.
+
+Determine what an efficient Hierholzer development would realistically require.
+
+Pay particular attention to:
+
+* `Graph`;
+* actual edge identity;
+* `Edge.endpoints` or equivalent endpoint access;
+* loops;
+* parallel edges;
+* incidence;
+* degree;
+* degree-sum facts;
+* delete/restrict operations;
+* walks/trails/circuits/cycles;
+* finite vertices and finite edges;
+* executable enumeration currently available or missing.
+
+Answer:
+
+1. What should the mathematical input graph be?
+2. What extra executable representation would an efficient implementation still need?
+3. Can GraphLib itself serve directly as executable state, or would an adjacency/index layer still be appropriate?
+4. What representation invariants would likely be necessary?
+5. What graph-specific bridge lemmas are likely to be needed?
+6. What assumptions are required for finite enumeration and decidable equality?
+7. Which operations must plausibly be constant-time or amortized constant-time to obtain `O(n+m)`?
+8. Are loops and parallel edges realistic to support without distorting the benchmark?
+9. What parts of the current GraphLib API appear likely to matter to correctness?
+10. What parts appear likely to matter only to runtime/execution?
+
+You may make tiny compile probes.
+
+Do not write Hierholzer.
+
+Do not try to demonstrate that GraphLib is better.
+
+Deliver a concise feasibility report to the main agent.
+
+---
+
+## Subagent C — Mathlib feasibility reconnaissance
+
+Inspect the current Mathlib graph infrastructure only, plus generic non-GraphLib CSLib/Mathlib facilities.
+
+Do **not** inspect GraphLib implementation details.
+
+Read the relevant parts of:
+
+* `Mathlib.Combinatorics.Graph`
+* finite graph APIs
+* delete/restrict/subgraph APIs
+* walk/trail/Eulerian APIs where applicable
+* other graph-related modules necessary for the benchmark
+
+Also inspect #804 and #805, because the benchmark must fairly allow the architecture they demonstrate.
+
+Determine the cleanest realistic Mathlib-side design.
+
+Explicitly allow the Mathlib solution to introduce its own executable representation, for example:
+
+* adjacency lists;
+* edge-indexed incidence lists;
+* per-vertex cursors;
+* arrays;
+* used-edge flags;
+* other suitable representations.
+
+The Mathlib implementation must NOT be required to execute directly on `Graph`.
+
+Answer the analogous questions to Subagent B:
+
+1. What should the mathematical input graph be?
+2. What executable representation is likely to be best?
+3. How should that representation relate to the Mathlib graph specification?
+4. What representation invariants would likely be necessary?
+5. What bridge theorems would likely be needed?
+6. What role does noncomputability, if any, actually play?
+7. Can preprocessing be separated from algorithm runtime in a standard and defensible way?
+8. What assumptions are required for finite enumeration?
+9. How naturally can loops and parallel edges be supported?
+10. What operations must be constant-time/amortized constant-time for `O(n+m)`?
+
+You may make tiny compile probes.
+
+Do not write Hierholzer.
+
+Do not try to demonstrate that Mathlib is better.
+
+Deliver a concise feasibility report to the main agent.
+
+---
+
+## Subagent D — Adversarial benchmark/fairness reviewer
+
+This subagent should inspect:
+
+* the GraphLib architecture/review material;
+* relevant Mathlib graph APIs;
+* #503/#804/#805;
+* the reports from Subagents A/B/C once available.
+
+Its job is NOT to design an implementation.
+
+Its job is to attack the benchmark protocol.
+
+Look for hidden asymmetries such as:
+
+* giving one side preprocessing for free and charging the other;
+* forcing one side to use its mathematical graph directly;
+* allowing one side an auxiliary adjacency representation but not the other;
+* different theorem strengths;
+* different loop or parallel-edge conventions;
+* different definitions of `m`;
+* counting edge occurrences differently;
+* letting one side use an unrealistically constant-time `Finset` operation;
+* hiding expensive reconstruction in a supposedly free abstraction;
+* allowing one side to add graph-specific lemmas to its foundation while forbidding the other;
+* counting generic data-structure deficiencies as graph-representation deficiencies;
+* requiring one side to prove stronger representation correspondence;
+* using asymptotic notation that hides materially different concrete costs;
+* choosing a graph class that accidentally removes the central representation issue.
+
+Classify every important potential bias as:
+
+* blocking;
+* should fix;
+* acceptable but must be documented.
+
+Deliver an adversarial fairness report to the main agent.
+
+---
+
+# 3. Main agent responsibilities
+
+The main agent should coordinate the four subagents, inspect their reports, independently verify important claims, and produce the final frozen protocol.
+
+Do not simply concatenate the reports.
+
+Resolve disagreements.
+
+When a protocol choice materially favors one side, either:
+
+1. replace it with a symmetric rule; or
+2. explicitly document why the asymmetry is intrinsic to the libraries rather than introduced by the benchmark.
+
+The final protocol must be realistic enough that Steps 2 and 3 can proceed without redesigning the experiment.
+
+---
+
+# 4. Benchmark problem to investigate and, unless strong evidence suggests otherwise, freeze
+
+The intended benchmark is **Hierholzer's algorithm on a finite undirected multigraph**.
+
+The benchmark should deliberately exercise actual edge identity.
+
+The default intended graph class is:
+
+* finite vertices;
+* finite edges;
+* undirected;
+* parallel edges allowed;
+* loops allowed.
+
+Do not silently simplify to `SimpleGraph`.
+
+If supporting loops makes the comparison technically pathological for a reason unrelated to the architecture question, analyze that explicitly before changing the scope.
+
+We want the benchmark to exercise:
+
+* actual edge identity;
+* incidence;
+* the other endpoint of an incident edge;
+* repeated/parallel edges;
+* loops;
+* marking or removing used edges;
+* walks/trails/circuits;
+* finite enumeration;
+* degree and degree-sum reasoning;
+* a genuinely linear-time implementation.
+
+---
+
+# 5. Correctness target to freeze
+
+The protocol must specify one exact correctness contract that both later implementations must prove.
+
+A likely target is:
+
+Given a finite undirected multigraph `G` and a starting vertex `s`, under standard Eulerian hypotheses such as:
+
+* all non-isolated vertices lie in the same connected component as `s`;
+* every vertex has even degree;
+
+the algorithm returns an Eulerian circuit starting and ending at `s`.
+
+The output theorem should make precise that:
+
+* the returned object is a valid walk/circuit in `G`;
+* every actual edge of `G` is used exactly once;
+* no edge outside `G` is used;
+* edge identity, not merely endpoint pairs, determines uniqueness.
+
+Handle the edgeless case explicitly.
+
+The benchmark need NOT prove the full iff characterization of Eulerian multigraphs unless doing so is required naturally by both implementations.
+
+Avoid adding unrelated graph theory merely to make one implementation look harder.
+
+Before freezing the exact statement, inspect what both libraries can naturally express.
+
+---
+
+# 6. Runtime target to freeze
+
+The intended target is textbook linear time:
+
+$$
+O(n+m),
+$$
+
+where `n` and `m` must be defined identically for both implementations.
+
+However, do NOT use only an asymptotic theorem if a sharper theorem is reasonably available.
+
+Prefer a two-level result:
+
+### Level 1: concrete resource bound
+
+Something structurally comparable to
+
+$$
+T
+\le
+c_0
+
+* c_1 n
+* c_2 m
+* c_3 \sum_v |\mathrm{incidence}(v)|
+  $$
+
+or an exact accounting identity if feasible.
+
+### Level 2: textbook corollary
+
+Use an incidence/degree-sum fact to derive
+
+$$
+T \le C(n+m)
+$$
+
+for a fixed constant `C`, hence the intended linear-time result.
+
+The exact form should be selected after the time-methodology survey.
+
+Do not hide meaningful representation differences behind `IsBigO` notation.
+
+---
+
+# 7. Runtime boundary versus representation burden
+
+This distinction is essential.
+
+The benchmark must separately report:
+
+## A. Algorithm runtime
+
+The primary runtime theorem should start from the executable representation expected by the algorithm.
+
+If textbook algorithm analysis normally treats the graph's adjacency representation as input, that preprocessing may be outside the primary Hierholzer runtime.
+
+This convention must be applied symmetrically.
+
+## B. Representation construction / bridge burden
+
+Separately record:
+
+* whether the executable representation is computably constructible;
+* whether construction is noncomputable;
+* whether a construction-time bound can be proved;
+* representation fields;
+* representation invariants;
+* bridge theorems;
+* preprocessing code and proof burden.
+
+If meaningful, permit an optional second theorem for preprocessing/construction cost.
+
+Do NOT conflate:
+
+> “algorithm runs in linear time once supplied its standard representation”
+
+with
+
+> “the mathematical graph specification itself can be converted to that representation in linear time.”
+
+Both questions may be interesting, but they are different benchmark dimensions.
+
+---
+
+# 8. Executable representation policy
+
+Both later implementations must have the same freedom.
+
+Each side may introduce the **best benchmark-local executable representation** it considers appropriate.
+
+Examples may include:
+
+* adjacency/incidence arrays;
+* edge-indexed occurrences;
+* per-vertex cursors;
+* edge indices;
+* used-edge Boolean arrays;
+* stacks;
+* output buffers;
+* finite maps;
+* other standard data structures.
+
+GraphLib is NOT required to run directly on its mathematical graph object.
+
+Mathlib is NOT required to run directly on its mathematical graph object.
+
+A benchmark-local representation must, however, come with enough correspondence to the mathematical graph to state and prove the shared correctness theorem.
+
+Do not give either side a weaker correspondence obligation.
+
+---
+
+# 9. Allowed dependencies in later steps
+
+Freeze clear dependency rules.
+
+## GraphLib implementation
+
+May use:
+
+* GraphLib;
+* generic Mathlib;
+* generic CSLib;
+* the chosen common time-cost framework;
+* generic data structures.
+
+Must not use Mathlib graph-specific definitions or theorems as a substitute for GraphLib.
+
+Be careful about accidental graph-specific imports.
+
+## Mathlib implementation
+
+May use:
+
+* Mathlib graph infrastructure;
+* generic Mathlib;
+* generic CSLib;
+* the chosen common time-cost framework;
+* generic data structures.
+
+Must not use GraphLib.
+
+Both sides may write benchmark-local helper definitions and lemmas.
+
+The protocol should define what counts as:
+
+* graph-foundation modification;
+* benchmark-local bridge code;
+* generic data-structure code.
+
+---
+
+# 10. Foundation modification policy
+
+For the later benchmark, neither side should be allowed to silently grow its underlying graph foundation until the benchmark becomes easy.
+
+Prefer:
+
+* no modifications to the underlying GraphLib or Mathlib graph foundation during the first implementation attempt;
+* benchmark-local helper definitions and lemmas are allowed;
+* any missing foundation API should be recorded explicitly.
+
+If a tiny foundation repair is genuinely necessary, record:
+
+* exact change;
+* why it was necessary;
+* whether an analogous change would have been allowed on the other side.
+
+The comparison should distinguish:
+
+1. existing-library support;
+2. benchmark-local bridge code;
+3. proposed upstream/foundation improvements.
+
+---
+
+# 11. Cost-model realism
+
+The protocol must not allow statements such as:
+
+> “membership/update costs one tick”
+
+unless the chosen framework makes clear what this means and why it corresponds to a defensible algorithmic cost model.
+
+In particular, investigate and freeze treatment of:
+
+* array reads/writes;
+* persistent versus mutable arrays;
+* stack push/pop;
+* cursor increments;
+* edge-used tests/updates;
+* map/set lookup;
+* `Finset` membership/insertion;
+* list scanning;
+* finite enumeration;
+* loop overhead;
+* preprocessing;
+* allocation.
+
+Do not accidentally treat a linear-time `Finset` lookup as unit-cost merely because it is written as one Lean expression.
+
+If the cost model abstracts over a data structure operation, make the abstraction explicit.
+
+If the model assumes a RAM primitive, say so.
+
+If the theorem is a manually annotated resource count rather than a machine-runtime theorem, say so.
+
+---
+
+# 12. Version freezing
+
+Record in the final protocol:
+
+* current GraphLib commit / repository state;
+* current Mathlib commit used by the project;
+* Lean version;
+* CSLib version/commit if relevant;
+* exact time-cost framework version/files;
+* date of the benchmark freeze.
+
+Later Steps 2 and 3 should use these frozen versions unless a blocking bug forces a documented update.
+
+---
+
+# 13. Metrics to freeze now for the final comparison
+
+Do not wait until Step 4 to invent evaluation metrics.
+
+Define them now.
+
+At minimum, the final comparison should report separately:
+
+### Code size
+
+* executable representation LOC;
+* representation/bridge theorem LOC;
+* algorithm LOC;
+* correctness proof LOC;
+* time-analysis proof LOC;
+* generic data-structure support LOC;
+* graph-specific helper LOC.
+
+### Logical/proof burden
+
+* number of main invariants;
+* number of representation invariants;
+* number of bridge lemmas;
+* number of new graph-specific lemmas;
+* number of auxiliary generic lemmas;
+* dependence on choice/noncomputability;
+* theorem-statement complexity.
+
+### Algorithmic result
+
+* exact/concrete time bound;
+* final asymptotic bound;
+* preprocessing included or excluded;
+* assumptions on primitive operations.
+
+### Engineering burden
+
+* build fragility;
+* proof brittleness;
+* heavy automation required;
+* major failed implementation approaches;
+* need for changes to the underlying graph foundation.
+
+### Friction classification
+
+For every significant difficulty, classify it as one of:
+
+A. unavoidable Hierholzer/graph-theory complexity;
+B. generic Lean/data-structure complexity;
+C. graph-specification / representation friction;
+D. missing graph-library API;
+E. time-complexity framework friction.
+
+The final comparison must not attribute category A/B/E difficulties to the graph library.
+
+---
+
+# 14. Development reports required from Steps 2 and 3
+
+Freeze now that both later implementation tasks must produce, in addition to Lean code:
+
+`IMPLEMENTATION_REPORT.md`
+
+with at least:
+
+* chosen representation;
+* alternative representations considered;
+* why the final one was chosen;
+* blockers encountered;
+* bridge invariants required;
+* graph-library APIs that were helpful;
+* graph-library APIs that were missing;
+* generic data-structure problems;
+* time-analysis problems;
+* noncomputable components;
+* preprocessing assumptions;
+* reviewer-suggested optimizations;
+* any foundation changes;
+* final build status.
+
+The reports must record failed or abandoned approaches when informative.
+
+---
+
+# 15. Bias-control principles
+
+The experiment is not intended to prove that GraphLib is better.
+
+The following are all acceptable final outcomes:
+
+1. GraphLib materially reduces downstream representation/proof burden.
+2. The two approaches are roughly equivalent.
+3. Mathlib + a thin executable representation is simpler or better.
+4. Each has advantages in different dimensions.
+
+Do not optimize the protocol for any desired outcome.
+
+In particular:
+
+* do not use “computability” as a win by itself unless it creates measurable downstream benefit;
+* do not use raw LOC as the sole metric;
+* do not penalize Mathlib merely because its intended architecture separates specification and implementation;
+* do not give GraphLib credit for generic data-structure work;
+* do not give Mathlib credit merely for moving complexity into an unmeasured representation layer;
+* measure where the complexity actually goes.
+
+---
+
+# 16. Main deliverable
+
+Create:
+
+`HIERHOLZER_BENCHMARK_PROTOCOL.md`
+
+This document must be sufficiently precise that two later agents can independently execute Step 2 and Step 3 without renegotiating the benchmark.
+
+Suggested structure:
+
+1. Executive summary
+2. Scientific/design question being tested
+3. Non-goals
+4. Frozen versions
+5. Exact graph class
+6. Exact input/output specification
+7. Exact Eulerian preconditions
+8. Exact correctness theorem target
+9. Executable representation policy
+10. Chosen time-cost methodology
+11. Primitive-operation cost model
+12. Runtime boundary and preprocessing policy
+13. Concrete time theorem target
+14. Asymptotic theorem target
+15. Allowed dependencies
+16. Foundation-modification policy
+17. Required implementation reports
+18. Final comparison metrics
+19. Fairness / anti-gaming rules
+20. Known limitations of the benchmark
+21. Unresolved questions, if any
+
+Try hard to leave **no unresolved question that would change the meaning of the later comparison**.
+
+If an unresolved issue remains genuinely unavoidable, present:
+
+* the alternatives;
+* the technical consequence of each;
+* your recommended choice.
+
+Do not implement Hierholzer in this task.
+
+---
+
+# 17. Final adversarial review before freezing
+
+Before declaring the protocol complete:
+
+1. Have Subagent D review the synthesized draft.
+2. Have the main agent independently challenge at least the following:
+
+   * Is either side forced into an unnatural representation?
+   * Is either side charged for work the other gets free?
+   * Are theorem strengths identical?
+   * Are loops and parallel edges treated identically?
+   * Is `m` literally the same mathematical quantity?
+   * Are primitive-operation costs defensible?
+   * Could either implementation “win” simply by hiding work outside the timed region?
+   * Could either implementation exploit noncomputability to avoid measured engineering burden?
+   * Are generic data-structure deficiencies separated from graph-library deficiencies?
+3. Repair all blocking or serious fairness defects.
+4. Freeze the final document.
+
+End the task after producing the protocol and a short summary of the main design decisions.

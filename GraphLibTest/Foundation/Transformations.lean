@@ -279,6 +279,20 @@ example : oneArcDiGraph.reverse.Adj 5 4 := by
 
 example : oneArcDiGraph.reverse.reverse = oneArcDiGraph := by simp
 
+example (G : DiGraph α β) (F : Set (Arc α β)) :
+    (G.deleteEdges F).reverse.reverse = G.deleteEdges F := by simp
+
+example (G : DiGraph α β) (F : Set (Arc α β)) :
+    (G.restrictEdges F).reverse.reverse = G.restrictEdges F := by simp
+
+example (G : SimpleDiGraph α) (F : Set (α × α)) :
+    (G.deleteEdges F).reverse.reverse = G.deleteEdges F := by simp
+
+example (G : SimpleDiGraph α) (F : Set (α × α)) :
+    (G.restrictEdges F).reverse.reverse = G.restrictEdges F := by simp
+
+#check DiGraph.mem_edgeSet_forgetDirection
+
 example : E(parallelGraph.underlyingSimple) = {s(0, 1)} := by
   ext e
   rw [Graph.mem_edgeSet_underlyingSimple]

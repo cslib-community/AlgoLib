@@ -22,70 +22,6 @@ open scoped GraphLib
 
 variable {α β γ δ : Type*}
 
-/-! ## Private cycle transport -/
-
-private theorem VertexSeq.dropTail_map_equiv (w : VertexSeq α) (f : α ≃ γ) :
-    (w.map f).dropTail = w.dropTail.map f := by
-  cases w <;> rfl
-
-private theorem Walk.dropTail_mapVertices_equiv (w : Walk α β) (f : α ≃ γ) :
-    (w.mapVertices f).dropTail = w.dropTail.mapVertices f := by
-  cases w <;> rfl
-
-private theorem Walk.dropTail_mapTags_equiv (w : Walk α β) (g : β ≃ δ) :
-    (w.mapTags g).dropTail = w.dropTail.mapTags g := by
-  cases w <;> rfl
-
-private def SimpleCycle.relabelVerticesData (c : SimpleCycle α)
-    (f : α ≃ γ) : SimpleCycle γ := by
-  refine ⟨c.val.map f f.injective, ?_⟩
-  refine ⟨by simpa [SimpleWalk.map] using c.2.1, ?_, ?_⟩
-  · simpa [SimpleWalk.closed, SimpleWalk.map, VertexSeq.closed] using congrArg f c.2.2.1
-  · simpa [SimpleWalk.dropTail, SimpleWalk.map, VertexSeq.dropTail_map_equiv] using
-      VertexSeq.nodup_map f f.injective c.val.dropTail.val c.2.2.2
-
-private def SimpleDiCycle.relabelVerticesData (c : SimpleDiCycle α)
-    (f : α ≃ γ) : SimpleDiCycle γ := by
-  refine ⟨c.val.map f f.injective, ?_⟩
-  refine ⟨by simpa [SimpleWalk.map] using c.2.1, ?_, ?_⟩
-  · simpa [SimpleWalk.closed, SimpleWalk.map, VertexSeq.closed] using congrArg f c.2.2.1
-  · simpa [SimpleWalk.dropTail, SimpleWalk.map, VertexSeq.dropTail_map_equiv] using
-      VertexSeq.nodup_map f f.injective c.val.dropTail.val c.2.2.2
-
-private def Cycle.relabelVerticesData (c : Cycle α β) (f : α ≃ γ) : Cycle γ β := by
-  refine ⟨c.val.mapVertices f, by
-    refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using congrArg f c.closed,
-      ?_, ?_⟩
-    · rw [Walk.dropTail_mapVertices_equiv, Walk.vertices_mapVertices]
-      exact c.interior_nodup.map f.injective
-    · rw [Walk.edges_mapVertices]
-      simpa [Edge.relabelVertices] using c.edges_nodup.map
-        (Edge.relabelVertices f).injective⟩
-
-private def Cycle.relabelTagsData (c : Cycle α β) (g : β ≃ δ) : Cycle α δ := by
-  refine ⟨c.val.mapTags g, by
-    refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using c.closed, ?_, ?_⟩
-    · simpa [Walk.dropTail_mapTags_equiv] using c.interior_nodup
-    · rw [Walk.edges_mapTags]
-      simpa [Edge.relabelTags] using c.edges_nodup.map (Edge.relabelTags g).injective⟩
-
-private def DiCycle.relabelVerticesData (c : DiCycle α β) (f : α ≃ γ) : DiCycle γ β := by
-  refine ⟨c.val.mapVertices f, by
-    refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using congrArg f c.closed,
-      ?_, ?_⟩
-    · rw [Walk.dropTail_mapVertices_equiv, Walk.vertices_mapVertices]
-      exact c.interior_nodup.map f.injective
-    · rw [Walk.arcs_mapVertices]
-      simpa [Arc.relabelVertices] using c.arcs_nodup.map
-        (Arc.relabelVertices f).injective⟩
-
-private def DiCycle.relabelTagsData (c : DiCycle α β) (g : β ≃ δ) : DiCycle α δ := by
-  refine ⟨c.val.mapTags g, by
-    refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using c.closed, ?_, ?_⟩
-    · simpa [Walk.dropTail_mapTags_equiv] using c.interior_nodup
-    · rw [Walk.arcs_mapTags]
-      simpa [Arc.relabelTags] using c.arcs_nodup.map (Arc.relabelTags g).injective⟩
-
 /-! ## Simple undirected graphs -/
 
 namespace SimpleGraph
@@ -129,10 +65,10 @@ lemma isAcyclic_of_subgraph (G H : SimpleGraph α) (hsub : H ≤ G)
     (G.relabelVertices f).HasSimpleCycle ↔ G.HasSimpleCycle := by
   constructor
   · rintro ⟨c, hc⟩
-    refine ⟨c.relabelVerticesData f.symm, ?_⟩
+    refine ⟨c.relabelVertices f.symm, ?_⟩
     simpa using IsSimpleWalkIn.relabelVertices f.symm hc
   · rintro ⟨c, hc⟩
-    exact ⟨c.relabelVerticesData f, IsSimpleWalkIn.relabelVertices f hc⟩
+    exact ⟨c.relabelVertices f, IsSimpleWalkIn.relabelVertices f hc⟩
 
 @[simp] theorem relabelVertices_isAcyclic (G : SimpleGraph α) (f : α ≃ γ) :
     (G.relabelVertices f).IsAcyclic ↔ G.IsAcyclic := by
@@ -216,10 +152,10 @@ lemma isAcyclic_of_subgraph (G H : SimpleDiGraph α) (hsub : H ≤ G)
     (G.relabelVertices f).HasSimpleCycle ↔ G.HasSimpleCycle := by
   constructor
   · rintro ⟨c, hc⟩
-    refine ⟨c.relabelVerticesData f.symm, ?_⟩
+    refine ⟨c.relabelVertices f.symm, ?_⟩
     simpa using IsSimpleWalkIn.relabelVertices f.symm hc
   · rintro ⟨c, hc⟩
-    exact ⟨c.relabelVerticesData f, IsSimpleWalkIn.relabelVertices f hc⟩
+    exact ⟨c.relabelVertices f, IsSimpleWalkIn.relabelVertices f hc⟩
 
 @[simp] theorem relabelVertices_isAcyclic (G : SimpleDiGraph α) (f : α ≃ γ) :
     (G.relabelVertices f).IsAcyclic ↔ G.IsAcyclic := by simp [IsAcyclic]
@@ -270,19 +206,19 @@ lemma isAcyclic_of_subgraph (G H : Graph α β) (hsub : H ≤ G) (hG : G.IsAcycl
     (G.relabelVertices f).HasCycle ↔ G.HasCycle := by
   constructor
   · rintro ⟨c, hc⟩
-    refine ⟨c.relabelVerticesData f.symm, ?_⟩
+    refine ⟨c.relabelVertices f.symm, ?_⟩
     simpa using hc.relabelVertices f.symm
   · rintro ⟨c, hc⟩
-    exact ⟨c.relabelVerticesData f, hc.relabelVertices f⟩
+    exact ⟨c.relabelVertices f, hc.relabelVertices f⟩
 
 @[simp] theorem relabelTags_hasCycle (G : Graph α β) (g : β ≃ δ) :
     (G.relabelTags g).HasCycle ↔ G.HasCycle := by
   constructor
   · rintro ⟨c, hc⟩
-    refine ⟨c.relabelTagsData g.symm, ?_⟩
+    refine ⟨c.relabelTags g.symm, ?_⟩
     simpa using hc.relabelTags g.symm
   · rintro ⟨c, hc⟩
-    exact ⟨c.relabelTagsData g, hc.relabelTags g⟩
+    exact ⟨c.relabelTags g, hc.relabelTags g⟩
 
 @[simp] theorem relabelVertices_isAcyclic (G : Graph α β) (f : α ≃ γ) :
     (G.relabelVertices f).IsAcyclic ↔ G.IsAcyclic := by simp [IsAcyclic]
@@ -362,19 +298,19 @@ lemma isAcyclic_of_subgraph (G H : DiGraph α β) (hsub : H ≤ G) (hG : G.IsAcy
     (G.relabelVertices f).HasCycle ↔ G.HasCycle := by
   constructor
   · rintro ⟨c, hc⟩
-    refine ⟨c.relabelVerticesData f.symm, ?_⟩
+    refine ⟨c.relabelVertices f.symm, ?_⟩
     simpa using hc.relabelVertices f.symm
   · rintro ⟨c, hc⟩
-    exact ⟨c.relabelVerticesData f, hc.relabelVertices f⟩
+    exact ⟨c.relabelVertices f, hc.relabelVertices f⟩
 
 @[simp] theorem relabelTags_hasCycle (G : DiGraph α β) (g : β ≃ δ) :
     (G.relabelTags g).HasCycle ↔ G.HasCycle := by
   constructor
   · rintro ⟨c, hc⟩
-    refine ⟨c.relabelTagsData g.symm, ?_⟩
+    refine ⟨c.relabelTags g.symm, ?_⟩
     simpa using hc.relabelTags g.symm
   · rintro ⟨c, hc⟩
-    exact ⟨c.relabelTagsData g, hc.relabelTags g⟩
+    exact ⟨c.relabelTags g, hc.relabelTags g⟩
 
 @[simp] theorem relabelVertices_isAcyclic (G : DiGraph α β) (f : α ≃ γ) :
     (G.relabelVertices f).IsAcyclic ↔ G.IsAcyclic := by simp [IsAcyclic]

@@ -277,6 +277,29 @@ namespace IsPathIn
 theorem isWalkIn {G : Graph α β} {p : Path α β} (h : G.IsPathIn p) : G.IsWalkIn p.val := h
 theorem reverse {G : Graph α β} {p : Path α β} (h : G.IsPathIn p) :
     G.IsPathIn p.reverse := Graph.IsWalkIn.reverse h
+theorem mono {G H : Graph α β} {p : Path α β} (h : G.IsPathIn p) (hGH : G ≤ H) :
+    H.IsPathIn p := Graph.IsWalkIn.mono h hGH
+theorem edge_mem {G : Graph α β} {p : Path α β} (h : G.IsPathIn p)
+    {e : Edge α β} (he : e ∈ p.edges) : e ∈ E(G) := Graph.IsWalkIn.edge_mem h he
+theorem glue {G : Graph α β} {p q : Path α β} (hp : G.IsPathIn p)
+    (hq : G.IsPathIn q) (hends : p.tail = q.head)
+    (hdisj : ∀ v ∈ p.vertices.dropLast, v ∈ q.vertices → False) :
+    G.IsPathIn (p.glue q hends hdisj) := Graph.IsWalkIn.glue hp hq hends
+theorem induce_iff (G : Graph α β) (S : Set α) (p : Path α β) :
+    (G.induce S).IsPathIn p ↔ G.IsPathIn p ∧ ∀ v ∈ p.vertices, v ∈ S :=
+  Graph.IsWalkIn.induce_iff G S p.val
+theorem restrictEdges_iff (G : Graph α β) (F : Set (Edge α β)) (p : Path α β) :
+    (G.restrictEdges F).IsPathIn p ↔ G.IsPathIn p ∧ ∀ e ∈ p.edges, e ∈ F :=
+  Graph.IsWalkIn.restrictEdges_iff G F p.val
+theorem deleteEdges_iff (G : Graph α β) (F : Set (Edge α β)) (p : Path α β) :
+    (G.deleteEdges F).IsPathIn p ↔ G.IsPathIn p ∧ ∀ e ∈ p.edges, e ∉ F :=
+  Graph.IsWalkIn.deleteEdges_iff G F p.val
+theorem relabelVertices {G : Graph α β} {p : Path α β} (f : α ≃ γ)
+    (h : G.IsPathIn p) : (G.relabelVertices f).IsPathIn (p.relabelVertices f) :=
+  Graph.IsWalkIn.relabelVertices f h
+theorem relabelTags {G : Graph α β} {p : Path α β} (g : β ≃ δ)
+    (h : G.IsPathIn p) : (G.relabelTags g).IsPathIn (p.relabelTags g) :=
+  Graph.IsWalkIn.relabelTags g h
 end IsPathIn
 
 namespace IsCircuitIn
@@ -291,6 +314,25 @@ theorem isWalkIn {G : Graph α β} {c : Cycle α β} (h : G.IsCycleIn c) :
     G.IsWalkIn c.val := h
 theorem reverse {G : Graph α β} {c : Cycle α β} (h : G.IsCycleIn c) :
     G.IsCycleIn c.reverse := Graph.IsWalkIn.reverse h
+theorem mono {G H : Graph α β} {c : Cycle α β} (h : G.IsCycleIn c) (hGH : G ≤ H) :
+    H.IsCycleIn c := Graph.IsWalkIn.mono h hGH
+theorem edge_mem {G : Graph α β} {c : Cycle α β} (h : G.IsCycleIn c)
+    {e : Edge α β} (he : e ∈ c.edges) : e ∈ E(G) := Graph.IsWalkIn.edge_mem h he
+theorem induce_iff (G : Graph α β) (S : Set α) (c : Cycle α β) :
+    (G.induce S).IsCycleIn c ↔ G.IsCycleIn c ∧ ∀ v ∈ c.vertices, v ∈ S :=
+  Graph.IsWalkIn.induce_iff G S c.val
+theorem restrictEdges_iff (G : Graph α β) (F : Set (Edge α β)) (c : Cycle α β) :
+    (G.restrictEdges F).IsCycleIn c ↔ G.IsCycleIn c ∧ ∀ e ∈ c.edges, e ∈ F :=
+  Graph.IsWalkIn.restrictEdges_iff G F c.val
+theorem deleteEdges_iff (G : Graph α β) (F : Set (Edge α β)) (c : Cycle α β) :
+    (G.deleteEdges F).IsCycleIn c ↔ G.IsCycleIn c ∧ ∀ e ∈ c.edges, e ∉ F :=
+  Graph.IsWalkIn.deleteEdges_iff G F c.val
+theorem relabelVertices {G : Graph α β} {c : Cycle α β} (f : α ≃ γ)
+    (h : G.IsCycleIn c) : (G.relabelVertices f).IsCycleIn (c.relabelVertices f) :=
+  Graph.IsWalkIn.relabelVertices f h
+theorem relabelTags {G : Graph α β} {c : Cycle α β} (g : β ≃ δ)
+    (h : G.IsCycleIn c) : (G.relabelTags g).IsCycleIn (c.relabelTags g) :=
+  Graph.IsWalkIn.relabelTags g h
 end IsCycleIn
 
 end Graph

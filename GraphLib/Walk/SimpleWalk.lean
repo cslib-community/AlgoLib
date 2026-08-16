@@ -344,14 +344,14 @@ lemma arcs_suffixFrom_subset [DecidableEq α] (w : SimpleWalk α) (v : α)
   VertexSeq.arcs_suffixFrom_subset w.val v h
 
 /-- The source of a traversed arc is a vertex of the walk. -/
-lemma fst_mem_of_arc_mem {a : α × α} (w : SimpleWalk α)
+lemma source_mem_of_arc_mem {a : α × α} (w : SimpleWalk α)
     (ha : a ∈ w.arcs) : a.1 ∈ w.support :=
-  VertexSeq.fst_mem_of_arc_mem w.val ha
+  VertexSeq.source_mem_of_arc_mem w.val ha
 
 /-- The target of a traversed arc is a vertex of the walk. -/
-lemma snd_mem_of_arc_mem {a : α × α} (w : SimpleWalk α)
+lemma target_mem_of_arc_mem {a : α × α} (w : SimpleWalk α)
     (ha : a ∈ w.arcs) : a.2 ∈ w.support :=
-  VertexSeq.snd_mem_of_arc_mem w.val ha
+  VertexSeq.target_mem_of_arc_mem w.val ha
 
 -- These operations are thin `Subtype` wrappers around their `VertexSeq`
 -- counterparts, so unfolding them is exactly how `simp`/`grind` gets down to the
@@ -382,10 +382,10 @@ def toSimpleDiGraph (w : SimpleWalk α) : SimpleDiGraph α where
   edgeSet := { a | a ∈ w.val.arcs }
   source_mem := by
     intro a ha
-    exact VertexSeq.fst_mem_of_arc_mem w.val ha
+    exact VertexSeq.source_mem_of_arc_mem w.val ha
   target_mem := by
     intro a ha
-    exact VertexSeq.snd_mem_of_arc_mem w.val ha
+    exact VertexSeq.target_mem_of_arc_mem w.val ha
   loopless := by
     intro a ha
     obtain ⟨q, hq⟩ := w

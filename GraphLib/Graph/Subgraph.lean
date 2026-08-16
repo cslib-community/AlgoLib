@@ -1496,4 +1496,54 @@ theorem restrictEdges_mono_right (G : SimpleDiGraph α) {F K : Set (α × α)} (
 
 end SimpleDiGraph
 
+/-! ## Mixed restriction normalization -/
+
+namespace Graph
+
+/-- Inducing vertices commutes with restricting actual edges. -/
+@[simp] theorem restrictEdges_induce (G : Graph α β) (S : Set α)
+    (F : Set (Edge α β)) :
+    (G.induce S).restrictEdges F = (G.restrictEdges F).induce S := by
+  apply Graph.ext <;> ext <;> simp only [mem_vertexSet_restrictEdges,
+    mem_vertexSet_induce, mem_edgeSet_restrictEdges, mem_edgeSet_induce]
+  tauto
+
+end Graph
+
+namespace SimpleGraph
+
+/-- Inducing vertices commutes with restricting actual edges. -/
+@[simp] theorem restrictEdges_induce (G : SimpleGraph α) (S : Set α)
+    (F : Set (Sym2 α)) :
+    (G.induce S).restrictEdges F = (G.restrictEdges F).induce S := by
+  apply SimpleGraph.ext <;> ext <;> simp only [mem_vertexSet_restrictEdges,
+    mem_vertexSet_induce, mem_edgeSet_restrictEdges, mem_edgeSet_induce]
+  tauto
+
+end SimpleGraph
+
+namespace DiGraph
+
+/-- Inducing vertices commutes with restricting actual arcs. -/
+@[simp] theorem restrictEdges_induce (G : DiGraph α β) (S : Set α)
+    (F : Set (Arc α β)) :
+    (G.induce S).restrictEdges F = (G.restrictEdges F).induce S := by
+  apply DiGraph.ext <;> ext <;> simp only [mem_vertexSet_restrictEdges,
+    mem_vertexSet_induce, mem_edgeSet_restrictEdges, mem_edgeSet_induce]
+  tauto
+
+end DiGraph
+
+namespace SimpleDiGraph
+
+/-- Inducing vertices commutes with restricting actual arcs. -/
+@[simp] theorem restrictEdges_induce (G : SimpleDiGraph α) (S : Set α)
+    (F : Set (α × α)) :
+    (G.induce S).restrictEdges F = (G.restrictEdges F).induce S := by
+  apply SimpleDiGraph.ext <;> ext <;> simp only [mem_vertexSet_restrictEdges,
+    mem_vertexSet_induce, mem_edgeSet_restrictEdges, mem_edgeSet_induce]
+  tauto
+
+end SimpleDiGraph
+
 end GraphLib

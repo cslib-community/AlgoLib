@@ -319,7 +319,7 @@ theorem deleteEdges_deleteVerts (G : Graph α β) (F : Set (Edge α β)) (S : Se
       ∃ e, G.IsLink e x y ∧ e.endpoints ≠ s(u, v) := by
   simp [deleteEdgesBetween]
 
-@[simp] theorem deleteEdgesBetween_comm (G : Graph α β) (u v : α) :
+theorem deleteEdgesBetween_comm (G : Graph α β) (u v : α) :
     G.deleteEdgesBetween u v = G.deleteEdgesBetween v u := by
   simp only [deleteEdgesBetween, Sym2.eq_swap]
 
@@ -532,7 +532,7 @@ theorem deleteEdges_deleteVerts (G : SimpleGraph α) (F : Set (Sym2 α)) (S : Se
       G.Adj x y ∧ s(x, y) ≠ s(u, v) := by
   simp [deleteEdgesBetween]
 
-@[simp] theorem deleteEdgesBetween_comm (G : SimpleGraph α) (u v : α) :
+theorem deleteEdgesBetween_comm (G : SimpleGraph α) (u v : α) :
     G.deleteEdgesBetween u v = G.deleteEdgesBetween v u := by
   simp only [deleteEdgesBetween, Sym2.eq_swap]
 
@@ -963,6 +963,48 @@ theorem deleteEdges_deleteVerts (G : SimpleDiGraph α) (F : Set (α × α)) (S :
     (G.deleteArcsFromTo u v).Adj x y ↔
       G.Adj x y ∧ ¬ (x = u ∧ y = v) := by
   simp [deleteArcsFromTo]
+
+end SimpleDiGraph
+
+/-! ## Mixed deletion normalization -/
+
+namespace Graph
+
+/-- Inducing vertices commutes with deleting actual edges. -/
+@[simp] theorem deleteEdges_induce (G : Graph α β) (S : Set α)
+    (F : Set (Edge α β)) :
+    (G.induce S).deleteEdges F = (G.deleteEdges F).induce S := by
+  simpa [deleteEdges] using G.restrictEdges_induce S Fᶜ
+
+end Graph
+
+namespace SimpleGraph
+
+/-- Inducing vertices commutes with deleting actual edges. -/
+@[simp] theorem deleteEdges_induce (G : SimpleGraph α) (S : Set α)
+    (F : Set (Sym2 α)) :
+    (G.induce S).deleteEdges F = (G.deleteEdges F).induce S := by
+  simpa [deleteEdges] using G.restrictEdges_induce S Fᶜ
+
+end SimpleGraph
+
+namespace DiGraph
+
+/-- Inducing vertices commutes with deleting actual arcs. -/
+@[simp] theorem deleteEdges_induce (G : DiGraph α β) (S : Set α)
+    (F : Set (Arc α β)) :
+    (G.induce S).deleteEdges F = (G.deleteEdges F).induce S := by
+  simpa [deleteEdges] using G.restrictEdges_induce S Fᶜ
+
+end DiGraph
+
+namespace SimpleDiGraph
+
+/-- Inducing vertices commutes with deleting actual arcs. -/
+@[simp] theorem deleteEdges_induce (G : SimpleDiGraph α) (S : Set α)
+    (F : Set (α × α)) :
+    (G.induce S).deleteEdges F = (G.deleteEdges F).induce S := by
+  simpa [deleteEdges] using G.restrictEdges_induce S Fᶜ
 
 end SimpleDiGraph
 

@@ -18,7 +18,7 @@ Part of the `InSimpleGraph` folder; see the umbrella module
 `GraphLib.Walk.InSimpleGraph`.
 -/
 
-variable {α : Type*}
+variable {α γ : Type*}
 
 namespace GraphLib
 
@@ -35,6 +35,15 @@ realized in `G`. -/
 
 namespace IsSimplePathIn
 
+theorem isSimpleWalkIn {G : SimpleGraph α} {p : SimplePath α}
+    (h : G.IsSimplePathIn p) : G.IsSimpleWalkIn p.val := h
+
+theorem reverse {G : SimpleGraph α} {p : SimplePath α} (h : G.IsSimplePathIn p) :
+    G.IsSimplePathIn p.reverse := IsSimpleWalkIn.reverse G h
+
+theorem mono (G H : SimpleGraph α) {p : SimplePath α} (hp : H.IsSimplePathIn p)
+    (hHG : H ≤ G) : G.IsSimplePathIn p := IsSimpleWalkIn.mono G H hp hHG
+
 /-- Realization of a simple path is realization of its underlying simple walk. -/
 @[simp, grind =] lemma iff_isSimpleWalkIn (G : SimpleGraph α) (p : SimplePath α) :
     G.IsSimplePathIn p ↔ G.IsSimpleWalkIn p.val := Iff.rfl
@@ -43,6 +52,35 @@ namespace IsSimplePathIn
 lemma singleton (G : SimpleGraph α) {v : α} (hv : v ∈ V(G)) :
     G.IsSimplePathIn (SimplePath.singleton v) :=
   IsVertexSeqIn.singleton v hv
+
+theorem induce_iff (G : SimpleGraph α) (S : Set α) (p : SimplePath α) :
+    (G.induce S).IsSimplePathIn p ↔
+      G.IsSimplePathIn p ∧ ∀ v ∈ p.support, v ∈ S :=
+  IsSimpleWalkIn.induce_iff G S p.val
+
+theorem restrictEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (p : SimplePath α) :
+    (G.restrictEdges F).IsSimplePathIn p ↔
+      G.IsSimplePathIn p ∧ ∀ e ∈ p.edges, e ∈ F :=
+  IsSimpleWalkIn.restrictEdges_iff G F p.val
+
+theorem deleteEdges_iff (G : SimpleGraph α) (F : Set (Sym2 α)) (p : SimplePath α) :
+    (G.deleteEdges F).IsSimplePathIn p ↔
+      G.IsSimplePathIn p ∧ ∀ e ∈ p.edges, e ∉ F :=
+  IsSimpleWalkIn.deleteEdges_iff G F p.val
+
+theorem relabelVertices {G : SimpleGraph α} {p : SimplePath α} (f : α ≃ γ)
+    (h : G.IsSimplePathIn p) :
+    (G.relabelVertices f).IsSimplePathIn (SimplePath.map f f.injective p) :=
+  IsSimpleWalkIn.relabelVertices f h
+
+/-- Gluing realized paths at a shared endpoint preserves realization. -/
+theorem glue (G : SimpleGraph α) {p q : SimplePath α}
+    (hp : G.IsSimplePathIn p) (hq : G.IsSimplePathIn q)
+    (h : p.tail = q.head)
+    (hdisj : p.vertices.length ≠ 0 →
+      ∀ v : α, v ∈ p.vertices.dropTail → v ∈ q.vertices → False) :
+    G.IsSimplePathIn (p.glue q h hdisj) :=
+  IsSimpleWalkIn.glue G hp hq h
 
 /-- Extending a realized path by a fresh adjacent tail vertex preserves realization. -/
 lemma extendTail (G : SimpleGraph α) {p : SimplePath α} {v : α}

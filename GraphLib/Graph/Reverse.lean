@@ -56,7 +56,32 @@ def reverseEquiv : Arc α β ≃ Arc α β where
     (Arc.relabelTags g a).reverse = Arc.relabelTags g a.reverse := by
   apply Arc.ext <;> simp
 
+/-- Taking the image under arc reversal twice restores the original set. -/
+@[simp] theorem image_reverse_image (F : Set (Arc α β)) :
+    Arc.reverse '' (Arc.reverse '' F) = F := by
+  ext a
+  constructor
+  · rintro ⟨b, ⟨c, hc, rfl⟩, rfl⟩
+    simpa using hc
+  · intro ha
+    exact ⟨a.reverse, ⟨a, ha, rfl⟩, by simp⟩
+
 end Arc
+
+namespace SimpleDiGraph
+
+/-- Taking the image under ordered-pair reversal twice restores the original set. -/
+@[simp] theorem image_swap_image (F : Set (α × α)) :
+    (fun a : α × α => (a.2, a.1)) ''
+        ((fun a : α × α => (a.2, a.1)) '' F) = F := by
+  ext a
+  constructor
+  · rintro ⟨b, ⟨c, hc, rfl⟩, rfl⟩
+    simpa using hc
+  · intro ha
+    exact ⟨(a.2, a.1), ⟨a, ha, rfl⟩, by simp⟩
+
+end SimpleDiGraph
 
 /-! ## Graph definitions -/
 
@@ -117,6 +142,36 @@ namespace DiGraph
     exact (G.reverse_isArc a u v).1 ha |>.adj
   · rintro ⟨a, ha⟩
     exact ⟨a.reverse, (G.reverse_isArc a.reverse u v).2 (by simpa using ha)⟩
+
+/-- Reversal sends incoming actual arcs to outgoing actual arcs. -/
+@[simp] theorem outIncidenceSet_reverse (G : DiGraph α β) (v : α) :
+    G.reverse.outIncidenceSet v = Arc.reverse '' G.inIncidenceSet v := by
+  ext a
+  constructor
+  · intro ha
+    have hmem := (G.reverse.mem_outIncidenceSet v a).mp ha
+    refine ⟨a.reverse, ?_, by simp⟩
+    exact (G.mem_inIncidenceSet v a.reverse).mpr
+      ⟨(G.mem_edgeSet_reverse a).1 hmem.1, by simpa using hmem.2⟩
+  · rintro ⟨b, hb, rfl⟩
+    have hmem := (G.mem_inIncidenceSet v b).mp hb
+    exact (G.reverse.mem_outIncidenceSet v b.reverse).mpr
+      ⟨(G.mem_edgeSet_reverse b.reverse).2 (by simpa using hmem.1), by simpa using hmem.2⟩
+
+/-- Reversal sends outgoing actual arcs to incoming actual arcs. -/
+@[simp] theorem inIncidenceSet_reverse (G : DiGraph α β) (v : α) :
+    G.reverse.inIncidenceSet v = Arc.reverse '' G.outIncidenceSet v := by
+  ext a
+  constructor
+  · intro ha
+    have hmem := (G.reverse.mem_inIncidenceSet v a).mp ha
+    refine ⟨a.reverse, ?_, by simp⟩
+    exact (G.mem_outIncidenceSet v a.reverse).mpr
+      ⟨(G.mem_edgeSet_reverse a).1 hmem.1, by simpa using hmem.2⟩
+  · rintro ⟨b, hb, rfl⟩
+    have hmem := (G.mem_outIncidenceSet v b).mp hb
+    exact (G.reverse.mem_inIncidenceSet v b.reverse).mpr
+      ⟨(G.mem_edgeSet_reverse b.reverse).2 (by simpa using hmem.1), by simpa using hmem.2⟩
 
 @[simp] theorem reverse_reverse (G : DiGraph α β) : G.reverse.reverse = G := by
   apply DiGraph.ext
@@ -311,6 +366,38 @@ namespace SimpleDiGraph
 @[simp] theorem reverse_adj (G : SimpleDiGraph α) (u v : α) :
     G.reverse.Adj u v ↔ G.Adj v u := by
   simp [SimpleDiGraph.adj_iff]
+
+/-- Reversal sends incoming actual arcs to outgoing actual arcs. -/
+@[simp] theorem outIncidenceSet_reverse (G : SimpleDiGraph α) (v : α) :
+    G.reverse.outIncidenceSet v =
+      (fun a : α × α => (a.2, a.1)) '' G.inIncidenceSet v := by
+  ext a
+  constructor
+  · intro ha
+    have hmem := (G.reverse.mem_outIncidenceSet v a).mp ha
+    refine ⟨(a.2, a.1), ?_, by simp⟩
+    exact (G.mem_inIncidenceSet v (a.2, a.1)).mpr
+      ⟨(G.mem_edgeSet_reverse a).1 hmem.1, by simpa using hmem.2⟩
+  · rintro ⟨b, hb, rfl⟩
+    have hmem := (G.mem_inIncidenceSet v b).mp hb
+    exact (G.reverse.mem_outIncidenceSet v (b.2, b.1)).mpr
+      ⟨(G.mem_edgeSet_reverse (b.2, b.1)).2 (by simpa using hmem.1), by simpa using hmem.2⟩
+
+/-- Reversal sends outgoing actual arcs to incoming actual arcs. -/
+@[simp] theorem inIncidenceSet_reverse (G : SimpleDiGraph α) (v : α) :
+    G.reverse.inIncidenceSet v =
+      (fun a : α × α => (a.2, a.1)) '' G.outIncidenceSet v := by
+  ext a
+  constructor
+  · intro ha
+    have hmem := (G.reverse.mem_inIncidenceSet v a).mp ha
+    refine ⟨(a.2, a.1), ?_, by simp⟩
+    exact (G.mem_outIncidenceSet v (a.2, a.1)).mpr
+      ⟨(G.mem_edgeSet_reverse a).1 hmem.1, by simpa using hmem.2⟩
+  · rintro ⟨b, hb, rfl⟩
+    have hmem := (G.mem_outIncidenceSet v b).mp hb
+    exact (G.reverse.mem_inIncidenceSet v (b.2, b.1)).mpr
+      ⟨(G.mem_edgeSet_reverse (b.2, b.1)).2 (by simpa using hmem.1), by simpa using hmem.2⟩
 
 @[simp] theorem reverse_reverse (G : SimpleDiGraph α) : G.reverse.reverse = G := by
   apply SimpleDiGraph.ext

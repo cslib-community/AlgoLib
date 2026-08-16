@@ -107,6 +107,10 @@ keeps distinct consecutive vertices distinct. -/
     (w : VertexSeq α) (h : w.nonstalling) : (w.map f).nonstalling := by
   induction w <;> grind
 
+@[simp, grind =] lemma dropTail_map {β : Type*} (f : α → β) (w : VertexSeq α) :
+    (w.map f).dropTail = w.dropTail.map f := by
+  cases w <;> rfl
+
 /-! ## zip -/
 
 /-- The tail of a `zip` is the pair of tails. -/
@@ -115,7 +119,7 @@ keeps distinct consecutive vertices distinct. -/
   fun_induction zip w w' <;> grind
 
 /-- Membership in a zip projects to membership in the left operand. -/
-@[grind] lemma fst_mem_of_zip_mem {β : Type*} (w : VertexSeq α) (w' : VertexSeq β)
+@[grind] lemma left_mem_of_zip_mem {β : Type*} (w : VertexSeq α) (w' : VertexSeq β)
     {x : α × β} (h : x ∈ w.zip w') : x.1 ∈ w := by
   fun_induction zip w w' <;> grind
 
@@ -124,7 +128,7 @@ keeps distinct consecutive vertices distinct. -/
     (hw : w.nodup) : (w.zip w').nodup := by
   fun_induction zip w w' with
   | case4 w v y u ih =>
-      have hkey : (v, u) ∉ w.zip y := fun hm => hw.2 (fst_mem_of_zip_mem w y hm)
+      have hkey : (v, u) ∉ w.zip y := fun hm => hw.2 (left_mem_of_zip_mem w y hm)
       grind [ih hw.1]
   | _ => grind
 

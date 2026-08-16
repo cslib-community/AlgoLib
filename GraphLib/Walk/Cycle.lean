@@ -16,7 +16,7 @@ distinct actual arcs.
 
 namespace GraphLib
 
-variable {α β : Type*}
+variable {α β γ δ : Type*}
 
 /-- A nonempty closed general walk with a vertex-simple interior and no repeated actual edge. -/
 def Cycle (α β : Type*) := {w : Walk α β //
@@ -46,6 +46,117 @@ theorem edges_nodup (c : Cycle α β) : c.edges.Nodup := c.property.2.2.2
 
 /-- The vertex-simple interior obtained by dropping the repeated closing vertex. -/
 def interior (c : Cycle α β) : Path α β := ⟨c.val.dropTail, c.interior_nodup⟩
+
+/-- Relabel the vertices of a general cycle. -/
+def relabelVertices (c : Cycle α β) (f : α ≃ γ) : Cycle γ β := by
+  refine ⟨c.val.mapVertices f, ?_⟩
+  refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using congrArg f c.closed,
+    ?_, ?_⟩
+  · rw [Walk.dropTail_mapVertices, Walk.vertices_mapVertices]
+    exact c.interior_nodup.map f.injective
+  · rw [Walk.edges_mapVertices]
+    apply c.edges_nodup.map
+    intro e d h
+    apply Edge.ext
+    · exact congrArg (fun x : Edge γ β => x.tag) h
+    · exact Sym2.map.injective f.injective
+        (congrArg (fun x : Edge γ β => x.endpoints) h)
+
+/-- Relabel the tags of a general cycle. -/
+def relabelTags (c : Cycle α β) (g : β ≃ δ) : Cycle α δ := by
+  refine ⟨c.val.mapTags g, ?_⟩
+  refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using c.closed, ?_, ?_⟩
+  · simpa [Walk.dropTail_mapTags] using c.interior_nodup
+  · rw [Walk.edges_mapTags]
+    apply c.edges_nodup.map
+    intro e d h
+    apply Edge.ext
+    · exact g.injective (congrArg (fun x : Edge α δ => x.tag) h)
+    · exact congrArg (fun x : Edge α δ => x.endpoints) h
+
+@[simp] theorem val_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).val = c.val.mapVertices f := rfl
+
+@[simp] theorem val_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).val = c.val.mapTags g := rfl
+
+@[simp] theorem head_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).head = f c.head := Walk.head_mapVertices c.val f
+
+@[simp] theorem tail_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).tail = f c.tail := Walk.tail_mapVertices c.val f
+
+@[simp] theorem length_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).length = c.length := Walk.length_mapVertices c.val f
+
+@[simp] theorem vertices_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).vertices = c.vertices.map f := Walk.vertices_mapVertices c.val f
+
+@[simp] theorem tags_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).tags = c.tags := Walk.tags_mapVertices c.val f
+
+@[simp] theorem edges_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).edges =
+      c.edges.map (fun e => Edge.mk e.tag (Sym2.map f e.endpoints)) :=
+  Walk.edges_mapVertices c.val f
+
+@[simp] theorem arcs_relabelVertices (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).arcs =
+      c.arcs.map (fun a => Arc.mk a.tag (f a.source, f a.target)) :=
+  Walk.arcs_mapVertices c.val f
+
+@[simp] theorem head_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).head = c.head := Walk.head_mapTags c.val g
+
+@[simp] theorem tail_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).tail = c.tail := Walk.tail_mapTags c.val g
+
+@[simp] theorem length_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).length = c.length := Walk.length_mapTags c.val g
+
+@[simp] theorem vertices_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).vertices = c.vertices := Walk.vertices_mapTags c.val g
+
+@[simp] theorem tags_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).tags = c.tags.map g := Walk.tags_mapTags c.val g
+
+@[simp] theorem edges_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).edges =
+      c.edges.map (fun e => Edge.mk (g e.tag) e.endpoints) :=
+  Walk.edges_mapTags c.val g
+
+@[simp] theorem arcs_relabelTags (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).arcs =
+      c.arcs.map (fun a => Arc.mk (g a.tag) a.endpoints) :=
+  Walk.arcs_mapTags c.val g
+
+@[simp] theorem relabelVertices_id (c : Cycle α β) :
+    c.relabelVertices (Equiv.refl α) = c := by
+  apply Cycle.ext
+  exact Walk.mapVertices_id c.val
+
+@[simp] theorem relabelVertices_comp {η : Type*} (c : Cycle α β)
+    (f : α ≃ γ) (g : γ ≃ η) :
+    (c.relabelVertices f).relabelVertices g = c.relabelVertices (f.trans g) := by
+  apply Cycle.ext
+  simpa only [val_relabelVertices] using Walk.mapVertices_comp c.val f g
+
+@[simp] theorem relabelVertices_inverse (c : Cycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).relabelVertices f.symm = c := by simp
+
+@[simp] theorem relabelTags_id (c : Cycle α β) :
+    c.relabelTags (Equiv.refl β) = c := by
+  apply Cycle.ext
+  exact Walk.mapTags_id c.val
+
+@[simp] theorem relabelTags_comp {η : Type*} (c : Cycle α β)
+    (f : β ≃ δ) (g : δ ≃ η) :
+    (c.relabelTags f).relabelTags g = c.relabelTags (f.trans g) := by
+  apply Cycle.ext
+  simpa only [val_relabelTags] using Walk.mapTags_comp c.val f g
+
+@[simp] theorem relabelTags_inverse (c : Cycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).relabelTags g.symm = c := by simp
 
 /-- Forget the vertex-simplicity condition and retain the circuit. -/
 def toCircuit (c : Cycle α β) : Circuit α β :=
@@ -94,6 +205,119 @@ theorem arcs_nodup (c : DiCycle α β) : c.arcs.Nodup := c.property.2.2.2
 
 /-- The vertex-simple interior obtained by dropping the repeated closing vertex. -/
 def interior (c : DiCycle α β) : Path α β := ⟨c.val.dropTail, c.interior_nodup⟩
+
+/-- Relabel the vertices of a directed general cycle. -/
+def relabelVertices (c : DiCycle α β) (f : α ≃ γ) : DiCycle γ β := by
+  refine ⟨c.val.mapVertices f, ?_⟩
+  refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using congrArg f c.closed,
+    ?_, ?_⟩
+  · rw [Walk.dropTail_mapVertices, Walk.vertices_mapVertices]
+    exact c.interior_nodup.map f.injective
+  · rw [Walk.arcs_mapVertices]
+    apply c.arcs_nodup.map
+    intro a b h
+    apply Arc.ext
+    · exact congrArg (fun x : Arc γ β => x.tag) h
+    · have hend := congrArg (fun x : Arc γ β => x.endpoints) h
+      apply Prod.ext
+      · exact f.injective (congrArg Prod.fst hend)
+      · exact f.injective (congrArg Prod.snd hend)
+
+/-- Relabel the tags of a directed general cycle. -/
+def relabelTags (c : DiCycle α β) (g : β ≃ δ) : DiCycle α δ := by
+  refine ⟨c.val.mapTags g, ?_⟩
+  refine ⟨by simpa using c.length_pos, by simpa [Walk.closed] using c.closed, ?_, ?_⟩
+  · simpa [Walk.dropTail_mapTags] using c.interior_nodup
+  · rw [Walk.arcs_mapTags]
+    apply c.arcs_nodup.map
+    intro a b h
+    apply Arc.ext
+    · exact g.injective (congrArg (fun x : Arc α δ => x.tag) h)
+    · exact congrArg (fun x : Arc α δ => x.endpoints) h
+
+@[simp] theorem val_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).val = c.val.mapVertices f := rfl
+
+@[simp] theorem val_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).val = c.val.mapTags g := rfl
+
+@[simp] theorem head_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).head = f c.head := Walk.head_mapVertices c.val f
+
+@[simp] theorem tail_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).tail = f c.tail := Walk.tail_mapVertices c.val f
+
+@[simp] theorem length_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).length = c.length := Walk.length_mapVertices c.val f
+
+@[simp] theorem vertices_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).vertices = c.vertices.map f := Walk.vertices_mapVertices c.val f
+
+@[simp] theorem tags_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).tags = c.tags := Walk.tags_mapVertices c.val f
+
+@[simp] theorem edges_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).edges =
+      c.edges.map (fun e => Edge.mk e.tag (Sym2.map f e.endpoints)) :=
+  Walk.edges_mapVertices c.val f
+
+@[simp] theorem arcs_relabelVertices (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).arcs =
+      c.arcs.map (fun a => Arc.mk a.tag (f a.source, f a.target)) :=
+  Walk.arcs_mapVertices c.val f
+
+@[simp] theorem head_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).head = c.head := Walk.head_mapTags c.val g
+
+@[simp] theorem tail_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).tail = c.tail := Walk.tail_mapTags c.val g
+
+@[simp] theorem length_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).length = c.length := Walk.length_mapTags c.val g
+
+@[simp] theorem vertices_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).vertices = c.vertices := Walk.vertices_mapTags c.val g
+
+@[simp] theorem tags_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).tags = c.tags.map g := Walk.tags_mapTags c.val g
+
+@[simp] theorem edges_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).edges =
+      c.edges.map (fun e => Edge.mk (g e.tag) e.endpoints) :=
+  Walk.edges_mapTags c.val g
+
+@[simp] theorem arcs_relabelTags (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).arcs =
+      c.arcs.map (fun a => Arc.mk (g a.tag) a.endpoints) :=
+  Walk.arcs_mapTags c.val g
+
+@[simp] theorem relabelVertices_id (c : DiCycle α β) :
+    c.relabelVertices (Equiv.refl α) = c := by
+  apply DiCycle.ext
+  exact Walk.mapVertices_id c.val
+
+@[simp] theorem relabelVertices_comp {η : Type*} (c : DiCycle α β)
+    (f : α ≃ γ) (g : γ ≃ η) :
+    (c.relabelVertices f).relabelVertices g = c.relabelVertices (f.trans g) := by
+  apply DiCycle.ext
+  simpa only [val_relabelVertices] using Walk.mapVertices_comp c.val f g
+
+@[simp] theorem relabelVertices_inverse (c : DiCycle α β) (f : α ≃ γ) :
+    (c.relabelVertices f).relabelVertices f.symm = c := by simp
+
+@[simp] theorem relabelTags_id (c : DiCycle α β) :
+    c.relabelTags (Equiv.refl β) = c := by
+  apply DiCycle.ext
+  exact Walk.mapTags_id c.val
+
+@[simp] theorem relabelTags_comp {η : Type*} (c : DiCycle α β)
+    (f : β ≃ δ) (g : δ ≃ η) :
+    (c.relabelTags f).relabelTags g = c.relabelTags (f.trans g) := by
+  apply DiCycle.ext
+  simpa only [val_relabelTags] using Walk.mapTags_comp c.val f g
+
+@[simp] theorem relabelTags_inverse (c : DiCycle α β) (g : β ≃ δ) :
+    (c.relabelTags g).relabelTags g.symm = c := by simp
 
 /-- Forget the vertex-simplicity condition and retain the directed circuit. -/
 def toCircuit (c : DiCycle α β) : DiCircuit α β :=

@@ -265,6 +265,29 @@ namespace IsPathIn
 theorem isWalkIn {G : DiGraph α β} {p : Path α β} (h : G.IsPathIn p) : G.IsWalkIn p.val := h
 theorem reverse {G : DiGraph α β} {p : Path α β} (h : G.IsPathIn p) :
     G.reverse.IsPathIn p.reverse := DiGraph.IsWalkIn.reverse h
+theorem mono {G H : DiGraph α β} {p : Path α β} (h : G.IsPathIn p) (hGH : G ≤ H) :
+    H.IsPathIn p := DiGraph.IsWalkIn.mono h hGH
+theorem arc_mem {G : DiGraph α β} {p : Path α β} (h : G.IsPathIn p)
+    {a : Arc α β} (ha : a ∈ p.arcs) : a ∈ E(G) := DiGraph.IsWalkIn.arc_mem h ha
+theorem glue {G : DiGraph α β} {p q : Path α β} (hp : G.IsPathIn p)
+    (hq : G.IsPathIn q) (hends : p.tail = q.head)
+    (hdisj : ∀ v ∈ p.vertices.dropLast, v ∈ q.vertices → False) :
+    G.IsPathIn (p.glue q hends hdisj) := DiGraph.IsWalkIn.glue hp hq hends
+theorem induce_iff (G : DiGraph α β) (S : Set α) (p : Path α β) :
+    (G.induce S).IsPathIn p ↔ G.IsPathIn p ∧ ∀ v ∈ p.vertices, v ∈ S :=
+  DiGraph.IsWalkIn.induce_iff G S p.val
+theorem restrictEdges_iff (G : DiGraph α β) (F : Set (Arc α β)) (p : Path α β) :
+    (G.restrictEdges F).IsPathIn p ↔ G.IsPathIn p ∧ ∀ a ∈ p.arcs, a ∈ F :=
+  DiGraph.IsWalkIn.restrictEdges_iff G F p.val
+theorem deleteEdges_iff (G : DiGraph α β) (F : Set (Arc α β)) (p : Path α β) :
+    (G.deleteEdges F).IsPathIn p ↔ G.IsPathIn p ∧ ∀ a ∈ p.arcs, a ∉ F :=
+  DiGraph.IsWalkIn.deleteEdges_iff G F p.val
+theorem relabelVertices {G : DiGraph α β} {p : Path α β} (f : α ≃ γ)
+    (h : G.IsPathIn p) : (G.relabelVertices f).IsPathIn (p.relabelVertices f) :=
+  DiGraph.IsWalkIn.relabelVertices f h
+theorem relabelTags {G : DiGraph α β} {p : Path α β} (g : β ≃ δ)
+    (h : G.IsPathIn p) : (G.relabelTags g).IsPathIn (p.relabelTags g) :=
+  DiGraph.IsWalkIn.relabelTags g h
 end IsPathIn
 
 namespace IsCircuitIn
@@ -278,6 +301,25 @@ namespace IsCycleIn
 theorem isWalkIn {G : DiGraph α β} {c : DiCycle α β} (h : G.IsCycleIn c) : G.IsWalkIn c.val := h
 theorem reverse {G : DiGraph α β} {c : DiCycle α β} (h : G.IsCycleIn c) :
     G.reverse.IsCycleIn c.reverse := DiGraph.IsWalkIn.reverse h
+theorem mono {G H : DiGraph α β} {c : DiCycle α β} (h : G.IsCycleIn c)
+    (hGH : G ≤ H) : H.IsCycleIn c := DiGraph.IsWalkIn.mono h hGH
+theorem arc_mem {G : DiGraph α β} {c : DiCycle α β} (h : G.IsCycleIn c)
+    {a : Arc α β} (ha : a ∈ c.arcs) : a ∈ E(G) := DiGraph.IsWalkIn.arc_mem h ha
+theorem induce_iff (G : DiGraph α β) (S : Set α) (c : DiCycle α β) :
+    (G.induce S).IsCycleIn c ↔ G.IsCycleIn c ∧ ∀ v ∈ c.vertices, v ∈ S :=
+  DiGraph.IsWalkIn.induce_iff G S c.val
+theorem restrictEdges_iff (G : DiGraph α β) (F : Set (Arc α β)) (c : DiCycle α β) :
+    (G.restrictEdges F).IsCycleIn c ↔ G.IsCycleIn c ∧ ∀ a ∈ c.arcs, a ∈ F :=
+  DiGraph.IsWalkIn.restrictEdges_iff G F c.val
+theorem deleteEdges_iff (G : DiGraph α β) (F : Set (Arc α β)) (c : DiCycle α β) :
+    (G.deleteEdges F).IsCycleIn c ↔ G.IsCycleIn c ∧ ∀ a ∈ c.arcs, a ∉ F :=
+  DiGraph.IsWalkIn.deleteEdges_iff G F c.val
+theorem relabelVertices {G : DiGraph α β} {c : DiCycle α β} (f : α ≃ γ)
+    (h : G.IsCycleIn c) : (G.relabelVertices f).IsCycleIn (c.relabelVertices f) :=
+  DiGraph.IsWalkIn.relabelVertices f h
+theorem relabelTags {G : DiGraph α β} {c : DiCycle α β} (g : β ≃ δ)
+    (h : G.IsCycleIn c) : (G.relabelTags g).IsCycleIn (c.relabelTags g) :=
+  DiGraph.IsWalkIn.relabelTags g h
 end IsCycleIn
 
 end DiGraph

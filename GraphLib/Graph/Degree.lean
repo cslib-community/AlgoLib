@@ -115,6 +115,40 @@ theorem SimpleDiGraph.ncard_inIncidenceSet_eq_inDegree
   rw [G.ncard_inIncidenceSet]
   rfl
 
+/-! ## Degree under directed reversal -/
+
+/-- Reversal exchanges out-degree with in-degree in a general digraph. -/
+@[simp] theorem DiGraph.outDegree_reverse (G : DiGraph α β) (v : α)
+    [Finite (G.inIncidenceSet v)] : G.reverse.outDegree v = G.inDegree v := by
+  rw [← G.reverse.ncard_outIncidenceSet_eq_outDegree, G.outIncidenceSet_reverse,
+    Set.ncard_image_of_injective _ Arc.reverse_injective,
+    G.ncard_inIncidenceSet_eq_inDegree]
+
+/-- Reversal exchanges in-degree with out-degree in a general digraph. -/
+@[simp] theorem DiGraph.inDegree_reverse (G : DiGraph α β) (v : α)
+    [Finite (G.outIncidenceSet v)] : G.reverse.inDegree v = G.outDegree v := by
+  rw [← G.reverse.ncard_inIncidenceSet_eq_inDegree, G.inIncidenceSet_reverse,
+    Set.ncard_image_of_injective _ Arc.reverse_injective,
+    G.ncard_outIncidenceSet_eq_outDegree]
+
+/-- Reversal exchanges out-degree with in-degree in a simple digraph. -/
+@[simp] theorem SimpleDiGraph.outDegree_reverse (G : SimpleDiGraph α) (v : α)
+    [Finite (G.inIncidenceSet v)] : G.reverse.outDegree v = G.inDegree v := by
+  have hinj : Function.Injective (fun a : α × α => (a.2, a.1)) :=
+    fun _ _ h => Prod.swap_injective h
+  rw [← G.reverse.ncard_outIncidenceSet_eq_outDegree, G.outIncidenceSet_reverse,
+    Set.ncard_image_of_injective _ hinj,
+    G.ncard_inIncidenceSet_eq_inDegree]
+
+/-- Reversal exchanges in-degree with out-degree in a simple digraph. -/
+@[simp] theorem SimpleDiGraph.inDegree_reverse (G : SimpleDiGraph α) (v : α)
+    [Finite (G.outIncidenceSet v)] : G.reverse.inDegree v = G.outDegree v := by
+  have hinj : Function.Injective (fun a : α × α => (a.2, a.1)) :=
+    fun _ _ h => Prod.swap_injective h
+  rw [← G.reverse.ncard_inIncidenceSet_eq_inDegree, G.inIncidenceSet_reverse,
+    Set.ncard_image_of_injective _ hinj,
+    G.ncard_outIncidenceSet_eq_outDegree]
+
 /-! ## Degree outside the vertex set -/
 
 @[simp] theorem Graph.degree_eq_zero_of_not_mem (G : Graph α β) (v : α)
@@ -315,184 +349,184 @@ theorem SimpleDiGraph.inDegree_mono {H G : SimpleDiGraph α} (hHG : H ≤ G) (v 
 /-! ## Transformation monotonicity -/
 
 theorem Graph.degree_induce (G : Graph α β) (S : Set α) (v : α)
-    [Finite ((G.induce S).incidenceSet v)] [Finite (G.incidenceSet v)] :
+    [Finite (G.incidenceSet v)] :
     (G.induce S).degree v ≤ G.degree v :=
   Graph.degree_mono (G.induce_le S) v
 
 theorem Graph.degree_deleteEdges (G : Graph α β) (F : Set (Edge α β)) (v : α)
-    [Finite ((G.deleteEdges F).incidenceSet v)] [Finite (G.incidenceSet v)] :
+    [Finite (G.incidenceSet v)] :
     (G.deleteEdges F).degree v ≤ G.degree v :=
   Graph.degree_mono (G.deleteEdges_le F) v
 
 theorem Graph.degree_deleteEdge (G : Graph α β) (e : Edge α β) (v : α)
-    [Finite ((G.deleteEdge e).incidenceSet v)] [Finite (G.incidenceSet v)] :
+    [Finite (G.incidenceSet v)] :
     (G.deleteEdge e).degree v ≤ G.degree v :=
   Graph.degree_mono (G.deleteEdge_le e) v
 
 theorem Graph.degree_deleteVerts (G : Graph α β) (S : Set α) (v : α)
-    [Finite ((G.deleteVerts S).incidenceSet v)] [Finite (G.incidenceSet v)] :
+    [Finite (G.incidenceSet v)] :
     (G.deleteVerts S).degree v ≤ G.degree v :=
   Graph.degree_mono (G.deleteVerts_le S) v
 
 theorem Graph.degree_deleteVert (G : Graph α β) (u v : α)
-    [Finite ((G.deleteVert u).incidenceSet v)] [Finite (G.incidenceSet v)] :
+    [Finite (G.incidenceSet v)] :
     (G.deleteVert u).degree v ≤ G.degree v :=
   Graph.degree_mono (G.deleteVert_le u) v
 
 theorem Graph.degree_deleteEdgesBetween (G : Graph α β) (u w v : α)
-    [Finite ((G.deleteEdgesBetween u w).incidenceSet v)] [Finite (G.incidenceSet v)] :
+    [Finite (G.incidenceSet v)] :
     (G.deleteEdgesBetween u w).degree v ≤ G.degree v :=
   Graph.degree_mono (G.deleteEdgesBetween_le u w) v
 
 theorem SimpleGraph.degree_induce (G : SimpleGraph α) (S : Set α) (v : α)
-    [Finite ((G.induce S).neighborSet v)] [Finite (G.neighborSet v)] :
+    [Finite (G.neighborSet v)] :
     (G.induce S).degree v ≤ G.degree v :=
   SimpleGraph.degree_mono (G.induce_le S) v
 
 theorem SimpleGraph.degree_deleteEdges (G : SimpleGraph α) (F : Set (Sym2 α)) (v : α)
-    [Finite ((G.deleteEdges F).neighborSet v)] [Finite (G.neighborSet v)] :
+    [Finite (G.neighborSet v)] :
     (G.deleteEdges F).degree v ≤ G.degree v :=
   SimpleGraph.degree_mono (G.deleteEdges_le F) v
 
 theorem SimpleGraph.degree_deleteEdge (G : SimpleGraph α) (e : Sym2 α) (v : α)
-    [Finite ((G.deleteEdge e).neighborSet v)] [Finite (G.neighborSet v)] :
+    [Finite (G.neighborSet v)] :
     (G.deleteEdge e).degree v ≤ G.degree v :=
   SimpleGraph.degree_mono (G.deleteEdge_le e) v
 
 theorem SimpleGraph.degree_deleteVerts (G : SimpleGraph α) (S : Set α) (v : α)
-    [Finite ((G.deleteVerts S).neighborSet v)] [Finite (G.neighborSet v)] :
+    [Finite (G.neighborSet v)] :
     (G.deleteVerts S).degree v ≤ G.degree v :=
   SimpleGraph.degree_mono (G.deleteVerts_le S) v
 
 theorem SimpleGraph.degree_deleteVert (G : SimpleGraph α) (u v : α)
-    [Finite ((G.deleteVert u).neighborSet v)] [Finite (G.neighborSet v)] :
+    [Finite (G.neighborSet v)] :
     (G.deleteVert u).degree v ≤ G.degree v :=
   SimpleGraph.degree_mono (G.deleteVert_le u) v
 
 theorem SimpleGraph.degree_deleteEdgesBetween (G : SimpleGraph α) (u w v : α)
-    [Finite ((G.deleteEdgesBetween u w).neighborSet v)] [Finite (G.neighborSet v)] :
+    [Finite (G.neighborSet v)] :
     (G.deleteEdgesBetween u w).degree v ≤ G.degree v :=
   SimpleGraph.degree_mono (G.deleteEdgesBetween_le u w) v
 
 theorem DiGraph.outDegree_induce (G : DiGraph α β) (S : Set α) (v : α)
-    [Finite ((G.induce S).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.induce S).outDegree v ≤ G.outDegree v :=
   DiGraph.outDegree_mono (G.induce_le S) v
 
 theorem DiGraph.inDegree_induce (G : DiGraph α β) (S : Set α) (v : α)
-    [Finite ((G.induce S).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.induce S).inDegree v ≤ G.inDegree v :=
   DiGraph.inDegree_mono (G.induce_le S) v
 
 theorem DiGraph.outDegree_deleteEdges (G : DiGraph α β) (F : Set (Arc α β)) (v : α)
-    [Finite ((G.deleteEdges F).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteEdges F).outDegree v ≤ G.outDegree v :=
   DiGraph.outDegree_mono (G.deleteEdges_le F) v
 
 theorem DiGraph.inDegree_deleteEdges (G : DiGraph α β) (F : Set (Arc α β)) (v : α)
-    [Finite ((G.deleteEdges F).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteEdges F).inDegree v ≤ G.inDegree v :=
   DiGraph.inDegree_mono (G.deleteEdges_le F) v
 
 theorem DiGraph.outDegree_deleteEdge (G : DiGraph α β) (a : Arc α β) (v : α)
-    [Finite ((G.deleteEdge a).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteEdge a).outDegree v ≤ G.outDegree v :=
   DiGraph.outDegree_mono (G.deleteEdge_le a) v
 
 theorem DiGraph.inDegree_deleteEdge (G : DiGraph α β) (a : Arc α β) (v : α)
-    [Finite ((G.deleteEdge a).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteEdge a).inDegree v ≤ G.inDegree v :=
   DiGraph.inDegree_mono (G.deleteEdge_le a) v
 
 theorem DiGraph.outDegree_deleteVerts (G : DiGraph α β) (S : Set α) (v : α)
-    [Finite ((G.deleteVerts S).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteVerts S).outDegree v ≤ G.outDegree v :=
   DiGraph.outDegree_mono (G.deleteVerts_le S) v
 
 theorem DiGraph.inDegree_deleteVerts (G : DiGraph α β) (S : Set α) (v : α)
-    [Finite ((G.deleteVerts S).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteVerts S).inDegree v ≤ G.inDegree v :=
   DiGraph.inDegree_mono (G.deleteVerts_le S) v
 
 theorem DiGraph.outDegree_deleteVert (G : DiGraph α β) (u v : α)
-    [Finite ((G.deleteVert u).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteVert u).outDegree v ≤ G.outDegree v :=
   DiGraph.outDegree_mono (G.deleteVert_le u) v
 
 theorem DiGraph.inDegree_deleteVert (G : DiGraph α β) (u v : α)
-    [Finite ((G.deleteVert u).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteVert u).inDegree v ≤ G.inDegree v :=
   DiGraph.inDegree_mono (G.deleteVert_le u) v
 
 theorem DiGraph.outDegree_deleteArcsFromTo (G : DiGraph α β) (u w v : α)
-    [Finite ((G.deleteArcsFromTo u w).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteArcsFromTo u w).outDegree v ≤ G.outDegree v :=
   DiGraph.outDegree_mono (G.deleteArcsFromTo_le u w) v
 
 theorem DiGraph.inDegree_deleteArcsFromTo (G : DiGraph α β) (u w v : α)
-    [Finite ((G.deleteArcsFromTo u w).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteArcsFromTo u w).inDegree v ≤ G.inDegree v :=
   DiGraph.inDegree_mono (G.deleteArcsFromTo_le u w) v
 
 theorem SimpleDiGraph.outDegree_induce (G : SimpleDiGraph α) (S : Set α) (v : α)
-    [Finite ((G.induce S).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.induce S).outDegree v ≤ G.outDegree v :=
   SimpleDiGraph.outDegree_mono (G.induce_le S) v
 
 theorem SimpleDiGraph.inDegree_induce (G : SimpleDiGraph α) (S : Set α) (v : α)
-    [Finite ((G.induce S).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.induce S).inDegree v ≤ G.inDegree v :=
   SimpleDiGraph.inDegree_mono (G.induce_le S) v
 
 theorem SimpleDiGraph.outDegree_deleteEdges
     (G : SimpleDiGraph α) (F : Set (α × α)) (v : α)
-    [Finite ((G.deleteEdges F).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteEdges F).outDegree v ≤ G.outDegree v :=
   SimpleDiGraph.outDegree_mono (G.deleteEdges_le F) v
 
 theorem SimpleDiGraph.inDegree_deleteEdges
     (G : SimpleDiGraph α) (F : Set (α × α)) (v : α)
-    [Finite ((G.deleteEdges F).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteEdges F).inDegree v ≤ G.inDegree v :=
   SimpleDiGraph.inDegree_mono (G.deleteEdges_le F) v
 
 theorem SimpleDiGraph.outDegree_deleteEdge (G : SimpleDiGraph α) (a : α × α) (v : α)
-    [Finite ((G.deleteEdge a).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteEdge a).outDegree v ≤ G.outDegree v :=
   SimpleDiGraph.outDegree_mono (G.deleteEdge_le a) v
 
 theorem SimpleDiGraph.inDegree_deleteEdge (G : SimpleDiGraph α) (a : α × α) (v : α)
-    [Finite ((G.deleteEdge a).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteEdge a).inDegree v ≤ G.inDegree v :=
   SimpleDiGraph.inDegree_mono (G.deleteEdge_le a) v
 
 theorem SimpleDiGraph.outDegree_deleteVerts (G : SimpleDiGraph α) (S : Set α) (v : α)
-    [Finite ((G.deleteVerts S).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteVerts S).outDegree v ≤ G.outDegree v :=
   SimpleDiGraph.outDegree_mono (G.deleteVerts_le S) v
 
 theorem SimpleDiGraph.inDegree_deleteVerts (G : SimpleDiGraph α) (S : Set α) (v : α)
-    [Finite ((G.deleteVerts S).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteVerts S).inDegree v ≤ G.inDegree v :=
   SimpleDiGraph.inDegree_mono (G.deleteVerts_le S) v
 
 theorem SimpleDiGraph.outDegree_deleteVert (G : SimpleDiGraph α) (u v : α)
-    [Finite ((G.deleteVert u).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteVert u).outDegree v ≤ G.outDegree v :=
   SimpleDiGraph.outDegree_mono (G.deleteVert_le u) v
 
 theorem SimpleDiGraph.inDegree_deleteVert (G : SimpleDiGraph α) (u v : α)
-    [Finite ((G.deleteVert u).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteVert u).inDegree v ≤ G.inDegree v :=
   SimpleDiGraph.inDegree_mono (G.deleteVert_le u) v
 
 theorem SimpleDiGraph.outDegree_deleteArcsFromTo (G : SimpleDiGraph α) (u w v : α)
-    [Finite ((G.deleteArcsFromTo u w).outIncidenceSet v)] [Finite (G.outIncidenceSet v)] :
+    [Finite (G.outIncidenceSet v)] :
     (G.deleteArcsFromTo u w).outDegree v ≤ G.outDegree v :=
   SimpleDiGraph.outDegree_mono (G.deleteArcsFromTo_le u w) v
 
 theorem SimpleDiGraph.inDegree_deleteArcsFromTo (G : SimpleDiGraph α) (u w v : α)
-    [Finite ((G.deleteArcsFromTo u w).inIncidenceSet v)] [Finite (G.inIncidenceSet v)] :
+    [Finite (G.inIncidenceSet v)] :
     (G.deleteArcsFromTo u w).inDegree v ≤ G.inDegree v :=
   SimpleDiGraph.inDegree_mono (G.deleteArcsFromTo_le u w) v
 
