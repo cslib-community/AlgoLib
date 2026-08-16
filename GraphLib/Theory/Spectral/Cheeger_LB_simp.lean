@@ -45,17 +45,12 @@ lemma lambda_le_rq (G : SimpleGraph α) [Finite G.vertexSet] (S : Finset α)
     have h_x_ne_zero : ∃ v ∈ G.vertexFinset, x v ≠ 0 := by grind
     refine ⟨x, ?_, rfl⟩; exact ⟨h_orth, h_x_ne_zero⟩
 
-@[grind] noncomputable def edge_cut (G : SimpleGraph α) [Finite G.vertexSet] (S : Finset α) :
-  Finset (Sym2 α) := G.edgeFinset.filter (
-    fun e => ∃ u ∈ G.vertexFinset, u ∈ e ∧ u ∈ S ∧ ∃ v ∈ G.vertexFinset, v ∈ e ∧ v ∉ S
-  )
-
 @[grind] noncomputable def edge_diff_sq (G : SimpleGraph α) [Finite G.vertexSet] (x : α → ℝ) :
   Sym2 α → ℝ := Sym2.lift ⟨fun u v => (x u - x v)^2, by intro u v; dsimp; ring⟩
 
 lemma num_eq (G : SimpleGraph α) [Finite G.vertexSet] (S : Finset α)
   (hS_nonempty : S.Nonempty) :
-    let n : ℝ := nG G; let x : α → ℝ := xS G S; let dS := edge_cut G S
+    let n : ℝ := nG G; let x : α → ℝ := xS G S; let dS := Cut G S
     let edge_diff := edge_diff_sq G x; ∑ e ∈ G.edgeFinset, edge_diff e = n^2 * ↑(#dS) := by
   intro n x dS edge_diff
   have h_sub : dS ⊆ G.edgeFinset := by grind
@@ -66,16 +61,15 @@ lemma num_eq (G : SimpleGraph α) [Finite G.vertexSet] (S : Finset α)
       obtain ⟨u, v⟩ := e; unfold edge_diff edge_diff_sq x at h_nz;
       simp only [Sym2.lift_mk, xS] at h_nz; split_ifs at h_nz with huS hvS <;> grind
     have he_in_dS : e ∈ dS := by
-      unfold dS edge_cut; simp only [Finset.mem_filter]; use he_G
+      unfold dS Cut; simp only [Finset.mem_filter]; use he_G
       rcases h_cross with ⟨u, hu_e, hu_S, v, hv_e, hv_nS⟩
-      use u, G.mem_vertexFinset.mpr (G.incidence (G.mem_edgeFinset.mp he_G) hu_e), hu_e, hu_S
-      use v, G.mem_vertexFinset.mpr (G.incidence (G.mem_edgeFinset.mp he_G) hv_e), hv_e, hv_nS
+      grind+suggestions
     exact he_ndS he_in_dS
   -- Every edge in dS contributes exactly n^2.
   have h_const : ∀ e ∈ dS, edge_diff e = n^2 := by
-    intro e he; simp only [dS, edge_cut, Finset.mem_filter] at he
+    intro e he; simp only [dS, Cut, Finset.mem_filter] at he
     rcases he with ⟨he_G, u, hu_V, hu_e, hu_S, v, hv_V, hv_e, hv_nS⟩
-    obtain ⟨u', v'⟩ := e; unfold edge_diff edge_diff_sq x; simp only [Sym2.lift_mk]; grind
+    unfold edge_diff edge_diff_sq x; simp only [Sym2.lift_mk]; grind
   rw [h_sum_is_dS, Finset.sum_congr rfl h_const]; simp only [sum_const, nsmul_eq_mul]; grind
 
 lemma denom_eq (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Finset α)
@@ -98,7 +92,7 @@ lemma denom_eq (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Finset �
 lemma rq_eq (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Finset α)
   (hS_nonempty : S.Nonempty) (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset)
   (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
-    let n : ℝ := nG G; let s : ℝ := #S; let x : α → ℝ := xS G S; let dS := edge_cut G S
+    let n : ℝ := nG G; let s : ℝ := #S; let x : α → ℝ := xS G S; let dS := Cut G S
     (have num := n ^ 2 * ↑(#dS); have denom := ↑d * n * ↑s * (n - ↑s);
     G.rayleighQuotient x = num / denom) := by
   intro n s x dS; let edge_diff := edge_diff_sq G x; unfold SimpleGraph.rayleighQuotient
@@ -116,12 +110,10 @@ lemma rq_le_two_phi (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Fin
   (hS_nonempty : S.Nonempty) (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset)
   (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hd : d > 0) :
     let x : α → ℝ := xS G S; G.rayleighQuotient x ≤ 2 * edgeExpansion G d S := by
-  let n : ℝ := nG G; let dS := edge_cut G S; intro x
+  let n : ℝ := nG G; let dS := Cut G S; intro x
   have h_rq_eq := rq_eq G d S hS_nonempty hS_size hS_subset h_reg
   unfold edgeExpansion
-  have h_cut_val : ↑(#(Cut G S)) = ↑(#dS) := by
-    congr; ext e; constructor <;>
-    · intro he; simp only [Cut, dS, Finset.mem_filter] at he ⊢; grind
+  have h_cut_val : ↑(#(Cut G S)) = ↑(#dS) := by congr
   rw [h_rq_eq, h_cut_val]
   unfold n at *
   have h_s_ne_zero : (↑(#S) : ℝ) ≠ 0 := by exact ne_of_gt (by exact_mod_cast (by grind))
@@ -134,7 +126,7 @@ lemma rq_le_two_phi (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Fin
   have hmul :
       ((↑(#G.vertexFinset) : ℝ) / ((↑(#G.vertexFinset) : ℝ) - ↑(#S))) * ↑(#dS) ≤ 2 * ↑(#dS) :=
     mul_le_mul_of_nonneg_right h_ratio_le_two (by positivity)
-  convert hmul using 1; ring_nf; grind
+  convert hmul using 1; repeat grind
 
 -- The "Easy Direction" of Cheeger's Inequality: For a d-regular graph, λ₂ / 2 ≤ ϕ(G).
 theorem cheeger_easy_direction (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Finset α)

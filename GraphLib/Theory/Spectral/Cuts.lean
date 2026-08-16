@@ -16,7 +16,7 @@ variable {α : Type*} [DecidableEq α]
 
 open GraphLib
 
-noncomputable def Cut (G : SimpleGraph α) (U : Finset α) [Finite G.vertexSet] :
+@[grind] noncomputable def Cut (G : SimpleGraph α) (U : Finset α) [Finite G.vertexSet] :
   Finset (Sym2 α) := {e ∈ G.edgeFinset | ∃ u ∈ U, u ∈ e ∧ ∃ v ∈ G.vertexFinset \ U, v ∈ e}
 
 --Weight function
