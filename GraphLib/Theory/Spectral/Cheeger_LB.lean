@@ -1,5 +1,9 @@
 import GraphLib.Theory.Spectral.Expansion
 
+-- Cheeger's Lower Bound
+-- Authors: Weixuan Yuan, Yuchen Zhong
+-- LLM: Gemini, GPT-5.5 on codex
+
 open Finset Cuts
 namespace GraphLib
 variable {α : Type*} [DecidableEq α]
