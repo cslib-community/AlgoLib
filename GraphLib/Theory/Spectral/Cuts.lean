@@ -6,11 +6,8 @@ import Mathlib.Data.Finset.Basic
 import GraphLib.Graph.Basic
 import GraphLib.Graph.Finite
 
-
 -- Cuts (undirected simple)
 -- Authors: Weixuan Yuan
-
-set_option tactic.hygienic false
 
 variable {α : Type*} [DecidableEq α]
 
@@ -26,15 +23,11 @@ class LinearOrderedAddCommMonoid (R : Type*) extends
   IsOrderedAddMonoid R -- addition is monotone
 
 variable {R : Type*} [LinearOrderedAddCommMonoid R]
-
 open Finset BigOperators
-
 namespace Cuts
 
-
-noncomputable def weight (G : SimpleGraph α) (U : Finset α) (w : Sym2 α → R) [Finite G.vertexSet] : R :=
-  Finset.sum (Cut G U) w
-
+noncomputable def weight (G : SimpleGraph α) (U : Finset α) (w : Sym2 α → R)
+    [Finite G.vertexSet] : R := Finset.sum (Cut G U) w
 
 lemma cut_submodular (G : SimpleGraph α) (U W : Finset α)
     (w : Sym2 α → R) (w_pos : ∀ e, 0 ≤ w e) [Finite G.vertexSet] :
@@ -54,7 +47,6 @@ lemma cut_submodular (G : SimpleGraph α) (U W : Finset α)
     apply Finset.sum_le_sum_of_subset_of_nonneg h3
     grind [Cut]
   apply add_le_add h1 h2
-
 
 def is_st_cut (G : SimpleGraph α) (U : Finset α) (s t : α) [Finite G.vertexSet] : Prop :=
   s ∈ U ∧ t ∉ U ∧ U.Nonempty ∧ U ⊂ G.vertexFinset
@@ -92,6 +84,5 @@ lemma st_min_cut {G : SimpleGraph α} [Finite G.vertexSet]
     rintro W hW; rw[<-h2]
     unfold st_mincut_value at h2; simp_all only; apply min'_le
     grind [st_cuts, is_st_cut]
-
 
 end Cuts
