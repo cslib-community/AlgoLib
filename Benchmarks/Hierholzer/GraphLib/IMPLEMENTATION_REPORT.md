@@ -17,9 +17,11 @@ worktree, history, report, or generated artifact was inspected.
 - Lean/toolchain and dependencies are those recorded by `COMMON_FREEZE_REPORT.md`: Lean
   `4.30.0-rc2`, Mathlib `d802ffd29db1f5dc5a29206b1a8af62bfcc234a3`, and CSLib
   `608cbe1b629a276abd3f2081f9b42dc766d8fd78`.
-- The preserved first-green commit is recorded in the final handoff and in the post-freeze
-  metadata update to this report. The commit being described is the first snapshot containing
-  all mandatory source, stress evaluations, this report, and the four-reviewer disposition.
+- Preserved first-green commit:
+  `b2fa1486db00eebf6a909395bbd303033647e107`, parent/base
+  `1b5c9f94e7cc660df254626555463ab8b2da791c`. It is the first snapshot containing all mandatory
+  source, stress evaluations, this report, and the four-reviewer disposition. The report-only
+  follow-up commit adds this necessarily post hoc hash without replacing that preserved snapshot.
 
 The representation was compiled and frozen before `Algorithm.lean` existed. Its manifest is:
 
