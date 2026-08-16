@@ -114,8 +114,7 @@ lemma rq_le_two_phi (G : SimpleGraph α) [Finite G.vertexSet] (d : ℕ) (S : Fin
   have h_rq_eq := rq_eq G d S hS_nonempty hS_size hS_subset h_reg
   unfold edgeExpansion
   have h_cut_val : ↑(#(Cut G S)) = ↑(#dS) := by congr
-  rw [h_rq_eq, h_cut_val]
-  unfold n at *
+  rw [h_rq_eq, h_cut_val]; unfold n at *
   have h_s_ne_zero : (↑(#S) : ℝ) ≠ 0 := by exact ne_of_gt (by exact_mod_cast (by grind))
   have h_d_ne_zero : (d : ℝ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hd)
   have h_size_real : (2 : ℝ) * ↑(#S) ≤ ↑(#G.vertexFinset) := by exact_mod_cast hS_size
