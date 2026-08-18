@@ -214,6 +214,34 @@ theorem not_isPreconnected_iff {G : SimpleGraph α} :
     ¬ G.IsPreconnected ↔ ∃ u ∈ V(G), ∃ v ∈ V(G), ¬ G.Reachable u v := by
   simp [IsPreconnected]
 
+/-! ## Edgeless graphs
+
+Deleting *all* the edges of `G` is the extreme case that the edge connectivity `κ'(G)`
+has to reason about, so it is worth recording once: without edges, no walk can move. -/
+
+/-- In a graph without edges, every realized vertex sequence stays put. -/
+theorem IsVertexSeqIn.head_eq_tail_of_edgeSet_eq_empty {G : SimpleGraph α}
+    (h : E(G) = ∅) {w : VertexSeq α} (hw : G.IsVertexSeqIn w) : w.head = w.tail := by
+  induction hw with
+  | singleton v hv => simp
+  | cons w u hw hadj ih =>
+    have hmem : s(w.tail, u) ∈ E(G) := hadj
+    rw [h] at hmem
+    exact absurd hmem (Set.notMem_empty _)
+
+/-- In a graph without edges, reachability is equality on the vertex set. -/
+theorem reachable_iff_of_edgeSet_eq_empty {G : SimpleGraph α} (h : E(G) = ∅) {u v : α} :
+    G.Reachable u v ↔ u = v ∧ u ∈ V(G) := by
+  refine ⟨fun hr => ⟨?_, hr.left_mem⟩, fun h' => h'.1 ▸ Reachable.refl G h'.2⟩
+  obtain ⟨w, hw, rfl, rfl⟩ := hr
+  exact IsVertexSeqIn.head_eq_tail_of_edgeSet_eq_empty h hw
+
+/-- A graph without edges is preconnected exactly when it has at most one vertex. -/
+theorem isPreconnected_iff_of_edgeSet_eq_empty {G : SimpleGraph α} (h : E(G) = ∅) :
+    G.IsPreconnected ↔ V(G).Subsingleton := by
+  refine ⟨fun hp u hu v hv => ((reachable_iff_of_edgeSet_eq_empty h).1 (hp u hu v hv)).1,
+    isPreconnected_of_subsingleton⟩
+
 end SimpleGraph
 
 end GraphLib

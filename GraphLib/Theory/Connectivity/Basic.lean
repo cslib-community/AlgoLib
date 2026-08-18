@@ -7,6 +7,7 @@ import GraphLib.Theory.Connectivity.Reachable
 import GraphLib.Theory.Connectivity.Components
 import GraphLib.Theory.Connectivity.Cuts
 import GraphLib.Theory.Connectivity.Connectivity
+import GraphLib.Theory.Connectivity.Computable
 
 /-!
 # `GraphLib.Theory.Connectivity`
@@ -24,6 +25,9 @@ development, which is split across `GraphLib/Theory/Connectivity/`:
 * `Cuts` — the edge boundary `∂(G, S)`, vertex and edge cuts, cut vertices and cut
   edges, and separators between vertices and between sets of vertices.
 * `Connectivity` — `κ(G)` and `κ'(G)`, with the `girth`-style infimum API.
+* `Computable` — the computable reachability closure `reachableFinset`, the connected
+  components as a `Finset`, the four connectivity numbers as executable definitions, and
+  the `Decidable` instances for reachability, connectedness, cuts and separating sets.
 
 Downstream files should import this umbrella; the split is internal. The submodules form
 the acyclic spine `Reachable ← Components ← Cuts ← Connectivity`, on top of the deletion
@@ -31,6 +35,8 @@ operations in `GraphLib.Graph.Delete` and the walk development in
 `GraphLib.Theory.Structures.InSimpleGraph`.
 
 ## Main definitions
+
+Definitions based on lecture note "Graph Theory ETH 2026" by Benny Sudakov
 
 * `SimpleGraph.Reachable G u v` — some simple walk realized in `G` runs from `u` to `v`.
 * `SimpleGraph.IsPreconnected G`, `SimpleGraph.IsConnected G` — Definition 1.35.
@@ -45,6 +51,8 @@ operations in `GraphLib.Graph.Delete` and the walk development in
   sets of vertices.
 * `SimpleGraph.vertexConnectivity G`, `SimpleGraph.edgeConnectivity G`, written `κ(G)`
   and `κ'(G)`.
+* `SimpleGraph.reachableFinset G u` — the computable counterpart of `componentOf`, and
+  `SimpleGraph.computeVertexConnectivity G` — the computable counterpart of `κ(G)`.
 
 ## Notation
 

@@ -3,6 +3,7 @@ Copyright (c) 2026 GraphLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
+import GraphLib.Graph.Finite
 import GraphLib.Theory.Connectivity.Cuts
 import Mathlib.Data.ENat.Lattice
 
@@ -26,6 +27,9 @@ edges, must be removed to destroy the connectivity of `G`.
   lower-bound characterizations; nearly everything else is a corollary.
 * `SimpleGraph.vertexConnectivity_le_encard` / `SimpleGraph.edgeConnectivity_le_encard` —
   every separating set bounds the connectivity number from above.
+* `SimpleGraph.vertexConnectivity_exists` / `SimpleGraph.edgeConnectivity_exists` — the
+  infimum is attained, unconditionally; `SimpleGraph.vertexCutNumber_exists` and
+  `SimpleGraph.edgeCutNumber_exists` are the conditional analogues for the cut numbers.
 
 ## Design choices
 
@@ -86,12 +90,14 @@ lemma IsEdgeCut.isEdgeSeparating {G : SimpleGraph α} {F : Set (Sym2 α)}
 disconnects `G` or leaves at most one vertex.
 
 It is `⊤` exactly when no set of vertices does either — for instance in an infinite
-complete graph. See `IsVertexSeparating` for the convention on complete graphs. -/
+complete graph. See `IsVertexSeparating` for the convention on complete graphs.
+The computable counterpart `computeVertexConnectivity` is available in `./Computable.lean`. -/
 noncomputable def vertexConnectivity (G : SimpleGraph α) : ℕ∞ :=
   ⨅ (S : Set α) (_ : G.IsVertexSeparating S), S.encard
 
 /-- The *edge connectivity* `κ'(G)`: the least number of edges whose deletion
-disconnects `G`, with the convention `κ'(G) = 0` when `G` has at most one vertex. -/
+disconnects `G`, with the convention `κ'(G) = 0` when `G` has at most one vertex.
+The computable counterpart `computeEdgeConnectivity` is available in `./Computable.lean`. -/
 noncomputable def edgeConnectivity (G : SimpleGraph α) : ℕ∞ :=
   ⨅ (F : Set (Sym2 α)) (_ : G.IsEdgeSeparating F), F.encard
 
@@ -152,6 +158,78 @@ theorem edgeConnectivity_eq_top_iff {G : SimpleGraph α} :
     κ'(G) = ⊤ ↔ ∀ F : Set (Sym2 α), G.IsEdgeSeparating F → F.Infinite := by
   simp [edgeConnectivity, iInf_eq_top]
 
+/-! ## Extremal separating sets, and attainment
+
+The `⨅` defining `κ` ranges over a family that is never empty — deleting *all* the
+vertices leaves nothing, which is a subsingleton — and an `ℕ∞`-valued infimum is always
+attained, `ℕ∞` being well-ordered. So `κ(G)` and `κ'(G)` are realized by an actual
+separating set, with no finiteness hypothesis anywhere: for an infinite complete graph
+the minimizer is `V(G)` itself and both sides are `⊤`.
+
+The unpatched cut numbers below do *not* enjoy this, which is the sharpest statement of
+what the Diestel convention buys. -/
+
+/-- The whole vertex set is vertex-separating: deleting it leaves no vertex at all. -/
+lemma isVertexSeparating_vertexSet (G : SimpleGraph α) : G.IsVertexSeparating V(G) :=
+  ⟨subset_rfl, Or.inr (by rw [Set.diff_self]; exact Set.subsingleton_empty)⟩
+
+/-- Deleting every edge leaves no edge. -/
+@[simp] lemma edgeSet_deleteEdges_self (G : SimpleGraph α) :
+    E(G.deleteEdges E(G)) = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ he => he.2 he.1
+
+/-- The whole edge set is edge-separating: an edgeless graph is preconnected only if it
+has at most one vertex, and that is the second disjunct. -/
+lemma isEdgeSeparating_edgeSet (G : SimpleGraph α) : G.IsEdgeSeparating E(G) := by
+  refine ⟨subset_rfl, ?_⟩
+  by_cases hsub : V(G).Subsingleton
+  · exact Or.inr hsub
+  · refine Or.inl fun hp => hsub ?_
+    exact (isPreconnected_iff_of_edgeSet_eq_empty G.edgeSet_deleteEdges_self).1 hp
+
+/-- `κ(G)` is bounded by the number of vertices. -/
+lemma vertexConnectivity_le_encard_vertexSet (G : SimpleGraph α) :
+    κ(G) ≤ V(G).encard :=
+  vertexConnectivity_le_encard G.isVertexSeparating_vertexSet
+
+/-- `κ'(G)` is bounded by the number of edges. -/
+lemma edgeConnectivity_le_encard_edgeSet (G : SimpleGraph α) : κ'(G) ≤ E(G).encard :=
+  edgeConnectivity_le_encard G.isEdgeSeparating_edgeSet
+
+/-- `κ(G)` is attained: some vertex-separating set has exactly that size. -/
+theorem vertexConnectivity_exists (G : SimpleGraph α) :
+    ∃ S : Set α, G.IsVertexSeparating S ∧ S.encard = κ(G) := by
+  have hne : Nonempty {S : Set α // G.IsVertexSeparating S} :=
+    nonempty_subtype.mpr ⟨V(G), G.isVertexSeparating_vertexSet⟩
+  obtain ⟨S, hS⟩ := @ENat.exists_eq_iInf _ hne fun S => S.val.encard
+  exact ⟨S.val, S.property, hS.trans iInf_subtype⟩
+
+/-- `κ'(G)` is attained. -/
+theorem edgeConnectivity_exists (G : SimpleGraph α) :
+    ∃ F : Set (Sym2 α), G.IsEdgeSeparating F ∧ F.encard = κ'(G) := by
+  have hne : Nonempty {F : Set (Sym2 α) // G.IsEdgeSeparating F} :=
+    nonempty_subtype.mpr ⟨E(G), G.isEdgeSeparating_edgeSet⟩
+  obtain ⟨F, hF⟩ := @ENat.exists_eq_iInf _ hne fun F => F.val.encard
+  exact ⟨F.val, F.property, hF.trans iInf_subtype⟩
+
+/-- On a graph with finitely many vertices the minimizer is a `Finset`. -/
+theorem exists_finset_isVertexSeparating_card_eq (G : SimpleGraph α) [Finite V(G)] :
+    ∃ S : Finset α, G.IsVertexSeparating ↑S ∧ (S.card : ℕ∞) = κ(G) := by
+  obtain ⟨S, hS, hcard⟩ := G.vertexConnectivity_exists
+  have hfin : S.Finite := Set.Finite.subset (Set.toFinite V(G)) hS.1
+  refine ⟨hfin.toFinset, ?_, ?_⟩
+  · rwa [hfin.coe_toFinset]
+  · rw [← hcard, hfin.encard_eq_coe_toFinset_card]
+
+/-- On a graph with finitely many vertices the edge minimizer is a `Finset`. -/
+theorem exists_finset_isEdgeSeparating_card_eq (G : SimpleGraph α) [Finite V(G)] :
+    ∃ F : Finset (Sym2 α), G.IsEdgeSeparating ↑F ∧ (F.card : ℕ∞) = κ'(G) := by
+  obtain ⟨F, hF, hcard⟩ := G.edgeConnectivity_exists
+  have hfin : F.Finite := Set.Finite.subset (SimpleGraph.edgeSet_finite G) hF.1
+  refine ⟨hfin.toFinset, ?_, ?_⟩
+  · rwa [hfin.coe_toFinset]
+  · rw [← hcard, hfin.encard_eq_coe_toFinset_card]
+
 /-! ## Degenerate cases -/
 
 /-- A disconnected graph has vertex connectivity zero: the empty set already separates
@@ -200,12 +278,14 @@ comparison and are *degenerate on complete graphs*: `Kₙ` has no vertex cut at 
 /-- The least size of a vertex cut of `G`, the literal reading of Definition 3.1.(i).
 
 Degenerate on complete graphs, which have no vertex cut: `vertexCutNumber Kₙ = ⊤`,
-whereas `κ(Kₙ) = n - 1`. -/
+whereas `κ(Kₙ) = n - 1`.
+The computable counterpart `computeVertexCutNumber` is available in `./Computable.lean`. -/
 noncomputable def vertexCutNumber (G : SimpleGraph α) : ℕ∞ :=
   ⨅ (S : Set α) (_ : G.IsVertexCut S), S.encard
 
 /-- The least size of an edge cut of `G`. Degenerate on graphs with at most one vertex,
-which have no edge cut. -/
+which have no edge cut.
+The computable counterpart `computeEdgeCutNumber` is available in `./Computable.lean`. -/
 noncomputable def edgeCutNumber (G : SimpleGraph α) : ℕ∞ :=
   ⨅ (F : Set (Sym2 α)) (_ : G.IsEdgeCut F), F.encard
 
@@ -221,6 +301,43 @@ lemma vertexConnectivity_le_vertexCutNumber (G : SimpleGraph α) :
 lemma edgeConnectivity_le_edgeCutNumber (G : SimpleGraph α) :
     κ'(G) ≤ G.edgeCutNumber :=
   le_iInf₂ fun _ hF => edgeConnectivity_le_encard_of_isEdgeCut hF
+
+/-! ### Attainment, conditionally
+
+Unlike `κ` and `κ'`, the cut numbers range over a family that can be empty — `Kₙ` has no
+vertex cut — so attainment needs the existence of a cut as a hypothesis. Note that the
+weaker-looking `≠ ⊤` is *not* the right hypothesis: it implies the existence of a cut
+(see `exists_isVertexCut_of_vertexCutNumber_ne_top`) but is strictly stronger, since a
+graph all of whose cuts are infinite has a cut and cut number `⊤`. -/
+
+/-- The least vertex cut is attained, provided there is a vertex cut. -/
+theorem vertexCutNumber_exists {G : SimpleGraph α} (h : ∃ S : Set α, G.IsVertexCut S) :
+    ∃ S : Set α, G.IsVertexCut S ∧ S.encard = G.vertexCutNumber := by
+  have hne : Nonempty {S : Set α // G.IsVertexCut S} := nonempty_subtype.mpr h
+  obtain ⟨S, hS⟩ := @ENat.exists_eq_iInf _ hne fun S => S.val.encard
+  exact ⟨S.val, S.property, hS.trans iInf_subtype⟩
+
+/-- The least edge cut is attained, provided there is an edge cut. -/
+theorem edgeCutNumber_exists {G : SimpleGraph α}
+    (h : ∃ F : Set (Sym2 α), G.IsEdgeCut F) :
+    ∃ F : Set (Sym2 α), G.IsEdgeCut F ∧ F.encard = G.edgeCutNumber := by
+  have hne : Nonempty {F : Set (Sym2 α) // G.IsEdgeCut F} := nonempty_subtype.mpr h
+  obtain ⟨F, hF⟩ := @ENat.exists_eq_iInf _ hne fun F => F.val.encard
+  exact ⟨F.val, F.property, hF.trans iInf_subtype⟩
+
+/-- A finite vertex cut number is witnessed by a vertex cut. -/
+lemma exists_isVertexCut_of_vertexCutNumber_ne_top {G : SimpleGraph α}
+    (h : G.vertexCutNumber ≠ ⊤) : ∃ S : Set α, G.IsVertexCut S := by
+  by_contra hcon
+  push Not at hcon
+  exact h (by simp [vertexCutNumber, hcon])
+
+/-- A finite edge cut number is witnessed by an edge cut. -/
+lemma exists_isEdgeCut_of_edgeCutNumber_ne_top {G : SimpleGraph α}
+    (h : G.edgeCutNumber ≠ ⊤) : ∃ F : Set (Sym2 α), G.IsEdgeCut F := by
+  by_contra hcon
+  push Not at hcon
+  exact h (by simp [edgeCutNumber, hcon])
 
 end SimpleGraph
 

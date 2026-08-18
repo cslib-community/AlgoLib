@@ -164,6 +164,11 @@ lemma pairwiseDisjoint_components (G : SimpleGraph α) :
     G.components = ∅ ↔ V(G) = ∅ := by
   simp [components, Set.image_eq_empty]
 
+/-- A graph with finitely many vertices has finitely many components: they are the image
+of the vertex set. -/
+lemma components_finite (G : SimpleGraph α) [Finite V(G)] : G.components.Finite :=
+  Set.Finite.image _ (Set.toFinite V(G))
+
 /-! ## Components and connectedness -/
 
 /-- In a preconnected graph, every vertex's component is the whole vertex set. -/
