@@ -179,6 +179,7 @@ lemma not_adj_banned_of_isAvoidingRootedPath_of_lt_girth (G : SimpleGraph α)
 
 /-- The first half-layer has at least `δ - 1` vertices. -/
 lemma pred_le_ncard_halfLayer_one (G : SimpleGraph α) [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     {δ : ℕ} {x banned : α}
     (hxb : G.Adj x banned)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v) :
@@ -207,7 +208,8 @@ lemma pred_le_ncard_halfLayer_one (G : SimpleGraph α) [Finite V(G)]
 
 /-- Successive nonzero half-layers grow by a factor of at least `δ - 1`. -/
 lemma mul_ncard_halfLayer_le_succ_of_lt_girth (G : SimpleGraph α)
-    [Finite V(G)] {δ i : ℕ} {x banned : α}
+    [Finite V(G)] [Fintype E(G)] [DecidableEq α]
+    {δ i : ℕ} {x banned : α}
     (hxb : G.Adj x banned)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * (i + 2) : ℕ∞) < G.girth) :
@@ -321,6 +323,7 @@ lemma disjoint_halfLayer_opposite_of_lt_girth (G : SimpleGraph α)
 /-- Nonzero same-side half-layer growth plus the first-layer estimate give the
 expected lower bound for every half-layer below radius `r`. -/
 lemma le_ncard_halfLayer (G : SimpleGraph α) [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     {δ i : ℕ} {x banned : α}
     (hxb : G.Adj x banned)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)

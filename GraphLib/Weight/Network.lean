@@ -61,14 +61,14 @@ theorem cutArcSet_finite (G : DiGraph α β) (S : Set α) [Finite E(G)] :
 instance instFiniteCutArcSet (G : DiGraph α β) (S : Set α) [Finite E(G)] :
     Finite (G.cutArcSet S) := (G.cutArcSet_finite S).to_subtype
 
-/-- The finite actual arcs leaving `S`, with membership equal to `cutArcSet`. -/
-noncomputable def cutArcFinset (G : DiGraph α β) (S : Set α) [Finite E(G)] :
-    Finset (Arc α β) := by
-  classical
-  exact G.edgeFinset.filter (fun a => a.source ∈ S ∧ a.target ∉ S)
+/-- The executable finite actual arcs leaving `S`, with membership equal to `cutArcSet`. -/
+def cutArcFinset (G : DiGraph α β) (S : Set α) [Fintype E(G)]
+    [DecidablePred (· ∈ S)] : Finset (Arc α β) :=
+  G.edgeFinset.filter (fun a => a.source ∈ S ∧ a.target ∉ S)
 
-@[simp] theorem mem_cutArcFinset (G : DiGraph α β) (S : Set α) [Finite E(G)]
-    (a : Arc α β) : a ∈ G.cutArcFinset S ↔ a ∈ G.cutArcSet S := by
+@[simp] theorem mem_cutArcFinset (G : DiGraph α β) (S : Set α) [Fintype E(G)]
+    [DecidablePred (· ∈ S)] (a : Arc α β) :
+    a ∈ G.cutArcFinset S ↔ a ∈ G.cutArcSet S := by
   simp [cutArcFinset]
 
 namespace Network
@@ -138,19 +138,20 @@ def reverse {G : DiGraph α β} (N : Network G R) : Network G.reverse R where
 def IsCut {G : DiGraph α β} (N : Network G R) (S : Set α) : Prop :=
   S ⊆ V(G) ∧ N.source ∈ S ∧ N.sink ∉ S
 
-/-- The capacity of arcs leaving a vertex set. -/
-noncomputable def cutCapacity {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
-    (N : Network G R) (S : Set α) : R := (G.cutArcFinset S).sum N.capacity
+/-- The capacity of arcs leaving a decidable vertex set. -/
+def cutCapacity {G : DiGraph α β} [AddCommMonoid R] [Fintype E(G)]
+    (N : Network G R) (S : Set α) [DecidablePred (· ∈ S)] : R :=
+  (G.cutArcFinset S).sum N.capacity
 
-theorem cutCapacity_eq_sum_cutArcFinset {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
-    (N : Network G R) (S : Set α) :
+theorem cutCapacity_eq_sum_cutArcFinset {G : DiGraph α β} [AddCommMonoid R]
+    [Fintype E(G)] (N : Network G R) (S : Set α) [DecidablePred (· ∈ S)] :
     N.cutCapacity S = (G.cutArcFinset S).sum N.capacity := rfl
 
 /-- Cut capacity depends only on capacity values of active arcs. -/
-theorem cutCapacity_congr {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+theorem cutCapacity_congr {G : DiGraph α β} [AddCommMonoid R] [Fintype E(G)]
     {N₁ N₂ : Network G R}
     (hcapacity : DiGraph.Capacity.EqOn G N₁.capacity N₂.capacity)
-    (S : Set α) : N₁.cutCapacity S = N₂.cutCapacity S := by
+    (S : Set α) [DecidablePred (· ∈ S)] : N₁.cutCapacity S = N₂.cutCapacity S := by
   classical
   rw [cutCapacity_eq_sum_cutArcFinset, cutCapacity_eq_sum_cutArcFinset]
   apply Finset.sum_congr rfl
@@ -168,29 +169,30 @@ abbrev EqOn {G : DiGraph α β} (N : Network G R) (flow₁ flow₂ : Flow N) : P
   Set.EqOn flow₁ flow₂ E(G)
 
 /-- Sum a flow over the actual arcs leaving a vertex. -/
-noncomputable def outflow {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+def outflow {G : DiGraph α β} [AddCommMonoid R] [Fintype E(G)] [DecidableEq α]
     (N : Network G R) (flow : Flow N) (v : α) : R :=
   (G.outIncidenceFinset v).sum flow
 
 /-- Sum a flow over the actual arcs entering a vertex. -/
-noncomputable def inflow {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+def inflow {G : DiGraph α β} [AddCommMonoid R] [Fintype E(G)] [DecidableEq α]
     (N : Network G R) (flow : Flow N) (v : α) : R :=
   (G.inIncidenceFinset v).sum flow
 
 /-- Net flow leaving the source. -/
-noncomputable def flowValue {G : DiGraph α β} [AddCommGroup R] [Finite E(G)]
+def flowValue {G : DiGraph α β} [AddCommGroup R] [Fintype E(G)] [DecidableEq α]
     (N : Network G R) (flow : Flow N) : R :=
   outflow N flow N.source - inflow N flow N.source
 
 /-- A feasible flow is nonnegative, respects capacity on active arcs, and is conserved at every
 internal vertex. -/
-def IsFeasible {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R] [Finite E(G)]
+def IsFeasible {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
+    [Fintype E(G)] [DecidableEq α]
     (N : Network G R) (flow : Flow N) : Prop :=
   (∀ a ∈ E(G), 0 ≤ flow a ∧ flow a ≤ N.capacity a) ∧
     ∀ v ∈ V(G), v ≠ N.source → v ≠ N.sink → inflow N flow v = outflow N flow v
 
 /-- Outflow depends only on flow values of active arcs. -/
-theorem outflow_congr {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+theorem outflow_congr {G : DiGraph α β} [AddCommMonoid R] [Fintype E(G)] [DecidableEq α]
     (N : Network G R) {flow₁ flow₂ : Flow N} (h : EqOn N flow₁ flow₂) (v : α) :
     outflow N flow₁ v = outflow N flow₂ v := by
   classical
@@ -200,7 +202,7 @@ theorem outflow_congr {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
   exact h ((G.mem_outIncidenceFinset v).mp ha).1
 
 /-- Inflow depends only on flow values of active arcs. -/
-theorem inflow_congr {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+theorem inflow_congr {G : DiGraph α β} [AddCommMonoid R] [Fintype E(G)] [DecidableEq α]
     (N : Network G R) {flow₁ flow₂ : Flow N} (h : EqOn N flow₁ flow₂) (v : α) :
     inflow N flow₁ v = inflow N flow₂ v := by
   classical
@@ -210,26 +212,30 @@ theorem inflow_congr {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
   exact h ((G.mem_inIncidenceFinset v).mp ha).1
 
 /-- Flow value depends only on flow values of active arcs. -/
-theorem flowValue_congr {G : DiGraph α β} [AddCommGroup R] [Finite E(G)]
+theorem flowValue_congr {G : DiGraph α β} [AddCommGroup R] [Fintype E(G)] [DecidableEq α]
     (N : Network G R) {flow₁ flow₂ : Flow N} (h : EqOn N flow₁ flow₂) :
     flowValue N flow₁ = flowValue N flow₂ := by
   rw [flowValue, flowValue, outflow_congr N h N.source, inflow_congr N h N.source]
 
-@[simp] theorem outflow_zero {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+@[simp] theorem outflow_zero {G : DiGraph α β} [AddCommMonoid R]
+    [Fintype E(G)] [DecidableEq α]
     (N : Network G R) (v : α) : outflow N (0 : Flow N) v = 0 := by
   simp [outflow]
 
-@[simp] theorem inflow_zero {G : DiGraph α β} [AddCommMonoid R] [Finite E(G)]
+@[simp] theorem inflow_zero {G : DiGraph α β} [AddCommMonoid R]
+    [Fintype E(G)] [DecidableEq α]
     (N : Network G R) (v : α) : inflow N (0 : Flow N) v = 0 := by
   simp [inflow]
 
-@[simp] theorem flowValue_zero {G : DiGraph α β} [AddCommGroup R] [Finite E(G)]
+@[simp] theorem flowValue_zero {G : DiGraph α β} [AddCommGroup R]
+    [Fintype E(G)] [DecidableEq α]
     (N : Network G R) : flowValue N (0 : Flow N) = 0 := by
   simp [flowValue]
 
 /-- The zero flow is feasible when active capacities are nonnegative. -/
 theorem zero_isFeasible {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
-    [Finite E(G)] (N : Network G R) (hcapacity : ∀ a ∈ E(G), 0 ≤ N.capacity a) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R)
+    (hcapacity : ∀ a ∈ E(G), 0 ≤ N.capacity a) :
     IsFeasible N (0 : Flow N) := by
   constructor
   · intro a ha
@@ -239,7 +245,8 @@ theorem zero_isFeasible {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
 
 /-- Feasibility depends only on the values of a flow on active arcs. -/
 theorem isFeasible_congr {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
-    [Finite E(G)] (N : Network G R) {flow₁ flow₂ : Flow N} (h : EqOn N flow₁ flow₂) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R)
+    {flow₁ flow₂ : Flow N} (h : EqOn N flow₁ flow₂) :
     IsFeasible N flow₁ ↔ IsFeasible N flow₂ := by
   constructor <;> intro hf
   · refine ⟨fun a ha => by simpa [h ha] using hf.1 a ha, ?_⟩
@@ -253,7 +260,8 @@ theorem isFeasible_congr {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
 
 /-- Feasibility depends only on active capacity values when source and sink agree. -/
 theorem isFeasible_congr_capacity {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
-    [Finite E(G)] (N₁ N₂ : Network G R) (hsource : N₁.source = N₂.source)
+    [Fintype E(G)] [DecidableEq α] (N₁ N₂ : Network G R)
+    (hsource : N₁.source = N₂.source)
     (hsink : N₁.sink = N₂.sink)
     (hcapacity : DiGraph.Capacity.EqOn G N₁.capacity N₂.capacity)
     (flow : Arc α β → R) : IsFeasible N₁ flow ↔ IsFeasible N₂ flow := by
@@ -271,7 +279,8 @@ theorem isFeasible_congr_capacity {G : DiGraph α β} [AddCommMonoid R] [Partial
 
 /-- The conservation equation supplied by feasibility at an internal vertex. -/
 theorem IsFeasible.conservation {G : DiGraph α β} [AddCommMonoid R] [PartialOrder R]
-    [Finite E(G)] {N : Network G R} {flow : Flow N} (h : IsFeasible N flow)
+    [Fintype E(G)] [DecidableEq α] {N : Network G R} {flow : Flow N}
+    (h : IsFeasible N flow)
     {v : α} (hv : v ∈ V(G)) (hsource : v ≠ N.source) (hsink : v ≠ N.sink) :
     inflow N flow v = outflow N flow v := h.2 v hv hsource hsink
 
@@ -304,7 +313,8 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
   simp [transportReverse]
 
 @[simp] theorem outflow_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R]
-    [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) (v : α) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : α ≃ γ)
+    [Fintype E(G.relabelVertices f)] [DecidableEq γ] (flow : Flow N) (v : α) :
     outflow (N.relabelVertices f) (transportRelabelVertices N f flow) (f v) =
       outflow N flow v := by
   classical
@@ -316,7 +326,8 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     simp
 
 @[simp] theorem inflow_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R]
-    [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) (v : α) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : α ≃ γ)
+    [Fintype E(G.relabelVertices f)] [DecidableEq γ] (flow : Flow N) (v : α) :
     inflow (N.relabelVertices f) (transportRelabelVertices N f flow) (f v) =
       inflow N flow v := by
   classical
@@ -328,7 +339,8 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     simp
 
 @[simp] theorem outflow_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
-    [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) (v : α) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : β ≃ δ)
+    [Fintype E(G.relabelTags f)] (flow : Flow N) (v : α) :
     outflow (N.relabelTags f) (transportRelabelTags N f flow) v = outflow N flow v := by
   classical
   symm
@@ -339,7 +351,8 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     simp
 
 @[simp] theorem inflow_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
-    [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) (v : α) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : β ≃ δ)
+    [Fintype E(G.relabelTags f)] (flow : Flow N) (v : α) :
     inflow (N.relabelTags f) (transportRelabelTags N f flow) v = inflow N flow v := by
   classical
   symm
@@ -350,7 +363,8 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     simp
 
 @[simp] theorem outflow_transportReverse {G : DiGraph α β} [AddCommMonoid R]
-    [Finite E(G)] (N : Network G R) (flow : Flow N) (v : α) :
+    [Fintype E(G)] [Fintype E(G.reverse)] [DecidableEq α]
+    (N : Network G R) (flow : Flow N) (v : α) :
     outflow N.reverse (transportReverse N flow) v = inflow N flow v := by
   classical
   symm
@@ -363,7 +377,8 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     simp
 
 @[simp] theorem inflow_transportReverse {G : DiGraph α β} [AddCommMonoid R]
-    [Finite E(G)] (N : Network G R) (flow : Flow N) (v : α) :
+    [Fintype E(G)] [Fintype E(G.reverse)] [DecidableEq α]
+    (N : Network G R) (flow : Flow N) (v : α) :
     inflow N.reverse (transportReverse N flow) v = outflow N flow v := by
   classical
   symm
@@ -376,18 +391,21 @@ def transportReverse {G : DiGraph α β} (N : Network G R) (flow : Flow N) :
     simp
 
 @[simp] theorem flowValue_transportRelabelVertices {G : DiGraph α β} [AddCommGroup R]
-    [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : α ≃ γ)
+    [Fintype E(G.relabelVertices f)] [DecidableEq γ] (flow : Flow N) :
     flowValue (N.relabelVertices f) (transportRelabelVertices N f flow) =
       flowValue N flow := by
   simp [flowValue]
 
 @[simp] theorem flowValue_transportRelabelTags {G : DiGraph α β} [AddCommGroup R]
-    [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) :
+    [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : β ≃ δ)
+    [Fintype E(G.relabelTags f)] (flow : Flow N) :
     flowValue (N.relabelTags f) (transportRelabelTags N f flow) = flowValue N flow := by
   simp [flowValue]
 
 theorem isFeasible_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R]
-    [PartialOrder R] [Finite E(G)] (N : Network G R) (f : α ≃ γ) (flow : Flow N) :
+    [PartialOrder R] [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : α ≃ γ)
+    [Fintype E(G.relabelVertices f)] [DecidableEq γ] (flow : Flow N) :
     IsFeasible (N.relabelVertices f) (transportRelabelVertices N f flow) ↔
       IsFeasible N flow := by
   constructor
@@ -413,7 +431,8 @@ theorem isFeasible_transportRelabelVertices {G : DiGraph α β} [AddCommMonoid R
       simpa using hf.2 u hu hsource' hsink'
 
 theorem isFeasible_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
-    [PartialOrder R] [Finite E(G)] (N : Network G R) (f : β ≃ δ) (flow : Flow N) :
+    [PartialOrder R] [Fintype E(G)] [DecidableEq α] (N : Network G R) (f : β ≃ δ)
+    [Fintype E(G.relabelTags f)] (flow : Flow N) :
     IsFeasible (N.relabelTags f) (transportRelabelTags N f flow) ↔
       IsFeasible N flow := by
   constructor
@@ -433,7 +452,8 @@ theorem isFeasible_transportRelabelTags {G : DiGraph α β} [AddCommMonoid R]
       simpa using hf.2 v hv (by simpa using hsource) (by simpa using hsink)
 
 theorem isFeasible_transportReverse {G : DiGraph α β} [AddCommMonoid R]
-    [PartialOrder R] [Finite E(G)] (N : Network G R) (flow : Flow N) :
+    [PartialOrder R] [Fintype E(G)] [Fintype E(G.reverse)] [DecidableEq α]
+    (N : Network G R) (flow : Flow N) :
     IsFeasible N.reverse (transportReverse N flow) ↔ IsFeasible N flow := by
   constructor
   · intro hf

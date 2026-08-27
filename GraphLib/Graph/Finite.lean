@@ -11,11 +11,11 @@ import Mathlib.Data.Sym.Card
 import GraphLib.Graph.Neighborhood
 
 /-!
-# Mathematical finite-set views of graphs
+# Finite-set views of graphs
 
-This file exposes noncomputable `Finset` views of the finite mathematical sets used by GraphLib.
-The views carry exactly the membership semantics of their `Set` counterparts; they are not an
-executable graph representation.
+This file exposes executable `Finset` views of the finite mathematical sets used by GraphLib.
+Global views are enumerated by `Fintype` instances on the corresponding set subtypes, and local
+views are obtained by filtering those global enumerations.
 
 For general graphs, finiteness of the vertex set and finiteness of the actual bundled edge set
 are independent. For simple graphs only, finite vertices imply finite edges. Local neighborhood
@@ -27,23 +27,6 @@ namespace GraphLib
 open scoped GraphLib
 
 variable {α β γ δ : Type*}
-
-private noncomputable def finiteSetFinset (s : Set α) [Finite s] : Finset α :=
-  (Set.toFinite s).toFinset
-
-@[simp] private theorem mem_finiteSetFinset (s : Set α) [Finite s] (x : α) :
-    x ∈ finiteSetFinset s ↔ x ∈ s := by
-  simp [finiteSetFinset]
-
-@[simp] private theorem coe_finiteSetFinset (s : Set α) [Finite s] :
-    (finiteSetFinset s : Set α) = s := by
-  ext x
-  simp
-
-@[simp] private theorem ncard_finiteSetFinset (s : Set α) [Finite s] :
-    s.ncard = (finiteSetFinset s).card := by
-  rw [Set.ncard_eq_toFinset_card s (Set.toFinite s)]
-  rfl
 
 /-! ## Finiteness bridges and instances -/
 
@@ -821,480 +804,620 @@ instance SimpleDiGraph.instFiniteLoopSet (G : SimpleDiGraph α) (v : α)
 
 /-! ## Vertex and actual-edge finsets -/
 
-/-- The finite vertex set of a general graph as a noncomputable `Finset`. -/
-noncomputable def Graph.vertexFinset (G : Graph α β) [Finite V(G)] : Finset α :=
-  finiteSetFinset V(G)
+/-- The executable finite vertex set of a general graph. -/
+def Graph.vertexFinset (G : Graph α β) [Fintype V(G)] : Finset α :=
+  V(G).toFinset
 
-/-- The finite vertex set of a simple graph as a noncomputable `Finset`. -/
-noncomputable def SimpleGraph.vertexFinset (G : SimpleGraph α) [Finite V(G)] : Finset α :=
-  finiteSetFinset V(G)
+/-- The executable finite vertex set of a simple graph. -/
+def SimpleGraph.vertexFinset (G : SimpleGraph α) [Fintype V(G)] : Finset α :=
+  V(G).toFinset
 
-/-- The finite vertex set of a general directed graph as a noncomputable `Finset`. -/
-noncomputable def DiGraph.vertexFinset (G : DiGraph α β) [Finite V(G)] : Finset α :=
-  finiteSetFinset V(G)
+/-- The executable finite vertex set of a general directed graph. -/
+def DiGraph.vertexFinset (G : DiGraph α β) [Fintype V(G)] : Finset α :=
+  V(G).toFinset
 
-/-- The finite vertex set of a simple directed graph as a noncomputable `Finset`. -/
-noncomputable def SimpleDiGraph.vertexFinset (G : SimpleDiGraph α) [Finite V(G)] : Finset α :=
-  finiteSetFinset V(G)
+/-- The executable finite vertex set of a simple directed graph. -/
+def SimpleDiGraph.vertexFinset (G : SimpleDiGraph α) [Fintype V(G)] : Finset α :=
+  V(G).toFinset
 
-/-- The finite actual bundled edge set of a general graph as a noncomputable `Finset`. -/
-noncomputable def Graph.edgeFinset (G : Graph α β) [Finite E(G)] : Finset (Edge α β) :=
-  finiteSetFinset E(G)
+/-- The executable finite actual bundled edge set of a general graph. -/
+def Graph.edgeFinset (G : Graph α β) [Fintype E(G)] : Finset (Edge α β) :=
+  E(G).toFinset
 
-/-- The finite actual edge set of a simple graph as a noncomputable `Finset`. -/
-noncomputable def SimpleGraph.edgeFinset (G : SimpleGraph α) [Finite E(G)] : Finset (Sym2 α) :=
-  finiteSetFinset E(G)
+/-- The executable finite actual edge set of a simple graph. -/
+def SimpleGraph.edgeFinset (G : SimpleGraph α) [Fintype E(G)] : Finset (Sym2 α) :=
+  E(G).toFinset
 
-/-- The finite actual bundled arc set of a general directed graph as a noncomputable `Finset`. -/
-noncomputable def DiGraph.edgeFinset (G : DiGraph α β) [Finite E(G)] : Finset (Arc α β) :=
-  finiteSetFinset E(G)
+/-- The executable finite actual bundled arc set of a general directed graph. -/
+def DiGraph.edgeFinset (G : DiGraph α β) [Fintype E(G)] : Finset (Arc α β) :=
+  E(G).toFinset
 
-/-- The finite actual arc set of a simple directed graph as a noncomputable `Finset`. -/
-noncomputable def SimpleDiGraph.edgeFinset (G : SimpleDiGraph α) [Finite E(G)] :
-    Finset (α × α) := finiteSetFinset E(G)
+/-- The executable finite actual arc set of a simple directed graph. -/
+def SimpleDiGraph.edgeFinset (G : SimpleDiGraph α) [Fintype E(G)] : Finset (α × α) :=
+  E(G).toFinset
 
-@[simp] theorem Graph.mem_vertexFinset (G : Graph α β) [Finite V(G)] {v : α} :
+@[simp] theorem Graph.mem_vertexFinset (G : Graph α β) [Fintype V(G)] {v : α} :
     v ∈ G.vertexFinset ↔ v ∈ V(G) := by simp [vertexFinset]
 
-@[simp] theorem SimpleGraph.mem_vertexFinset (G : SimpleGraph α) [Finite V(G)] {v : α} :
+@[simp] theorem SimpleGraph.mem_vertexFinset (G : SimpleGraph α) [Fintype V(G)] {v : α} :
     v ∈ G.vertexFinset ↔ v ∈ V(G) := by simp [vertexFinset]
 
-@[simp] theorem DiGraph.mem_vertexFinset (G : DiGraph α β) [Finite V(G)] {v : α} :
+@[simp] theorem DiGraph.mem_vertexFinset (G : DiGraph α β) [Fintype V(G)] {v : α} :
     v ∈ G.vertexFinset ↔ v ∈ V(G) := by simp [vertexFinset]
 
-@[simp] theorem SimpleDiGraph.mem_vertexFinset (G : SimpleDiGraph α) [Finite V(G)] {v : α} :
+@[simp] theorem SimpleDiGraph.mem_vertexFinset (G : SimpleDiGraph α) [Fintype V(G)] {v : α} :
     v ∈ G.vertexFinset ↔ v ∈ V(G) := by simp [vertexFinset]
 
-@[simp] theorem Graph.coe_vertexFinset (G : Graph α β) [Finite V(G)] :
+@[simp] theorem Graph.coe_vertexFinset (G : Graph α β) [Fintype V(G)] :
     (G.vertexFinset : Set α) = V(G) := by simp [vertexFinset]
 
-@[simp] theorem SimpleGraph.coe_vertexFinset (G : SimpleGraph α) [Finite V(G)] :
+@[simp] theorem SimpleGraph.coe_vertexFinset (G : SimpleGraph α) [Fintype V(G)] :
     (G.vertexFinset : Set α) = V(G) := by simp [vertexFinset]
 
-@[simp] theorem DiGraph.coe_vertexFinset (G : DiGraph α β) [Finite V(G)] :
+@[simp] theorem DiGraph.coe_vertexFinset (G : DiGraph α β) [Fintype V(G)] :
     (G.vertexFinset : Set α) = V(G) := by simp [vertexFinset]
 
-@[simp] theorem SimpleDiGraph.coe_vertexFinset (G : SimpleDiGraph α) [Finite V(G)] :
+@[simp] theorem SimpleDiGraph.coe_vertexFinset (G : SimpleDiGraph α) [Fintype V(G)] :
     (G.vertexFinset : Set α) = V(G) := by simp [vertexFinset]
 
-@[simp] theorem Graph.mem_edgeFinset (G : Graph α β) [Finite E(G)] {e : Edge α β} :
+@[simp] theorem Graph.mem_edgeFinset (G : Graph α β) [Fintype E(G)] {e : Edge α β} :
     e ∈ G.edgeFinset ↔ e ∈ E(G) := by simp [edgeFinset]
 
-@[simp] theorem SimpleGraph.mem_edgeFinset (G : SimpleGraph α) [Finite E(G)] {e : Sym2 α} :
+@[simp] theorem SimpleGraph.mem_edgeFinset (G : SimpleGraph α) [Fintype E(G)] {e : Sym2 α} :
     e ∈ G.edgeFinset ↔ e ∈ E(G) := by simp [edgeFinset]
 
-@[simp] theorem DiGraph.mem_edgeFinset (G : DiGraph α β) [Finite E(G)] {a : Arc α β} :
+@[simp] theorem DiGraph.mem_edgeFinset (G : DiGraph α β) [Fintype E(G)] {a : Arc α β} :
     a ∈ G.edgeFinset ↔ a ∈ E(G) := by simp [edgeFinset]
 
-@[simp] theorem SimpleDiGraph.mem_edgeFinset (G : SimpleDiGraph α) [Finite E(G)] {a : α × α} :
+@[simp] theorem SimpleDiGraph.mem_edgeFinset (G : SimpleDiGraph α) [Fintype E(G)] {a : α × α} :
     a ∈ G.edgeFinset ↔ a ∈ E(G) := by simp [edgeFinset]
 
-@[simp] theorem Graph.coe_edgeFinset (G : Graph α β) [Finite E(G)] :
+@[simp] theorem Graph.coe_edgeFinset (G : Graph α β) [Fintype E(G)] :
     (G.edgeFinset : Set (Edge α β)) = E(G) := by simp [edgeFinset]
 
-@[simp] theorem SimpleGraph.coe_edgeFinset (G : SimpleGraph α) [Finite E(G)] :
+@[simp] theorem SimpleGraph.coe_edgeFinset (G : SimpleGraph α) [Fintype E(G)] :
     (G.edgeFinset : Set (Sym2 α)) = E(G) := by simp [edgeFinset]
 
-@[simp] theorem DiGraph.coe_edgeFinset (G : DiGraph α β) [Finite E(G)] :
+@[simp] theorem DiGraph.coe_edgeFinset (G : DiGraph α β) [Fintype E(G)] :
     (G.edgeFinset : Set (Arc α β)) = E(G) := by simp [edgeFinset]
 
-@[simp] theorem SimpleDiGraph.coe_edgeFinset (G : SimpleDiGraph α) [Finite E(G)] :
+@[simp] theorem SimpleDiGraph.coe_edgeFinset (G : SimpleDiGraph α) [Fintype E(G)] :
     (G.edgeFinset : Set (α × α)) = E(G) := by simp [edgeFinset]
 
 /-! ## Local neighborhood finsets -/
 
-/-- A finite neighborhood in a general graph as a noncomputable `Finset`. -/
-noncomputable def Graph.neighborFinset (G : Graph α β) (v : α)
-    [Finite (G.neighborSet v)] : Finset α := finiteSetFinset (G.neighborSet v)
+/-- The executable neighborhood of a vertex in a general graph. -/
+def Graph.neighborFinset (G : Graph α β) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] : Finset α :=
+  G.vertexFinset.filter fun u =>
+    (G.edgeFinset.filter fun e => e.endpoints = s(v, u)).Nonempty
 
-/-- A finite neighborhood in a simple graph as a noncomputable `Finset`. -/
-noncomputable def SimpleGraph.neighborFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.neighborSet v)] : Finset α := finiteSetFinset (G.neighborSet v)
+/-- The executable neighborhood of a vertex in a simple graph. -/
+def SimpleGraph.neighborFinset (G : SimpleGraph α) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] : Finset α :=
+  G.vertexFinset.filter fun u =>
+    (G.edgeFinset.filter fun e => e = s(v, u)).Nonempty
 
-/-- A finite outgoing neighborhood in a general directed graph as a noncomputable `Finset`. -/
-noncomputable def DiGraph.outNeighborFinset (G : DiGraph α β) (v : α)
-    [Finite (G.outNeighborSet v)] : Finset α := finiteSetFinset (G.outNeighborSet v)
+/-- The executable outgoing neighborhood of a vertex in a general directed graph. -/
+def DiGraph.outNeighborFinset (G : DiGraph α β) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] : Finset α :=
+  G.vertexFinset.filter fun u =>
+    (G.edgeFinset.filter fun a => a.source = v ∧ a.target = u).Nonempty
 
-/-- A finite incoming neighborhood in a general directed graph as a noncomputable `Finset`. -/
-noncomputable def DiGraph.inNeighborFinset (G : DiGraph α β) (v : α)
-    [Finite (G.inNeighborSet v)] : Finset α := finiteSetFinset (G.inNeighborSet v)
+/-- The executable incoming neighborhood of a vertex in a general directed graph. -/
+def DiGraph.inNeighborFinset (G : DiGraph α β) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] : Finset α :=
+  G.vertexFinset.filter fun u =>
+    (G.edgeFinset.filter fun a => a.source = u ∧ a.target = v).Nonempty
 
-/-- A finite outgoing neighborhood in a simple directed graph as a noncomputable `Finset`. -/
-noncomputable def SimpleDiGraph.outNeighborFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outNeighborSet v)] : Finset α := finiteSetFinset (G.outNeighborSet v)
+/-- The executable outgoing neighborhood of a vertex in a simple directed graph. -/
+def SimpleDiGraph.outNeighborFinset (G : SimpleDiGraph α) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] : Finset α :=
+  G.vertexFinset.filter fun u =>
+    (G.edgeFinset.filter fun a => a.1 = v ∧ a.2 = u).Nonempty
 
-/-- A finite incoming neighborhood in a simple directed graph as a noncomputable `Finset`. -/
-noncomputable def SimpleDiGraph.inNeighborFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inNeighborSet v)] : Finset α := finiteSetFinset (G.inNeighborSet v)
+/-- The executable incoming neighborhood of a vertex in a simple directed graph. -/
+def SimpleDiGraph.inNeighborFinset (G : SimpleDiGraph α) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] : Finset α :=
+  G.vertexFinset.filter fun u =>
+    (G.edgeFinset.filter fun a => a.1 = u ∧ a.2 = v).Nonempty
 
 @[simp] theorem Graph.mem_neighborFinset (G : Graph α β) (v u : α)
-    [Finite (G.neighborSet v)] : u ∈ G.neighborFinset v ↔ G.Adj v u := by simp [neighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    u ∈ G.neighborFinset v ↔ G.Adj v u := by
+  simp only [neighborFinset, Finset.mem_filter, G.mem_vertexFinset,
+    Finset.filter_nonempty_iff, G.mem_edgeFinset, Graph.Adj, Graph.IsLink]
+  constructor
+  · rintro ⟨_, e, he, hendpoints⟩
+    exact ⟨e, he, hendpoints⟩
+  · rintro ⟨e, he, hendpoints⟩
+    exact ⟨G.endpoints_mem e he u (hendpoints.symm ▸ (by simp)), e, he, hendpoints⟩
 
 @[simp] theorem SimpleGraph.mem_neighborFinset (G : SimpleGraph α) (v u : α)
-    [Finite (G.neighborSet v)] : u ∈ G.neighborFinset v ↔ G.Adj v u := by simp [neighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    u ∈ G.neighborFinset v ↔ G.Adj v u := by
+  simp only [neighborFinset, Finset.mem_filter, G.mem_vertexFinset,
+    Finset.filter_nonempty_iff, G.mem_edgeFinset, SimpleGraph.Adj, SimpleGraph.IsLink]
+  constructor
+  · rintro ⟨_, e, he, hendpoints⟩
+    exact ⟨e, he, hendpoints⟩
+  · rintro ⟨e, he, hendpoints⟩
+    exact ⟨G.endpoints_mem e he u (hendpoints ▸ (by simp)), e, he, hendpoints⟩
 
 @[simp] theorem DiGraph.mem_outNeighborFinset (G : DiGraph α β) (v u : α)
-    [Finite (G.outNeighborSet v)] : u ∈ G.outNeighborFinset v ↔ G.Adj v u := by
-  simp [outNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    u ∈ G.outNeighborFinset v ↔ G.Adj v u := by
+  simp only [outNeighborFinset, Finset.mem_filter, G.mem_vertexFinset,
+    Finset.filter_nonempty_iff, G.mem_edgeFinset, DiGraph.Adj, DiGraph.IsArc]
+  constructor
+  · rintro ⟨_, a, ha, hsource, htarget⟩
+    exact ⟨a, ha, hsource, htarget⟩
+  · rintro ⟨a, ha, hsource, htarget⟩
+    exact ⟨htarget ▸ G.target_mem a ha, a, ha, hsource, htarget⟩
 
 @[simp] theorem DiGraph.mem_inNeighborFinset (G : DiGraph α β) (v u : α)
-    [Finite (G.inNeighborSet v)] : u ∈ G.inNeighborFinset v ↔ G.Adj u v := by
-  simp [inNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    u ∈ G.inNeighborFinset v ↔ G.Adj u v := by
+  simp only [inNeighborFinset, Finset.mem_filter, G.mem_vertexFinset,
+    Finset.filter_nonempty_iff, G.mem_edgeFinset, DiGraph.Adj, DiGraph.IsArc]
+  constructor
+  · rintro ⟨_, a, ha, hsource, htarget⟩
+    exact ⟨a, ha, hsource, htarget⟩
+  · rintro ⟨a, ha, hsource, htarget⟩
+    exact ⟨hsource ▸ G.source_mem a ha, a, ha, hsource, htarget⟩
 
 @[simp] theorem SimpleDiGraph.mem_outNeighborFinset (G : SimpleDiGraph α) (v u : α)
-    [Finite (G.outNeighborSet v)] : u ∈ G.outNeighborFinset v ↔ G.Adj v u := by
-  simp [outNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    u ∈ G.outNeighborFinset v ↔ G.Adj v u := by
+  simp only [outNeighborFinset, Finset.mem_filter, G.mem_vertexFinset,
+    Finset.filter_nonempty_iff, G.mem_edgeFinset, SimpleDiGraph.Adj, SimpleDiGraph.IsArc]
+  constructor
+  · rintro ⟨_, a, ha, hsource, htarget⟩
+    exact ⟨a, ha, hsource, htarget⟩
+  · rintro ⟨a, ha, hsource, htarget⟩
+    exact ⟨htarget ▸ G.target_mem a ha, a, ha, hsource, htarget⟩
 
 @[simp] theorem SimpleDiGraph.mem_inNeighborFinset (G : SimpleDiGraph α) (v u : α)
-    [Finite (G.inNeighborSet v)] : u ∈ G.inNeighborFinset v ↔ G.Adj u v := by
-  simp [inNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    u ∈ G.inNeighborFinset v ↔ G.Adj u v := by
+  simp only [inNeighborFinset, Finset.mem_filter, G.mem_vertexFinset,
+    Finset.filter_nonempty_iff, G.mem_edgeFinset, SimpleDiGraph.Adj, SimpleDiGraph.IsArc]
+  constructor
+  · rintro ⟨_, a, ha, hsource, htarget⟩
+    exact ⟨a, ha, hsource, htarget⟩
+  · rintro ⟨a, ha, hsource, htarget⟩
+    exact ⟨hsource ▸ G.source_mem a ha, a, ha, hsource, htarget⟩
 
 @[simp] theorem Graph.coe_neighborFinset (G : Graph α β) (v : α)
-    [Finite (G.neighborSet v)] : (G.neighborFinset v : Set α) = G.neighborSet v := by
-  simp [neighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.neighborFinset v : Set α) = G.neighborSet v := by
+  ext u
+  simp
 
 @[simp] theorem SimpleGraph.coe_neighborFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.neighborSet v)] : (G.neighborFinset v : Set α) = G.neighborSet v := by
-  simp [neighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.neighborFinset v : Set α) = G.neighborSet v := by
+  ext u
+  simp
 
 @[simp] theorem DiGraph.coe_outNeighborFinset (G : DiGraph α β) (v : α)
-    [Finite (G.outNeighborSet v)] : (G.outNeighborFinset v : Set α) = G.outNeighborSet v := by
-  simp [outNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.outNeighborFinset v : Set α) = G.outNeighborSet v := by
+  ext u
+  simp
 
 @[simp] theorem DiGraph.coe_inNeighborFinset (G : DiGraph α β) (v : α)
-    [Finite (G.inNeighborSet v)] : (G.inNeighborFinset v : Set α) = G.inNeighborSet v := by
-  simp [inNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.inNeighborFinset v : Set α) = G.inNeighborSet v := by
+  ext u
+  simp
 
 @[simp] theorem SimpleDiGraph.coe_outNeighborFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outNeighborSet v)] : (G.outNeighborFinset v : Set α) = G.outNeighborSet v := by
-  simp [outNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.outNeighborFinset v : Set α) = G.outNeighborSet v := by
+  ext u
+  simp
 
 @[simp] theorem SimpleDiGraph.coe_inNeighborFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inNeighborSet v)] : (G.inNeighborFinset v : Set α) = G.inNeighborSet v := by
-  simp [inNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.inNeighborFinset v : Set α) = G.inNeighborSet v := by
+  ext u
+  simp
 
-theorem Graph.neighborFinset_subset_vertexFinset (G : Graph α β) (v : α) [Finite V(G)] :
+theorem Graph.neighborFinset_subset_vertexFinset (G : Graph α β) (v : α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     G.neighborFinset v ⊆ G.vertexFinset := by
   intro u hu
   exact G.mem_vertexFinset.mpr ((G.mem_neighborFinset v u).mp hu).right_mem
 
 theorem SimpleGraph.neighborFinset_subset_vertexFinset
-    (G : SimpleGraph α) (v : α) [Finite V(G)] :
+    (G : SimpleGraph α) (v : α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     G.neighborFinset v ⊆ G.vertexFinset := by
   intro u hu
   exact G.mem_vertexFinset.mpr ((G.mem_neighborFinset v u).mp hu).right_mem
 
 theorem DiGraph.outNeighborFinset_subset_vertexFinset
-    (G : DiGraph α β) (v : α) [Finite V(G)] :
+    (G : DiGraph α β) (v : α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     G.outNeighborFinset v ⊆ G.vertexFinset := by
   intro u hu
   exact G.mem_vertexFinset.mpr ((G.mem_outNeighborFinset v u).mp hu).target_mem
 
 theorem DiGraph.inNeighborFinset_subset_vertexFinset
-    (G : DiGraph α β) (v : α) [Finite V(G)] :
+    (G : DiGraph α β) (v : α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     G.inNeighborFinset v ⊆ G.vertexFinset := by
   intro u hu
   exact G.mem_vertexFinset.mpr ((G.mem_inNeighborFinset v u).mp hu).source_mem
 
 theorem SimpleDiGraph.outNeighborFinset_subset_vertexFinset
-    (G : SimpleDiGraph α) (v : α) [Finite V(G)] :
+    (G : SimpleDiGraph α) (v : α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     G.outNeighborFinset v ⊆ G.vertexFinset := by
   intro u hu
   exact G.mem_vertexFinset.mpr ((G.mem_outNeighborFinset v u).mp hu).target_mem
 
 theorem SimpleDiGraph.inNeighborFinset_subset_vertexFinset
-    (G : SimpleDiGraph α) (v : α) [Finite V(G)] :
+    (G : SimpleDiGraph α) (v : α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     G.inNeighborFinset v ⊆ G.vertexFinset := by
   intro u hu
   exact G.mem_vertexFinset.mpr ((G.mem_inNeighborFinset v u).mp hu).source_mem
 
 @[simp] theorem Graph.ncard_neighborSet (G : Graph α β) (v : α)
-    [Finite (G.neighborSet v)] : (G.neighborSet v).ncard = (G.neighborFinset v).card := by
-  simp [neighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.neighborSet v).ncard = (G.neighborFinset v).card := by
+  rw [← G.coe_neighborFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleGraph.ncard_neighborSet (G : SimpleGraph α) (v : α)
-    [Finite (G.neighborSet v)] : (G.neighborSet v).ncard = (G.neighborFinset v).card := by
-  simp [neighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.neighborSet v).ncard = (G.neighborFinset v).card := by
+  rw [← G.coe_neighborFinset, Set.ncard_coe_finset]
 
 @[simp] theorem DiGraph.ncard_outNeighborSet (G : DiGraph α β) (v : α)
-    [Finite (G.outNeighborSet v)] :
-    (G.outNeighborSet v).ncard = (G.outNeighborFinset v).card := by simp [outNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.outNeighborSet v).ncard = (G.outNeighborFinset v).card := by
+  rw [← G.coe_outNeighborFinset, Set.ncard_coe_finset]
 
 @[simp] theorem DiGraph.ncard_inNeighborSet (G : DiGraph α β) (v : α)
-    [Finite (G.inNeighborSet v)] :
-    (G.inNeighborSet v).ncard = (G.inNeighborFinset v).card := by simp [inNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.inNeighborSet v).ncard = (G.inNeighborFinset v).card := by
+  rw [← G.coe_inNeighborFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleDiGraph.ncard_outNeighborSet (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outNeighborSet v)] :
-    (G.outNeighborSet v).ncard = (G.outNeighborFinset v).card := by simp [outNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.outNeighborSet v).ncard = (G.outNeighborFinset v).card := by
+  rw [← G.coe_outNeighborFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleDiGraph.ncard_inNeighborSet (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inNeighborSet v)] :
-    (G.inNeighborSet v).ncard = (G.inNeighborFinset v).card := by simp [inNeighborFinset]
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
+    (G.inNeighborSet v).ncard = (G.inNeighborFinset v).card := by
+  rw [← G.coe_inNeighborFinset, Set.ncard_coe_finset]
 
 /-! ## Local incidence and loop finsets -/
 
-/-- The finite actual edges incident with `v` in a general graph. -/
-noncomputable def Graph.incidenceFinset (G : Graph α β) (v : α)
-    [Finite (G.incidenceSet v)] : Finset (Edge α β) := finiteSetFinset (G.incidenceSet v)
+/-- The executable actual edges incident with `v` in a general graph. -/
+def Graph.incidenceFinset (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Edge α β) :=
+  G.edgeFinset.filter fun e => v ∈ e.endpoints
 
-/-- The finite actual edges incident with `v` in a simple graph. -/
-noncomputable def SimpleGraph.incidenceFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.incidenceSet v)] : Finset (Sym2 α) := finiteSetFinset (G.incidenceSet v)
+/-- The executable actual edges incident with `v` in a simple graph. -/
+def SimpleGraph.incidenceFinset (G : SimpleGraph α) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Sym2 α) :=
+  G.edgeFinset.filter fun e => v ∈ e
 
-/-- The finite actual arcs whose source is `v` in a general directed graph. -/
-noncomputable def DiGraph.outIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.outIncidenceSet v)] : Finset (Arc α β) := finiteSetFinset (G.outIncidenceSet v)
+/-- The executable actual arcs whose source is `v` in a general directed graph. -/
+def DiGraph.outIncidenceFinset (G : DiGraph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Arc α β) :=
+  G.edgeFinset.filter fun a => a.source = v
 
-/-- The finite actual arcs whose target is `v` in a general directed graph. -/
-noncomputable def DiGraph.inIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.inIncidenceSet v)] : Finset (Arc α β) := finiteSetFinset (G.inIncidenceSet v)
+/-- The executable actual arcs whose target is `v` in a general directed graph. -/
+def DiGraph.inIncidenceFinset (G : DiGraph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Arc α β) :=
+  G.edgeFinset.filter fun a => a.target = v
 
-/-- The finite actual arcs whose source is `v` in a simple directed graph. -/
-noncomputable def SimpleDiGraph.outIncidenceFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outIncidenceSet v)] : Finset (α × α) := finiteSetFinset (G.outIncidenceSet v)
+/-- The executable actual arcs whose source is `v` in a simple directed graph. -/
+def SimpleDiGraph.outIncidenceFinset (G : SimpleDiGraph α) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (α × α) :=
+  G.edgeFinset.filter fun a => a.1 = v
 
-/-- The finite actual arcs whose target is `v` in a simple directed graph. -/
-noncomputable def SimpleDiGraph.inIncidenceFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inIncidenceSet v)] : Finset (α × α) := finiteSetFinset (G.inIncidenceSet v)
+/-- The executable actual arcs whose target is `v` in a simple directed graph. -/
+def SimpleDiGraph.inIncidenceFinset (G : SimpleDiGraph α) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (α × α) :=
+  G.edgeFinset.filter fun a => a.2 = v
 
-/-- The finite actual loops at `v` in a general graph. -/
-noncomputable def Graph.loopFinset (G : Graph α β) (v : α)
-    [Finite (G.loopSet v)] : Finset (Edge α β) := finiteSetFinset (G.loopSet v)
+/-- The executable actual loops at `v` in a general graph. -/
+def Graph.loopFinset (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Edge α β) :=
+  G.edgeFinset.filter fun e => e.endpoints = s(v, v)
 
-/-- The finite actual loops at `v` in a simple graph. -/
-noncomputable def SimpleGraph.loopFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.loopSet v)] : Finset (Sym2 α) := finiteSetFinset (G.loopSet v)
+/-- The executable actual loops at `v` in a simple graph. -/
+def SimpleGraph.loopFinset (G : SimpleGraph α) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Sym2 α) :=
+  G.edgeFinset.filter fun e => e = s(v, v)
 
-/-- The finite actual directed loops at `v` in a general directed graph. -/
-noncomputable def DiGraph.loopFinset (G : DiGraph α β) (v : α)
-    [Finite (G.loopSet v)] : Finset (Arc α β) := finiteSetFinset (G.loopSet v)
+/-- The executable actual directed loops at `v` in a general directed graph. -/
+def DiGraph.loopFinset (G : DiGraph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (Arc α β) :=
+  G.edgeFinset.filter fun a => a.source = v ∧ a.target = v
 
-/-- The finite actual directed loops at `v` in a simple directed graph. -/
-noncomputable def SimpleDiGraph.loopFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.loopSet v)] : Finset (α × α) := finiteSetFinset (G.loopSet v)
+/-- The executable actual directed loops at `v` in a simple directed graph. -/
+def SimpleDiGraph.loopFinset (G : SimpleDiGraph α) (v : α)
+    [Fintype E(G)] [DecidableEq α] : Finset (α × α) :=
+  G.edgeFinset.filter fun a => a.1 = v ∧ a.2 = v
 
-@[simp] theorem Graph.mem_incidenceFinset (G : Graph α β) (v : α) [Finite (G.incidenceSet v)]
-    {e : Edge α β} : e ∈ G.incidenceFinset v ↔ G.Inc e v := by simp [incidenceFinset]
+@[simp] theorem Graph.mem_incidenceFinset (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α]
+    {e : Edge α β} : e ∈ G.incidenceFinset v ↔ G.Inc e v := by
+  simp [incidenceFinset, Graph.Inc]
 
 @[simp] theorem SimpleGraph.mem_incidenceFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.incidenceSet v)] {e : Sym2 α} : e ∈ G.incidenceFinset v ↔ G.Inc e v := by
-  simp [incidenceFinset]
+    [Fintype E(G)] [DecidableEq α] {e : Sym2 α} :
+    e ∈ G.incidenceFinset v ↔ G.Inc e v := by
+  simp [incidenceFinset, SimpleGraph.Inc]
 
 @[simp] theorem DiGraph.mem_outIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.outIncidenceSet v)] {a : Arc α β} :
+    [Fintype E(G)] [DecidableEq α] {a : Arc α β} :
     a ∈ G.outIncidenceFinset v ↔ a ∈ E(G) ∧ a.source = v := by simp [outIncidenceFinset]
 
 @[simp] theorem DiGraph.mem_inIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.inIncidenceSet v)] {a : Arc α β} :
+    [Fintype E(G)] [DecidableEq α] {a : Arc α β} :
     a ∈ G.inIncidenceFinset v ↔ a ∈ E(G) ∧ a.target = v := by simp [inIncidenceFinset]
 
 @[simp] theorem SimpleDiGraph.mem_outIncidenceFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outIncidenceSet v)] {a : α × α} :
+    [Fintype E(G)] [DecidableEq α] {a : α × α} :
     a ∈ G.outIncidenceFinset v ↔ a ∈ E(G) ∧ a.1 = v := by simp [outIncidenceFinset]
 
 @[simp] theorem SimpleDiGraph.mem_inIncidenceFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inIncidenceSet v)] {a : α × α} :
+    [Fintype E(G)] [DecidableEq α] {a : α × α} :
     a ∈ G.inIncidenceFinset v ↔ a ∈ E(G) ∧ a.2 = v := by simp [inIncidenceFinset]
 
-@[simp] theorem Graph.mem_loopFinset (G : Graph α β) (v : α) [Finite (G.loopSet v)]
+@[simp] theorem Graph.mem_loopFinset (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α]
     {e : Edge α β} : e ∈ G.loopFinset v ↔ G.IsLink e v v := by simp [loopFinset]
 
 @[simp] theorem SimpleGraph.mem_loopFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.loopSet v)] {e : Sym2 α} : e ∈ G.loopFinset v ↔ G.IsLink e v v := by
+    [Fintype E(G)] [DecidableEq α] {e : Sym2 α} :
+    e ∈ G.loopFinset v ↔ G.IsLink e v v := by
   simp [loopFinset]
 
-@[simp] theorem DiGraph.mem_loopFinset (G : DiGraph α β) (v : α) [Finite (G.loopSet v)]
+@[simp] theorem DiGraph.mem_loopFinset (G : DiGraph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α]
     {a : Arc α β} : a ∈ G.loopFinset v ↔ G.IsArc a v v := by simp [loopFinset]
 
 @[simp] theorem SimpleDiGraph.mem_loopFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.loopSet v)] {a : α × α} : a ∈ G.loopFinset v ↔ G.IsArc a v v := by
+    [Fintype E(G)] [DecidableEq α] {a : α × α} :
+    a ∈ G.loopFinset v ↔ G.IsArc a v v := by
   simp [loopFinset]
 
 @[simp] theorem Graph.coe_incidenceFinset (G : Graph α β) (v : α)
-    [Finite (G.incidenceSet v)] : (G.incidenceFinset v : Set (Edge α β)) = G.incidenceSet v := by
-  simp [incidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.incidenceFinset v : Set (Edge α β)) = G.incidenceSet v := by
+  ext e
+  simp [Graph.incidenceSet, Graph.Inc]
 
 @[simp] theorem SimpleGraph.coe_incidenceFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.incidenceSet v)] : (G.incidenceFinset v : Set (Sym2 α)) = G.incidenceSet v := by
-  simp [incidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.incidenceFinset v : Set (Sym2 α)) = G.incidenceSet v := by
+  ext e
+  simp [SimpleGraph.incidenceSet, SimpleGraph.Inc]
 
 @[simp] theorem DiGraph.coe_outIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.outIncidenceSet v)] :
+    [Fintype E(G)] [DecidableEq α] :
     (G.outIncidenceFinset v : Set (Arc α β)) = G.outIncidenceSet v := by
-  simp [outIncidenceFinset]
+  ext a
+  simp [DiGraph.outIncidenceSet]
 
 @[simp] theorem DiGraph.coe_inIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.inIncidenceSet v)] :
+    [Fintype E(G)] [DecidableEq α] :
     (G.inIncidenceFinset v : Set (Arc α β)) = G.inIncidenceSet v := by
-  simp [inIncidenceFinset]
+  ext a
+  simp [DiGraph.inIncidenceSet]
 
 @[simp] theorem SimpleDiGraph.coe_outIncidenceFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outIncidenceSet v)] :
+    [Fintype E(G)] [DecidableEq α] :
     (G.outIncidenceFinset v : Set (α × α)) = G.outIncidenceSet v := by
-  simp [outIncidenceFinset]
+  ext a
+  simp [SimpleDiGraph.outIncidenceSet]
 
 @[simp] theorem SimpleDiGraph.coe_inIncidenceFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inIncidenceSet v)] :
+    [Fintype E(G)] [DecidableEq α] :
     (G.inIncidenceFinset v : Set (α × α)) = G.inIncidenceSet v := by
-  simp [inIncidenceFinset]
+  ext a
+  simp [SimpleDiGraph.inIncidenceSet]
 
-@[simp] theorem Graph.coe_loopFinset (G : Graph α β) (v : α) [Finite (G.loopSet v)] :
-    (G.loopFinset v : Set (Edge α β)) = G.loopSet v := by simp [loopFinset]
+@[simp] theorem Graph.coe_loopFinset (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopFinset v : Set (Edge α β)) = G.loopSet v := by
+  ext e
+  simp [Graph.loopSet, Graph.IsLink]
 
 @[simp] theorem SimpleGraph.coe_loopFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.loopSet v)] : (G.loopFinset v : Set (Sym2 α)) = G.loopSet v := by
-  simp [loopFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopFinset v : Set (Sym2 α)) = G.loopSet v := by
+  ext e
+  simp [SimpleGraph.loopSet, SimpleGraph.IsLink]
 
-@[simp] theorem DiGraph.coe_loopFinset (G : DiGraph α β) (v : α) [Finite (G.loopSet v)] :
-    (G.loopFinset v : Set (Arc α β)) = G.loopSet v := by simp [loopFinset]
+@[simp] theorem DiGraph.coe_loopFinset (G : DiGraph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopFinset v : Set (Arc α β)) = G.loopSet v := by
+  ext a
+  simp only [loopFinset, Finset.mem_coe, Finset.mem_filter, G.mem_edgeFinset,
+    DiGraph.loopSet, DiGraph.IsArc, Set.mem_setOf_eq]
 
 @[simp] theorem SimpleDiGraph.coe_loopFinset (G : SimpleDiGraph α) (v : α)
-    [Finite (G.loopSet v)] : (G.loopFinset v : Set (α × α)) = G.loopSet v := by
-  simp [loopFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopFinset v : Set (α × α)) = G.loopSet v := by
+  ext a
+  simp only [loopFinset, Finset.mem_coe, Finset.mem_filter, G.mem_edgeFinset,
+    SimpleDiGraph.loopSet, SimpleDiGraph.IsArc, Set.mem_setOf_eq]
 
-theorem Graph.incidenceFinset_subset_edgeFinset (G : Graph α β) (v : α) [Finite E(G)] :
+theorem Graph.incidenceFinset_subset_edgeFinset (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] :
     G.incidenceFinset v ⊆ G.edgeFinset := by
   intro e he
   exact G.mem_edgeFinset.mpr ((G.mem_incidenceFinset v).mp he).edge_mem
 
 theorem SimpleGraph.incidenceFinset_subset_edgeFinset
-    (G : SimpleGraph α) (v : α) [Finite E(G)] :
+    (G : SimpleGraph α) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.incidenceFinset v ⊆ G.edgeFinset := by
   intro e he
   exact G.mem_edgeFinset.mpr ((G.mem_incidenceFinset v).mp he).edge_mem
 
 theorem DiGraph.outIncidenceFinset_subset_edgeFinset
-    (G : DiGraph α β) (v : α) [Finite E(G)] :
+    (G : DiGraph α β) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.outIncidenceFinset v ⊆ G.edgeFinset := by
   intro a ha
   exact G.mem_edgeFinset.mpr ((G.mem_outIncidenceFinset v).mp ha).1
 
 theorem DiGraph.inIncidenceFinset_subset_edgeFinset
-    (G : DiGraph α β) (v : α) [Finite E(G)] :
+    (G : DiGraph α β) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.inIncidenceFinset v ⊆ G.edgeFinset := by
   intro a ha
   exact G.mem_edgeFinset.mpr ((G.mem_inIncidenceFinset v).mp ha).1
 
 theorem SimpleDiGraph.outIncidenceFinset_subset_edgeFinset
-    (G : SimpleDiGraph α) (v : α) [Finite E(G)] :
+    (G : SimpleDiGraph α) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.outIncidenceFinset v ⊆ G.edgeFinset := by
   intro a ha
   exact G.mem_edgeFinset.mpr ((G.mem_outIncidenceFinset v).mp ha).1
 
 theorem SimpleDiGraph.inIncidenceFinset_subset_edgeFinset
-    (G : SimpleDiGraph α) (v : α) [Finite E(G)] :
+    (G : SimpleDiGraph α) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.inIncidenceFinset v ⊆ G.edgeFinset := by
   intro a ha
   exact G.mem_edgeFinset.mpr ((G.mem_inIncidenceFinset v).mp ha).1
 
 theorem Graph.loopFinset_subset_incidenceFinset (G : Graph α β) (v : α)
-    [Finite (G.incidenceSet v)] : G.loopFinset v ⊆ G.incidenceFinset v := by
+    [Fintype E(G)] [DecidableEq α] : G.loopFinset v ⊆ G.incidenceFinset v := by
   intro e he
   exact (G.mem_incidenceFinset v).mpr ((G.mem_loopFinset v).mp he).inc_left
 
 theorem SimpleGraph.loopFinset_subset_incidenceFinset (G : SimpleGraph α) (v : α)
-    [Finite (G.incidenceSet v)] : G.loopFinset v ⊆ G.incidenceFinset v := by
+    [Fintype E(G)] [DecidableEq α] : G.loopFinset v ⊆ G.incidenceFinset v := by
   intro e he
   exact (G.mem_incidenceFinset v).mpr ((G.mem_loopFinset v).mp he).inc_left
 
 theorem DiGraph.loopFinset_subset_outIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.outIncidenceSet v)] : G.loopFinset v ⊆ G.outIncidenceFinset v := by
+    [Fintype E(G)] [DecidableEq α] : G.loopFinset v ⊆ G.outIncidenceFinset v := by
   intro a ha
   exact (G.mem_outIncidenceFinset v).mpr
     ⟨((G.mem_loopFinset v).mp ha).edge_mem, ((G.mem_loopFinset v).mp ha).source_eq⟩
 
 theorem SimpleDiGraph.loopFinset_subset_outIncidenceFinset
-    (G : SimpleDiGraph α) (v : α) [Finite (G.outIncidenceSet v)] :
+    (G : SimpleDiGraph α) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.loopFinset v ⊆ G.outIncidenceFinset v := by
   intro a ha
   exact (G.mem_outIncidenceFinset v).mpr
     ⟨((G.mem_loopFinset v).mp ha).edge_mem, ((G.mem_loopFinset v).mp ha).source_eq⟩
 
 theorem DiGraph.loopFinset_subset_inIncidenceFinset (G : DiGraph α β) (v : α)
-    [Finite (G.loopSet v)] [Finite (G.inIncidenceSet v)] :
+    [Fintype E(G)] [DecidableEq α] :
     G.loopFinset v ⊆ G.inIncidenceFinset v := by
   intro a ha
   exact (G.mem_inIncidenceFinset v).mpr
     ⟨((G.mem_loopFinset v).mp ha).edge_mem, ((G.mem_loopFinset v).mp ha).target_eq⟩
 
 theorem SimpleDiGraph.loopFinset_subset_inIncidenceFinset
-    (G : SimpleDiGraph α) (v : α) [Finite (G.loopSet v)] [Finite (G.inIncidenceSet v)] :
+    (G : SimpleDiGraph α) (v : α) [Fintype E(G)] [DecidableEq α] :
     G.loopFinset v ⊆ G.inIncidenceFinset v := by
   intro a ha
   exact (G.mem_inIncidenceFinset v).mpr
     ⟨((G.mem_loopFinset v).mp ha).edge_mem, ((G.mem_loopFinset v).mp ha).target_eq⟩
 
 @[simp] theorem Graph.ncard_incidenceSet (G : Graph α β) (v : α)
-    [Finite (G.incidenceSet v)] :
-    (G.incidenceSet v).ncard = (G.incidenceFinset v).card := by simp [incidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.incidenceSet v).ncard = (G.incidenceFinset v).card := by
+  rw [← G.coe_incidenceFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleGraph.ncard_incidenceSet (G : SimpleGraph α) (v : α)
-    [Finite (G.incidenceSet v)] :
-    (G.incidenceSet v).ncard = (G.incidenceFinset v).card := by simp [incidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.incidenceSet v).ncard = (G.incidenceFinset v).card := by
+  rw [← G.coe_incidenceFinset, Set.ncard_coe_finset]
 
 @[simp] theorem DiGraph.ncard_outIncidenceSet (G : DiGraph α β) (v : α)
-    [Finite (G.outIncidenceSet v)] :
-    (G.outIncidenceSet v).ncard = (G.outIncidenceFinset v).card := by simp [outIncidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.outIncidenceSet v).ncard = (G.outIncidenceFinset v).card := by
+  rw [← G.coe_outIncidenceFinset, Set.ncard_coe_finset]
 
 @[simp] theorem DiGraph.ncard_inIncidenceSet (G : DiGraph α β) (v : α)
-    [Finite (G.inIncidenceSet v)] :
-    (G.inIncidenceSet v).ncard = (G.inIncidenceFinset v).card := by simp [inIncidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.inIncidenceSet v).ncard = (G.inIncidenceFinset v).card := by
+  rw [← G.coe_inIncidenceFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleDiGraph.ncard_outIncidenceSet (G : SimpleDiGraph α) (v : α)
-    [Finite (G.outIncidenceSet v)] :
-    (G.outIncidenceSet v).ncard = (G.outIncidenceFinset v).card := by simp [outIncidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.outIncidenceSet v).ncard = (G.outIncidenceFinset v).card := by
+  rw [← G.coe_outIncidenceFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleDiGraph.ncard_inIncidenceSet (G : SimpleDiGraph α) (v : α)
-    [Finite (G.inIncidenceSet v)] :
-    (G.inIncidenceSet v).ncard = (G.inIncidenceFinset v).card := by simp [inIncidenceFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.inIncidenceSet v).ncard = (G.inIncidenceFinset v).card := by
+  rw [← G.coe_inIncidenceFinset, Set.ncard_coe_finset]
 
-@[simp] theorem Graph.ncard_loopSet (G : Graph α β) (v : α) [Finite (G.loopSet v)] :
-    (G.loopSet v).ncard = (G.loopFinset v).card := by simp [loopFinset]
+@[simp] theorem Graph.ncard_loopSet (G : Graph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopSet v).ncard = (G.loopFinset v).card := by
+  rw [← G.coe_loopFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleGraph.ncard_loopSet (G : SimpleGraph α) (v : α)
-    [Finite (G.loopSet v)] : (G.loopSet v).ncard = (G.loopFinset v).card := by
-  simp [loopFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopSet v).ncard = (G.loopFinset v).card := by
+  rw [← G.coe_loopFinset, Set.ncard_coe_finset]
 
-@[simp] theorem DiGraph.ncard_loopSet (G : DiGraph α β) (v : α) [Finite (G.loopSet v)] :
-    (G.loopSet v).ncard = (G.loopFinset v).card := by simp [loopFinset]
+@[simp] theorem DiGraph.ncard_loopSet (G : DiGraph α β) (v : α)
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopSet v).ncard = (G.loopFinset v).card := by
+  rw [← G.coe_loopFinset, Set.ncard_coe_finset]
 
 @[simp] theorem SimpleDiGraph.ncard_loopSet (G : SimpleDiGraph α) (v : α)
-    [Finite (G.loopSet v)] : (G.loopSet v).ncard = (G.loopFinset v).card := by
-  simp [loopFinset]
+    [Fintype E(G)] [DecidableEq α] :
+    (G.loopSet v).ncard = (G.loopFinset v).card := by
+  rw [← G.coe_loopFinset, Set.ncard_coe_finset]
 
 /-! ## Global cardinal bridges -/
 
-@[simp] theorem Graph.ncard_vertexSet (G : Graph α β) [Finite V(G)] :
-    V(G).ncard = G.vertexFinset.card := by simp [vertexFinset]
+@[simp] theorem Graph.ncard_vertexSet (G : Graph α β) [Fintype V(G)] :
+    V(G).ncard = G.vertexFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem SimpleGraph.ncard_vertexSet (G : SimpleGraph α) [Finite V(G)] :
-    V(G).ncard = G.vertexFinset.card := by simp [vertexFinset]
+@[simp] theorem SimpleGraph.ncard_vertexSet (G : SimpleGraph α) [Fintype V(G)] :
+    V(G).ncard = G.vertexFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem DiGraph.ncard_vertexSet (G : DiGraph α β) [Finite V(G)] :
-    V(G).ncard = G.vertexFinset.card := by simp [vertexFinset]
+@[simp] theorem DiGraph.ncard_vertexSet (G : DiGraph α β) [Fintype V(G)] :
+    V(G).ncard = G.vertexFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem SimpleDiGraph.ncard_vertexSet (G : SimpleDiGraph α) [Finite V(G)] :
-    V(G).ncard = G.vertexFinset.card := by simp [vertexFinset]
+@[simp] theorem SimpleDiGraph.ncard_vertexSet (G : SimpleDiGraph α) [Fintype V(G)] :
+    V(G).ncard = G.vertexFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem Graph.ncard_edgeSet (G : Graph α β) [Finite E(G)] :
-    E(G).ncard = G.edgeFinset.card := by simp [edgeFinset]
+@[simp] theorem Graph.ncard_edgeSet (G : Graph α β) [Fintype E(G)] :
+    E(G).ncard = G.edgeFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem SimpleGraph.ncard_edgeSet (G : SimpleGraph α) [Finite E(G)] :
-    E(G).ncard = G.edgeFinset.card := by simp [edgeFinset]
+@[simp] theorem SimpleGraph.ncard_edgeSet (G : SimpleGraph α) [Fintype E(G)] :
+    E(G).ncard = G.edgeFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem DiGraph.ncard_edgeSet (G : DiGraph α β) [Finite E(G)] :
-    E(G).ncard = G.edgeFinset.card := by simp [edgeFinset]
+@[simp] theorem DiGraph.ncard_edgeSet (G : DiGraph α β) [Fintype E(G)] :
+    E(G).ncard = G.edgeFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
-@[simp] theorem SimpleDiGraph.ncard_edgeSet (G : SimpleDiGraph α) [Finite E(G)] :
-    E(G).ncard = G.edgeFinset.card := by simp [edgeFinset]
+@[simp] theorem SimpleDiGraph.ncard_edgeSet (G : SimpleDiGraph α) [Fintype E(G)] :
+    E(G).ncard = G.edgeFinset.card := by
+  rw [Set.ncard_eq_toFinset_card']
+  rfl
 
 /-! ## Simple cardinality bounds -/
 
-private theorem SimpleGraph.vertexFinset_card_eq (G : SimpleGraph α) [Finite V(G)]
-    [Fintype V(G)] : G.vertexFinset.card = Fintype.card V(G) := by
-  change (finiteSetFinset V(G)).card = Fintype.card V(G)
-  exact (Set.toFinite V(G)).card_toFinset
+private theorem SimpleGraph.vertexFinset_card_eq (G : SimpleGraph α) [Fintype V(G)] :
+    G.vertexFinset.card = Fintype.card V(G) := by
+  simp [vertexFinset]
 
 private theorem SimpleGraph.edgeLift (G : SimpleGraph α) {e : Sym2 α} (he : e ∈ E(G)) :
     ∃ s : Sym2 V(G), ¬ s.IsDiag ∧ s.map Subtype.val = e := by
@@ -1307,10 +1430,9 @@ private theorem SimpleGraph.edgeLift (G : SimpleGraph α) {e : Sym2 α} (he : e 
 
 /-- A simple graph has at most `choose |V| 2` actual edges. -/
 theorem SimpleGraph.card_edgeFinset_le_card_vertexFinset_choose_two
-    (G : SimpleGraph α) [Finite V(G)] :
+    (G : SimpleGraph α) [Fintype V(G)] [Fintype E(G)] :
     G.edgeFinset.card ≤ G.vertexFinset.card.choose 2 := by
   classical
-  haveI : Fintype V(G) := Fintype.ofFinite V(G)
   let f : G.edgeFinset → {s : Sym2 V(G) // ¬ s.IsDiag} := fun e =>
     ⟨(G.edgeLift (G.mem_edgeFinset.mp e.property)).choose,
       (G.edgeLift (G.mem_edgeFinset.mp e.property)).choose_spec.1⟩
@@ -1328,17 +1450,15 @@ theorem SimpleGraph.card_edgeFinset_le_card_vertexFinset_choose_two
     _ = (Fintype.card V(G)).choose 2 := Sym2.card_subtype_not_diag
     _ = G.vertexFinset.card.choose 2 := by rw [G.vertexFinset_card_eq]
 
-private theorem SimpleDiGraph.vertexFinset_card_eq (G : SimpleDiGraph α) [Finite V(G)]
-    [Fintype V(G)] : G.vertexFinset.card = Fintype.card V(G) := by
-  change (finiteSetFinset V(G)).card = Fintype.card V(G)
-  exact (Set.toFinite V(G)).card_toFinset
+private theorem SimpleDiGraph.vertexFinset_card_eq (G : SimpleDiGraph α) [Fintype V(G)] :
+    G.vertexFinset.card = Fintype.card V(G) := by
+  simp [vertexFinset]
 
 /-- A simple directed graph has at most twice `choose |V| 2` actual arcs. -/
 theorem SimpleDiGraph.card_edgeFinset_le_two_mul_card_vertexFinset_choose_two
-    (G : SimpleDiGraph α) [Finite V(G)] :
+    (G : SimpleDiGraph α) [Fintype V(G)] [Fintype E(G)] :
     G.edgeFinset.card ≤ 2 * G.vertexFinset.card.choose 2 := by
   classical
-  haveI : Fintype V(G) := Fintype.ofFinite V(G)
   let f : G.edgeFinset → {p : V(G) × V(G) // p.1 ≠ p.2} := fun a =>
     let ha := G.mem_edgeFinset.mp a.property
     ⟨(⟨a.val.1, G.source_mem _ ha⟩, ⟨a.val.2, G.target_mem _ ha⟩), by

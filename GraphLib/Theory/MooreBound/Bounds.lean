@@ -28,6 +28,7 @@ open MooreBound
 /-- Odd-girth version of the Moore bound. -/
 theorem mooreBound_odd (G : SimpleGraph α) (δ r : ℕ)
     [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     (hne : V(G).Nonempty)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * r + 1 : ℕ∞) ≤ G.girth) :
@@ -77,6 +78,7 @@ theorem mooreBound_odd (G : SimpleGraph α) (δ r : ℕ)
 /-- Even-girth version of the Moore bound. -/
 theorem mooreBound_even (G : SimpleGraph α) (δ r : ℕ)
     [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     (hne : V(G).Nonempty)
     (hδ : 2 ≤ δ)
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)

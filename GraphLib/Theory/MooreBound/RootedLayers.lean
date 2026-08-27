@@ -139,6 +139,7 @@ lemma neighborSet_subset_rootLayer_one (G : SimpleGraph α) {x : α} (hx : x ∈
 
 /-- The first rooted layer has at least the degree of the root. -/
 lemma degree_le_ncard_rootLayer_one (G : SimpleGraph α) [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     {x : α} (hx : x ∈ V(G)) :
     G.degree x ≤ (rootLayer G x 1).ncard := by
   have hroot_fin : (rootLayer G x 1).Finite :=
@@ -168,7 +169,8 @@ lemma disjoint_rootLayer_of_ne_of_lt_girth (G : SimpleGraph α) {x : α} {i j : 
 /-- Successive odd Moore layers grow by a factor of at least `δ - 1` after the
 first layer. -/
 lemma mul_ncard_rootLayer_le_succ_of_lt_girth (G : SimpleGraph α)
-    [Finite V(G)] {δ i : ℕ} {x : α}
+    [Finite V(G)] [Fintype E(G)] [DecidableEq α]
+    {δ i : ℕ} {x : α}
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)
     (hgirth : (2 * (i + 2) : ℕ∞) < G.girth) :
     (δ - 1) * (rootLayer G x (i + 1)).ncard ≤
@@ -218,6 +220,7 @@ lemma mul_ncard_rootLayer_le_succ_of_lt_girth (G : SimpleGraph α)
 
 /-- Nonzero rooted layers in the odd Moore tree have the expected lower bound. -/
 lemma le_ncard_rootLayer_succ (G : SimpleGraph α) [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     {δ i : ℕ} {x : α}
     (hx : x ∈ V(G))
     (hmin : ∀ v : α, v ∈ V(G) → δ ≤ G.degree v)

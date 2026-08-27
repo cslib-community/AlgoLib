@@ -168,6 +168,7 @@ lemma le_ncard_vertexSet (G : SimpleGraph α) (hV : V(G).Finite)
 /-- A finite nonempty simple graph with every vertex of degree at least two has
 finite girth. -/
 lemma ne_top_of_two_le_degree (G : SimpleGraph α) [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     (hne : V(G).Nonempty)
     (hdeg : ∀ v : α, v ∈ V(G) → 2 ≤ G.degree v) :
     G.girth ≠ ⊤ := by

@@ -64,7 +64,8 @@ lemma eq_tail_or_eq_penultimate_of_adj_mem_of_lt_girth (G : SimpleGraph α)
 possibly the penultimate vertex are fresh neighbours. Consequently, the number
 of fresh neighbours is at least `degree - 1`. -/
 lemma pred_degree_le_ncard_freshNeighborSet_of_lt_girth (G : SimpleGraph α)
-    [Finite V(G)] {p : SimplePath α}
+    [Finite V(G)] [Fintype E(G)] [DecidableEq α]
+    {p : SimplePath α}
     (hp : G.IsSimplePathIn p) (hpos : p.length ≠ 0)
     (hgirth : ((p.length + 1 : ℕ) : ℕ∞) < G.girth) :
     G.degree p.tail - 1 ≤ (freshNeighborSet G p).ncard := by
@@ -106,6 +107,7 @@ them:
 /-- The fresh neighbours of a realized path of length `n ≠ 0` number at least `δ - 1`,
 given the minimum-degree hypothesis and a girth bound comfortably above `n`. -/
 lemma pred_le_ncard_freshNeighborSet (G : SimpleGraph α) [Finite V(G)]
+    [Fintype E(G)] [DecidableEq α]
     {δ n : ℕ} {p : SimplePath α} {v : α}
     (hmin : ∀ w : α, w ∈ V(G) → δ ≤ G.degree w)
     (hp : G.IsSimplePathIn p) (hpt : p.tail = v) (hpl : p.length = n) (hpos : n ≠ 0)

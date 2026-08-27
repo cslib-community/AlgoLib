@@ -39,22 +39,21 @@ instance instFiniteEdgeSet {G : Graph α β} (M : Matching G) [Finite E(G)] :
     Finite M.edgeSet :=
   (G.edgeSet_finite.subset M.edgeSet_subset).to_subtype
 
-/-- A finite matching's actual edges as a noncomputable finset. -/
-noncomputable def edgeFinset {G : Graph α β} (M : Matching G) [Finite M.edgeSet] :
-    Finset (Edge α β) := (Set.toFinite M.edgeSet).toFinset
+/-- A finite matching's executable actual-edge enumeration. -/
+def edgeFinset {G : Graph α β} (M : Matching G) [Fintype M.edgeSet] :
+    Finset (Edge α β) := M.edgeSet.toFinset
 
-@[simp] theorem mem_edgeFinset {G : Graph α β} (M : Matching G) [Finite M.edgeSet]
+@[simp] theorem mem_edgeFinset {G : Graph α β} (M : Matching G) [Fintype M.edgeSet]
     (e : Edge α β) : e ∈ M.edgeFinset ↔ e ∈ M.edgeSet := by
   simp [edgeFinset]
 
-/-- The number of actual edges in a finite matching. -/
-noncomputable def size {G : Graph α β} (M : Matching G) [Finite M.edgeSet] : ℕ :=
+/-- The number of actual edges in an executably finite matching. -/
+def size {G : Graph α β} (M : Matching G) [Fintype M.edgeSet] : ℕ :=
   M.edgeFinset.card
 
-@[simp] theorem size_eq_ncard {G : Graph α β} (M : Matching G) [Finite M.edgeSet] :
+@[simp] theorem size_eq_ncard {G : Graph α β} (M : Matching G) [Fintype M.edgeSet] :
     M.size = M.edgeSet.ncard := by
-  rw [size, Set.ncard_eq_toFinset_card M.edgeSet (Set.toFinite M.edgeSet)]
-  rfl
+  rw [size, edgeFinset, Set.ncard_eq_toFinset_card']
 
 end Matching
 

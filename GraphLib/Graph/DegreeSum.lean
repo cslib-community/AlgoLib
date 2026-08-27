@@ -101,7 +101,8 @@ private theorem sum_incidence_and_loops_eq_twice
 
 /-- The sum of degrees of a finite general graph is twice its number of actual bundled edges.
 Parallel edges are counted separately and every loop contributes two. -/
-theorem Graph.sum_degrees_eq_twice_card_edges (G : Graph α β) [Finite V(G)] [Finite E(G)] :
+theorem Graph.sum_degrees_eq_twice_card_edges (G : Graph α β)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     ∑ v ∈ G.vertexFinset, G.degree v = 2 * G.edgeFinset.card := by
   classical
   calc
@@ -130,7 +131,8 @@ theorem Graph.sum_degrees_eq_twice_card_edges (G : Graph α β) [Finite V(G)] [F
           (G.endpoints_mem e (G.mem_edgeFinset.mp he) v hv))
 
 /-- The sum of degrees of a finite simple graph is twice its number of edges. -/
-theorem SimpleGraph.sum_degrees_eq_twice_card_edges (G : SimpleGraph α) [Finite V(G)] :
+theorem SimpleGraph.sum_degrees_eq_twice_card_edges (G : SimpleGraph α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     ∑ v ∈ G.vertexFinset, G.degree v = 2 * G.edgeFinset.card := by
   classical
   calc
@@ -177,7 +179,8 @@ private theorem card_eq_sum_source_fibers
   rw [hset, Set.ncard_coe_finset]
 
 /-- The sum of out-degrees is the number of actual arcs in a finite general directed graph. -/
-theorem DiGraph.sum_outDegrees_eq_card_edges (G : DiGraph α β) [Finite V(G)] [Finite E(G)] :
+theorem DiGraph.sum_outDegrees_eq_card_edges (G : DiGraph α β)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     ∑ v ∈ G.vertexFinset, G.outDegree v = G.edgeFinset.card := by
   classical
   calc
@@ -197,7 +200,8 @@ theorem DiGraph.sum_outDegrees_eq_card_edges (G : DiGraph α β) [Finite V(G)] [
         (fun a ha => G.mem_vertexFinset.mpr (G.source_mem a (G.mem_edgeFinset.mp ha)))).symm
 
 /-- The sum of in-degrees is the number of actual arcs in a finite general directed graph. -/
-theorem DiGraph.sum_inDegrees_eq_card_edges (G : DiGraph α β) [Finite V(G)] [Finite E(G)] :
+theorem DiGraph.sum_inDegrees_eq_card_edges (G : DiGraph α β)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     ∑ v ∈ G.vertexFinset, G.inDegree v = G.edgeFinset.card := by
   classical
   calc
@@ -217,12 +221,13 @@ theorem DiGraph.sum_inDegrees_eq_card_edges (G : DiGraph α β) [Finite V(G)] [F
         (fun a ha => G.mem_vertexFinset.mpr (G.target_mem a (G.mem_edgeFinset.mp ha)))).symm
 
 theorem DiGraph.sum_outDegrees_eq_sum_inDegrees
-    (G : DiGraph α β) [Finite V(G)] [Finite E(G)] :
+    (G : DiGraph α β) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     (∑ v ∈ G.vertexFinset, G.outDegree v) = ∑ v ∈ G.vertexFinset, G.inDegree v := by
   rw [G.sum_outDegrees_eq_card_edges, G.sum_inDegrees_eq_card_edges]
 
 /-- The sum of out-degrees is the number of arcs in a finite simple directed graph. -/
-theorem SimpleDiGraph.sum_outDegrees_eq_card_edges (G : SimpleDiGraph α) [Finite V(G)] :
+theorem SimpleDiGraph.sum_outDegrees_eq_card_edges (G : SimpleDiGraph α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     ∑ v ∈ G.vertexFinset, G.outDegree v = G.edgeFinset.card := by
   classical
   calc
@@ -242,7 +247,8 @@ theorem SimpleDiGraph.sum_outDegrees_eq_card_edges (G : SimpleDiGraph α) [Finit
         (fun a ha => G.mem_vertexFinset.mpr (G.source_mem a (G.mem_edgeFinset.mp ha)))).symm
 
 /-- The sum of in-degrees is the number of arcs in a finite simple directed graph. -/
-theorem SimpleDiGraph.sum_inDegrees_eq_card_edges (G : SimpleDiGraph α) [Finite V(G)] :
+theorem SimpleDiGraph.sum_inDegrees_eq_card_edges (G : SimpleDiGraph α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     ∑ v ∈ G.vertexFinset, G.inDegree v = G.edgeFinset.card := by
   classical
   calc
@@ -262,32 +268,34 @@ theorem SimpleDiGraph.sum_inDegrees_eq_card_edges (G : SimpleDiGraph α) [Finite
         (fun a ha => G.mem_vertexFinset.mpr (G.target_mem a (G.mem_edgeFinset.mp ha)))).symm
 
 theorem SimpleDiGraph.sum_outDegrees_eq_sum_inDegrees
-    (G : SimpleDiGraph α) [Finite V(G)] :
+    (G : SimpleDiGraph α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α] :
     (∑ v ∈ G.vertexFinset, G.outDegree v) = ∑ v ∈ G.vertexFinset, G.inDegree v := by
   rw [G.sum_outDegrees_eq_card_edges, G.sum_inDegrees_eq_card_edges]
 
 /-! ## Rational average degree -/
 
-/-- The rational average degree of a finite nonempty general graph. -/
-noncomputable def Graph.averageDegree (G : Graph α β) [Finite V(G)] [Finite E(G)]
-    [Nonempty V(G)] : ℚ :=
+/-- The executable rational average degree of a finite nonempty general graph. -/
+def Graph.averageDegree (G : Graph α β)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] [Nonempty V(G)] : ℚ :=
   (∑ v ∈ G.vertexFinset, (G.degree v : ℚ)) / G.vertexFinset.card
 
-/-- The rational average degree of a finite nonempty simple graph. -/
-noncomputable def SimpleGraph.averageDegree (G : SimpleGraph α) [Finite V(G)]
-    [Nonempty V(G)] : ℚ :=
+/-- The executable rational average degree of a finite nonempty simple graph. -/
+def SimpleGraph.averageDegree (G : SimpleGraph α)
+    [Fintype V(G)] [Fintype E(G)] [DecidableEq α] [Nonempty V(G)] : ℚ :=
   (∑ v ∈ G.vertexFinset, (G.degree v : ℚ)) / G.vertexFinset.card
 
 /-- The average degree is twice the number of actual edges divided by the number of vertices. -/
 theorem Graph.averageDegree_eq_two_mul_card_edgeFinset_div_card_vertexFinset
-    (G : Graph α β) [Finite V(G)] [Finite E(G)] [Nonempty V(G)] :
+    (G : Graph α β) [Fintype V(G)] [Fintype E(G)] [DecidableEq α]
+    [Nonempty V(G)] :
     G.averageDegree = (2 * G.edgeFinset.card : ℚ) / G.vertexFinset.card := by
   rw [averageDegree, ← Nat.cast_sum, G.sum_degrees_eq_twice_card_edges]
   norm_num
 
 /-- The average degree is twice the number of edges divided by the number of vertices. -/
 theorem SimpleGraph.averageDegree_eq_two_mul_card_edgeFinset_div_card_vertexFinset
-    (G : SimpleGraph α) [Finite V(G)] [Nonempty V(G)] :
+    (G : SimpleGraph α) [Fintype V(G)] [Fintype E(G)] [DecidableEq α]
+    [Nonempty V(G)] :
     G.averageDegree = (2 * G.edgeFinset.card : ℚ) / G.vertexFinset.card := by
   rw [averageDegree, ← Nat.cast_sum, G.sum_degrees_eq_twice_card_edges]
   norm_num
