@@ -74,7 +74,7 @@ their edge was not deleted. -/
   cases G; simp [SimpleGraph.deleteEdges]
 
 /-- Deleting edges yields a subgraph. -/
-@[grind] lemma SimpleGraph.deleteEdges_subgraphOf (G : SimpleGraph α)
+@[grind .] lemma SimpleGraph.deleteEdges_subgraphOf (G : SimpleGraph α)
     (F : Set (Sym2 α)) : SimpleGraph.subgraphOf (G.deleteEdges F) G :=
   ⟨subset_rfl, Set.diff_subset⟩
 
@@ -120,7 +120,7 @@ neither was deleted. -/
   cases G; simp [SimpleGraph.deleteVertices]
 
 /-- Deleting vertices yields a subgraph. -/
-@[grind] lemma SimpleGraph.deleteVertices_subgraphOf (G : SimpleGraph α) (S : Set α) :
+@[grind .] lemma SimpleGraph.deleteVertices_subgraphOf (G : SimpleGraph α) (S : Set α) :
     SimpleGraph.subgraphOf (G.deleteVertices S) G :=
   ⟨Set.diff_subset, fun _ he => he.1⟩
 
