@@ -10,6 +10,7 @@ import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.Set.Finite.Range
 import Mathlib.Data.Sym.Card
 import GraphLib.Graph.Basic
+import GraphLib.Graph.Degree
 
 /-!
 # Finiteness of graphs
@@ -82,6 +83,16 @@ instance SimpleGraph.instFiniteEdgeSet (G : SimpleGraph α)
           exact ⟨s(⟨x, hx⟩, ⟨y, hy⟩), by simp, rfl⟩
       · exact he)
 
+noncomputable instance SimpleGraph.instFintypeNeighborSet (G : SimpleGraph α) (v : α)
+    [Fintype G.edgeSet] : Fintype (G.neighborSet v) := by
+  let f : G.neighborSet v → G.edgeSet := fun u => ⟨s(u.val, v), u.property⟩
+  have hf : Function.Injective f := by
+    rintro ⟨u1, hu1⟩ ⟨u2, hu2⟩ h
+    have heq : s(u1, v) = s(u2, v) := Subtype.ext_iff.mp h
+    have hu1_in : u1 ∈ s(u2, v) := by rw [← heq]; exact Sym2.mem_mk_left u1 v
+    grind
+  exact Fintype.ofInjective f hf
+
 instance SimpleDiGraph.instFiniteEdgeSet (G : SimpleDiGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
     Fintype G.edgeSet :=
@@ -112,6 +123,15 @@ theorem SimpleGraph.fin_vertexSet_fin_edgeSet (G : SimpleGraph α)
   classical
   haveI : Fintype G.vertexSet := hfin
   haveI : Fintype G.edgeSet := SimpleGraph.instFiniteEdgeSet G
+  exact inferInstance
+
+theorem SimpleGraph.fin_vertexSet_fin_neighborSet (G : SimpleGraph α)
+    (hfin : Fintype G.vertexSet) (v : α) :
+    Finite (G.neighborSet v) := by
+  classical
+  haveI : Fintype G.vertexSet := hfin
+  haveI : Fintype G.edgeSet := SimpleGraph.instFiniteEdgeSet G
+  haveI : Fintype (G.neighborSet v) := SimpleGraph.instFintypeNeighborSet G v
   exact inferInstance
 
 /-- Backwards-compatible named form. -/
@@ -447,5 +467,32 @@ lemma SimpleDiGraph.edgeSet_finite (G : SimpleDiGraph α)
     G.edgeSet.Finite :=
   haveI : Fintype G.edgeSet := SimpleDiGraph.instFiniteEdgeSet G
   Set.toFinite G.edgeSet
+
+-- Degree finite
+
+@[simp]
+theorem card_incidenceFinset_eq_degree (G : SimpleGraph α) (v : α)
+    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+    (G.incidenceSet v).ncard = G.degree v := by
+  classical
+  unfold SimpleGraph.degree
+  refine Set.ncard_congr (fun e he => Sym2.Mem.other he.2) ?_ ?_ ?_
+  · intro e he
+    change s(Sym2.Mem.other he.2, v) ∈ G.edgeSet
+    rw [Sym2.eq_swap, Sym2.other_spec he.2]
+    exact he.1
+  · intro e₁ e₂ he₁ he₂ h
+    calc
+      e₁ = s(v, Sym2.Mem.other he₁.2) := (Sym2.other_spec he₁.2).symm
+      _ = s(v, Sym2.Mem.other he₂.2) := by grind
+      _ = e₂ := Sym2.other_spec he₂.2
+  · intro u hu
+    change s(u, v) ∈ G.edgeSet at hu
+    have huv : s(v, u) ∈ G.edgeSet := by
+      rw [Sym2.eq_swap]
+      exact hu
+    let hv : v ∈ s(v, u) := Sym2.mem_mk_left v u
+    refine ⟨s(v, u), ⟨huv, hv⟩, ?_⟩
+    exact Sym2.congr_right.mp (Sym2.other_spec hv)
 
 end GraphLib
