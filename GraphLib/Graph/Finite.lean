@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Basil Rohner. All rights reserved.
+Copyright (c) 2026 GraphLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Basil Rohner
+Authors: Basil Rohner, Huang.JiangYi (co/ Claude Opus 5)
 -/
 import Mathlib.Algebra.Group.Nat.Even
 import Mathlib.Data.Nat.Choose.Basic
@@ -18,10 +18,39 @@ When the vertex set of a graph is finite, the edge set is finite as well.
 This file packages those facts together with `Finset` versions of the
 vertex and edge sets, and basic cardinality bounds.
 
-The intended ergonomics: *the only finiteness assumption a user should ever
-need to write is `[Finite V(G)]`* (equivalently `[Finite G.vertexSet]`).
-All downstream `Finite` / `Fintype` / `Finset` instances and bookkeeping
-flow from there as `instance`s registered in this file.
+## Two layers, and which one to assume
+
+`Finite` is a `Prop` — it merely asserts that a finite enumeration exists.
+`Fintype` is *data* — it carries the `Finset` of all elements. The two are
+classically equivalent (`Fintype.ofFinite`), but they are not
+interchangeable as hypotheses, so this file offers both and downstream files
+should choose deliberately.
+
+*The theory layer* — statements about an arbitrary graph: cardinality
+bounds, connectivity, separating sets — assumes only `[Finite V(G)]`
+(equivalently `[Finite G.vertexSet]`). `Finite E(G)` then follows from the
+instances registered here, with no further hypotheses. Prefer this whenever
+the conclusion is a `Prop`: no decidability is demanded of the caller, and
+because `Finite` is proof-irrelevant, two instances are definitionally
+equal, so no `Fintype` diamond can obstruct `rw` / `simp` downstream. This
+is also Mathlib's convention, enforced by the `unusedFintypeInType` and
+`unusedDecidableInType` linters.
+
+*The computable layer* — anything that must actually produce or traverse a
+`Finset`, such as a BFS — assumes `[Fintype V(G)]`, plus `[DecidableEq α]`
+and `[DecidablePred (· ∈ E(G))]` where an edge `Finset` is built by
+filtering. These are genuine extra assumptions: a graph given by a classical
+predicate satisfies none of them without choice. Ask for them only in the
+declarations that consume the data. In particular the vertex-side
+`compute…` definitions need no edge decidability.
+
+The two layers meet in the `computeVertexFinset_eq_vertexFinset` /
+`computeEdgeFinset_eq_edgeFinset` and `coe_compute…Finset` lemmas: a result
+established constructively over `Finset`s is transported to a statement
+phrased with `V(G)` / `E(G)`. Note that the `Fintype E(G)` obtained
+classically from `[Finite V(G)]` is *not* definitionally the one the
+computable layer builds — which is precisely why those bridge lemmas are
+proved rather than assumed.
 
 ## Main results
 
@@ -29,10 +58,15 @@ flow from there as `instance`s registered in this file.
   set as a `Finset`.
 * `SimpleGraph.edgeFinset` / `SimpleDiGraph.edgeFinset` — the edge set
   as a `Finset`.
-* `Finite` instances: `Finite G.edgeSet` from `Finite G.vertexSet`, for
-  both `SimpleGraph` and `SimpleDiGraph`.
-* `Fintype` instances on `vertexSet` and `edgeSet` (classical, via
-  `Fintype.ofFinite`).
+* `SimpleGraph.instFiniteEdgeSetOfFinite` /
+  `SimpleDiGraph.instFiniteEdgeSetOfFinite` — `Finite G.edgeSet` from
+  `[Finite G.vertexSet]`, `Prop`-valued, no decidability. The theory layer.
+* `SimpleGraph.instFiniteEdgeSet` / `SimpleDiGraph.instFiniteEdgeSet` —
+  `Fintype G.edgeSet` from `[Fintype G.vertexSet]` plus decidability.
+  *Data*; the computable layer. (Name kept for compatibility, despite
+  producing a `Fintype`.)
+* `compute…Finset` and the `coe_compute…Finset` / `…_eq_…Finset` bridge
+  lemmas between the two layers.
 * `SimpleGraph.card_edgeFinset_le_card_choose_two` — `|E(G)| ≤ C(|V(G)|, 2)`.
 * `SimpleDiGraph.card_edgeFinset_le_two_card_choose_two` —
   `|E(G)| ≤ 2·C(|V(G)|, 2)`.
@@ -122,6 +156,42 @@ theorem SimpleDiGraph.fin_vertexSet_fin_edgeSet (G : SimpleDiGraph α)
   haveI : Fintype G.vertexSet := hfin
   haveI : Fintype G.edgeSet := SimpleDiGraph.instFiniteEdgeSet G
   exact inferInstance
+
+/-! ### Prop-level finiteness: `[Finite V(G)]` is enough
+
+The `Fintype` instances above are *data*: building `E(G)` as a `Finset` requires
+`DecidableEq α` and a decision procedure for edge membership. Those are genuine
+assumptions, and theory-level statements about an arbitrary graph should not carry
+them. The instances below are `Prop`-valued, so `Classical` choice may be used in
+their proofs at no cost — proof irrelevance means no choice-derived data can leak
+into a statement, and two such instances are definitionally equal, so no `Fintype`
+diamond can arise downstream. -/
+
+/-- Finiteness of the vertex set transfers to the edge set, with no decidability
+assumptions. This is the instance the theory layer relies on. -/
+instance SimpleGraph.instFiniteEdgeSetOfFinite (G : SimpleGraph α)
+    [hfin : Finite G.vertexSet] :
+    Finite G.edgeSet := by
+  have hVfin : G.vertexSet.Finite := hfin
+  have hsubset : G.edgeSet ⊆ {e : Sym2 α | ∀ v ∈ e, v ∈ G.vertexSet} :=
+    fun e he v hv => G.incidence' e he v hv
+  exact ((sym2_of_subset_finite G.vertexSet hVfin).subset hsubset).to_subtype
+
+/-- Finiteness of the vertex set transfers to the edge set, with no decidability
+assumptions. This is the instance the theory layer relies on. -/
+instance SimpleDiGraph.instFiniteEdgeSetOfFinite (G : SimpleDiGraph α)
+    [hfin : Finite G.vertexSet] :
+    Finite G.edgeSet := by
+  classical
+  haveI : Fintype G.vertexSet := Fintype.ofFinite _
+  haveI : Fintype (G.vertexSet × G.vertexSet) := inferInstance
+  apply Finite.of_injective (β := G.vertexSet × G.vertexSet) fun e =>
+    (⟨e.val.1, (G.incidence' _ e.property).1⟩,
+     ⟨e.val.2, (G.incidence' _ e.property).2⟩)
+  rintro ⟨⟨a, b⟩, ha⟩ ⟨⟨c, d⟩, hc⟩ heq
+  simp only [Prod.mk.injEq, Subtype.mk.injEq] at heq
+  apply Subtype.ext
+  ext <;> [exact heq.1; exact heq.2]
 
 /-! ## Vertex finset -/
 
@@ -313,43 +383,53 @@ theorem SimpleDiGraph.card_edgeFinset_le_two_card_choose_two
 
 /-! ## Computable variants
 
-`vertexFinset` and `edgeFinset` are `noncomputable` because `Finite` is a
-`Prop`; producing a `Finset` from a `Finite` hypothesis goes through
-`Classical.choice`. For users who want to actually `#eval` an edge list,
-this section provides parallel definitions `computeVertexFinset` and
-`computeEdgeFinset` that demand stronger typeclasses (data, not Prop) but
-are fully constructive, together with equality lemmas tying them back to
-their noncomputable counterparts. -/
+These definitions spell out the `Finset`s by explicit construction, for users
+who want to `#eval` a vertex or edge list, together with equality lemmas tying
+them back to `vertexFinset` / `edgeFinset`.
+
+The vertex-side definitions need only `[Fintype V(G)]` (plus `DecidableEq α`
+for downstream `Finset` operations): deciding *edge* membership is irrelevant to
+building the vertex `Finset`, and demanding it there would force every consumer of
+`computeVertexFinset` to carry a `DecidablePred (· ∈ E(G))` instance it never uses.
+
+TODO. This section predates the move from `Finite` to `Fintype` in the
+`vertexFinset` / `edgeFinset` definitions above, which is what used to make them
+`noncomputable`. Now that both layers go through `Set.toFinset`,
+`computeVertexFinset` is definitionally `vertexFinset`, and `computeEdgeFinset`
+differs from `edgeFinset` only in performing the `filter` explicitly rather than
+through the `Fintype` instance. Consider collapsing the duplication — but only
+together with the downstream `Decidable` / `Computable` files, which name these
+definitions throughout. -/
 
 /-- Computable variant of `vertexFinset`. -/
 def SimpleGraph.computeVertexFinset (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : Finset α :=
+    [Fintype G.vertexSet] [DecidableEq α] : Finset α :=
   G.vertexSet.toFinset
 
 /-- Computable variant of `vertexFinset`. -/
 def SimpleDiGraph.computeVertexFinset (G : SimpleDiGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : Finset α :=
+    [Fintype G.vertexSet] [DecidableEq α] : Finset α :=
   G.vertexSet.toFinset
 
 @[simp] lemma SimpleGraph.mem_computeVertexFinset (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] {v : α} :
+    [Fintype G.vertexSet] [DecidableEq α] {v : α} :
     v ∈ G.computeVertexFinset ↔ v ∈ G.vertexSet := by
   simp [computeVertexFinset]
 
 @[simp] lemma SimpleDiGraph.mem_computeVertexFinset (G : SimpleDiGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] {v : α} :
+    [Fintype G.vertexSet] [DecidableEq α] {v : α} :
     v ∈ G.computeVertexFinset ↔ v ∈ G.vertexSet := by
   simp [computeVertexFinset]
 
-/-- The computable and noncomputable vertex finsets agree. -/
+/-- The explicitly-built and the `Set.toFinset` vertex finsets agree. -/
 lemma SimpleGraph.computeVertexFinset_eq_vertexFinset (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+    [Fintype G.vertexSet] [DecidableEq α] :
     G.computeVertexFinset = G.vertexFinset := by
   ext v; simp
 
-/-- The computable and noncomputable vertex finsets agree. -/
+/-- The explicitly-built and the `Set.toFinset` vertex finsets agree. -/
 lemma SimpleDiGraph.computeVertexFinset_eq_vertexFinset (G : SimpleDiGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+    [Fintype G.vertexSet] [DecidableEq α] :
     G.computeVertexFinset = G.vertexFinset := by
   ext v; simp
 
@@ -396,56 +476,80 @@ def SimpleDiGraph.computeEdgeFinset (G : SimpleDiGraph α)
   refine ⟨(⟨e.1, (G.incidence' _ he).1⟩, ⟨e.2, (G.incidence' _ he).2⟩), ?_⟩
   rfl
 
-/-- The computable and noncomputable edge finsets agree. -/
+/-- The explicitly-built and the `Set.toFinset` edge finsets agree. -/
 lemma SimpleGraph.computeEdgeFinset_eq_edgeFinset (G : SimpleGraph α)
     [DecidableEq α] [Fintype G.vertexSet] [DecidablePred (· ∈ G.edgeSet)] :
     G.computeEdgeFinset = G.edgeFinset := by
   ext e; simp
 
-/-- The computable and noncomputable edge finsets agree. -/
+/-- The explicitly-built and the `Set.toFinset` edge finsets agree. -/
 lemma SimpleDiGraph.computeEdgeFinset_eq_edgeFinset (G : SimpleDiGraph α)
     [DecidableEq α] [Fintype G.vertexSet] [DecidablePred (· ∈ G.edgeSet)] :
     G.computeEdgeFinset = G.edgeFinset := by
   ext e; simp
 
+/-! ### Coercions back to the sets
+
+The `Finset` views coerce back to the very sets they were built from. These are the
+lemmas that let a statement phrased with `V(G)` / `E(G)` — as every connectivity
+predicate is — be discharged from the `Finset` layer, so the right-hand sides use the
+notation deliberately. -/
+
+@[simp] lemma SimpleGraph.coe_computeVertexFinset (G : SimpleGraph α)
+    [DecidableEq α] [Fintype G.vertexSet] :
+    (G.computeVertexFinset : Set α) = V(G) :=
+  Set.ext fun _ => G.mem_computeVertexFinset
+
+@[simp] lemma SimpleDiGraph.coe_computeVertexFinset (G : SimpleDiGraph α)
+    [DecidableEq α] [Fintype G.vertexSet] :
+    (G.computeVertexFinset : Set α) = V(G) :=
+  Set.ext fun _ => G.mem_computeVertexFinset
+
+@[simp] lemma SimpleGraph.coe_computeEdgeFinset (G : SimpleGraph α)
+    [DecidableEq α] [Fintype G.vertexSet] [DecidablePred (· ∈ G.edgeSet)] :
+    (G.computeEdgeFinset : Set (Sym2 α)) = E(G) :=
+  Set.ext fun _ => G.mem_computeEdgeFinset
+
+@[simp] lemma SimpleDiGraph.coe_computeEdgeFinset (G : SimpleDiGraph α)
+    [DecidableEq α] [Fintype G.vertexSet] [DecidablePred (· ∈ G.edgeSet)] :
+    (G.computeEdgeFinset : Set (α × α)) = E(G) :=
+  Set.ext fun _ => G.mem_computeEdgeFinset
+
 /-! ## Convenience: `[Finite V(G)]` is enough
 
-In normal use a downstream lemma should only need to write
-`[Finite V(G)]` (i.e. `[Finite G.vertexSet]`). The instances below ensure
-all of the following are then synthesised automatically:
+A lemma whose conclusion is a `Prop` should need to write only
+`[Finite V(G)]` (i.e. `[Finite G.vertexSet]`). That single assumption gives:
 
-* `Finite E(G)` / `Finite G.edgeSet` (already registered as instances above).
-* `Fintype G.vertexSet`, `Fintype G.edgeSet` (via `Fintype.ofFinite`).
-* `Set.Finite G.vertexSet`, `Set.Finite G.edgeSet`.
-* The `vertexFinset` / `edgeFinset` `Finset` views.
+* `Finite E(G)` / `Finite G.edgeSet`, by the instances registered above.
+* `Set.Finite G.vertexSet`, `Set.Finite G.edgeSet`, by the lemmas below.
+
+It does *not* give `Fintype G.vertexSet` or the `vertexFinset` / `edgeFinset`
+views. `Fintype.ofFinite` is noncomputable and deliberately not an instance:
+registering it would make every `Finset` in the development choice-derived and
+would clash with any `Fintype` a caller supplies by hand. A declaration that
+genuinely needs the `Finset` data therefore assumes `[Fintype V(G)]` itself and
+lives in the computable layer; a proof that needs it only transiently can open
+`classical` and call `Fintype.ofFinite` locally, where the choice cannot escape.
 
 The lemmas in this section let the user move freely between `Set.ncard`,
 `Set.Finite.toFinset.card`, and `vertexFinset.card` / `edgeFinset.card`. -/
 
-set_option linter.unusedFintypeInType false
 /-- A `[Finite V(G)]` hypothesis yields `Set.Finite V(G)`. -/
-lemma SimpleGraph.vertexSet_finite (G : SimpleGraph α)
-    [Fintype G.vertexSet] :
+lemma SimpleGraph.vertexSet_finite (G : SimpleGraph α) [Finite G.vertexSet] :
     G.vertexSet.Finite := Set.toFinite G.vertexSet
 
 /-- A `[Finite V(G)]` hypothesis yields `Set.Finite V(G)`. -/
-lemma SimpleDiGraph.vertexSet_finite (G : SimpleDiGraph α)
-    [Fintype G.vertexSet] :
+lemma SimpleDiGraph.vertexSet_finite (G : SimpleDiGraph α) [Finite G.vertexSet] :
     G.vertexSet.Finite := Set.toFinite G.vertexSet
 
-set_option linter.unusedDecidableInType false
-/-- A `[Finite V(G)]` hypothesis yields `Set.Finite E(G)`. -/
-lemma SimpleGraph.edgeSet_finite (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
-    G.edgeSet.Finite :=
-  haveI : Fintype G.edgeSet := SimpleGraph.instFiniteEdgeSet G
-  Set.toFinite G.edgeSet
+/-- A `[Finite V(G)]` hypothesis yields `Set.Finite E(G)`. No decidability is
+required: this goes through `SimpleGraph.instFiniteEdgeSetOfFinite`. -/
+lemma SimpleGraph.edgeSet_finite (G : SimpleGraph α) [Finite G.vertexSet] :
+    G.edgeSet.Finite := Set.toFinite G.edgeSet
 
-/-- A `[Finite V(G)]` hypothesis yields `Set.Finite E(G)`. -/
-lemma SimpleDiGraph.edgeSet_finite (G : SimpleDiGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
-    G.edgeSet.Finite :=
-  haveI : Fintype G.edgeSet := SimpleDiGraph.instFiniteEdgeSet G
-  Set.toFinite G.edgeSet
+/-- A `[Finite V(G)]` hypothesis yields `Set.Finite E(G)`. No decidability is
+required: this goes through `SimpleDiGraph.instFiniteEdgeSetOfFinite`. -/
+lemma SimpleDiGraph.edgeSet_finite (G : SimpleDiGraph α) [Finite G.vertexSet] :
+    G.edgeSet.Finite := Set.toFinite G.edgeSet
 
 end GraphLib
