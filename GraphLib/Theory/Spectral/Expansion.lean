@@ -14,6 +14,12 @@ open Finset Cuts
 namespace GraphLib
 variable {α : Type*}
 
+@[grind] lemma ne_of_mem_edgeSet (G : SimpleGraph α)
+    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
+    (u v : α) (h : s(u, v) ∈ G.edgeFinset) : u ≠ v := by
+  by_contra! huv; subst v
+  apply G.loopless' s(u, u) (G.mem_edgeFinset.mp h); simp
+
 @[grind] noncomputable def edgeExpansion (G : SimpleGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
     (d : ℕ) (S : Finset α) : ℝ := ( (Cut G S).card : ℝ ) / ( (d * S.card) : ℝ )
