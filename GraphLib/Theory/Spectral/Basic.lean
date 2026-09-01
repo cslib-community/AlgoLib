@@ -2,6 +2,7 @@ import GraphLib.Theory.Spectral.Cuts
 import GraphLib.Theory.Spectral.Helper
 import GraphLib.Theory.Spectral.Expansion
 import GraphLib.Theory.Spectral.Cheeger_LB
+import GraphLib.Theory.Spectral.Cheeger_UB
 
 /-
 # `GraphLib.Theory.Spectral`
