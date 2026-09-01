@@ -384,12 +384,12 @@ lemma graphExpansion_le_of_valid (d : ℕ) (S : Finset α)
     (hS_ne : S.Nonempty) (hS_sub : S ⊆ G.vertexFinset)
     (hS_size : 2 * S.card ≤ (G.vertexFinset).card) :
     graphExpansion G d ≤ edgeExpansion G d S := by
-  let validSubsets := (G.vertexFinset.powerset).filter
-    (fun S : Finset α => S.Nonempty ∧ 2 * S.card ≤ (G.vertexFinset).card)
-  have hvalid_nonempty : validSubsets.Nonempty := by
-    simpa [validSubsets, graphExpansionValidSubsets] using
-      graphExpansionValidSubsets_nonempty_of_valid G S hS_ne hS_sub hS_size
-  unfold graphExpansion; dsimp; rw [dif_pos hvalid_nonempty]; apply Finset.min'_le; grind
+  unfold graphExpansion; dsimp only
+  rw [dif_pos (by
+    simpa only [graphExpansionValidSubsets] using
+      graphExpansionValidSubsets_nonempty_of_valid G S hS_ne hS_sub hS_size)]
+  exact Finset.min'_le _ _
+    (edgeExpansion_mem_graphExpansion_image_of_valid G d S hS_ne hS_sub hS_size)
 
 /-- The Hard Direction of Cheeger's Inequality: h(G) ≤ √(2 * λ₂) -/
 theorem cheeger_hard_direction [Finite α] (d : ℕ)
