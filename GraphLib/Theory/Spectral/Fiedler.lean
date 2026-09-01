@@ -1,5 +1,9 @@
 import GraphLib.Theory.Spectral.Expansion
 
+-- Cheeger upper bound, Fiedler's Algorithm (Sweep Cut)
+-- Authors: Weixuan Yuan, Yuchen Zhong
+-- LLM: Gemini, GPT-5.6 on codex
+
 namespace GraphLib
 namespace Spectral
 

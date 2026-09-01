@@ -2,6 +2,10 @@ import GraphLib.Theory.Spectral.Expansion
 import GraphLib.Theory.Spectral.Coarea
 import GraphLib.Theory.Spectral.Fiedler
 
+-- Cheeger upper bound, main proof
+-- Authors: Weixuan Yuan, Yuchen Zhong
+-- LLM: Gemini, GPT-5.6 on codex
+
 namespace GraphLib
 namespace Spectral
 
