@@ -67,7 +67,6 @@ lemma previousLevel_insert_top {levels : Finset ℝ} {a : ℝ} (h_all_lt : ∀ s
 lemma sum_coareaWeight_eq_max_sq_or_zero (levels : Finset ℝ) :
     ∑ t ∈ levels, coareaWeight levels t =
       if h : levels.Nonempty then (levels.max' h) ^ 2 else 0 := by
-  classical
   refine Finset.induction_on_max levels ?_ ?_
   · simp
   · intro a s h_all_lt ih
@@ -100,7 +99,6 @@ lemma coareaWeight_filter_le_eq {levels : Finset ℝ} {a t : ℝ} (ht_le : t ≤
 lemma sum_coareaWeight_initial_segment_eq_max_sq {levels : Finset ℝ} {a : ℝ}
     (ha_mem : a ∈ levels) :
     ∑ t ∈ levels.filter (fun t => t ≤ a), coareaWeight levels t = a ^ 2 := by
-  classical
   have hsum_filter : ∑ t ∈ levels.filter (fun t => t ≤ a), coareaWeight levels t =
       ∑ t ∈ levels.filter (fun t => t ≤ a),
         coareaWeight (levels.filter (fun s => s ≤ a)) t := by
@@ -120,7 +118,6 @@ lemma sum_coareaWeight_initial_segment_eq_value_sq (y : α → ℝ) (h_pos : ∀
     (hv : v ∈ G.vertexFinset) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
     ∑ t ∈ levels.filter (fun t => t ≤ y v), coareaWeight levels t = y v ^ 2 := by
-  classical
   intro levels; by_cases hv_pos : 0 < y v
   · have hy_mem : y v ∈ levels := by grind
     exact sum_coareaWeight_initial_segment_eq_max_sq hy_mem
@@ -134,7 +131,6 @@ lemma sum_coareaWeight_between_vertex_values_eq_sq_sub (y : α → ℝ) (h_pos :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
       ∑ t ∈ levels.filter (fun t => y u < t ∧ t ≤ y v),
         coareaWeight levels t = y v ^ 2 - y u ^ 2 := by
-  classical
   intro levels
   have hv_sum := sum_coareaWeight_initial_segment_eq_value_sq G y h_pos v hvV
   have hu_sum := sum_coareaWeight_initial_segment_eq_value_sq G y h_pos u huV
@@ -192,7 +188,6 @@ lemma edge_level_cut_weight_sum_le_abs_sq_sub (y : α → ℝ)
         coareaWeight levels t *
           (if s(u, v) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t)) then (1 : ℝ) else 0)
       ≤ |y u ^ 2 - y v ^ 2| := by
-  classical
   intro levels
   have huV : u ∈ G.vertexFinset := by grind+suggestions
   have hvV : v ∈ G.vertexFinset := by grind+suggestions
@@ -262,7 +257,6 @@ lemma edge_vertex_indicator_sum_eq_endpoint_sq_sum (y : α → ℝ)
     {u v : α} (he : s(u, v) ∈ G.edgeFinset) :
     ∑ x ∈ G.vertexFinset, (if x ∈ s(u, v) then y x ^ 2 else 0) =
       y u ^ 2 + y v ^ 2 := by
-  classical
   have huv_ne : u ≠ v := by
     exact ne_of_mem_edgeSet G u v he
   have huV : u ∈ G.vertexFinset := by grind+suggestions
@@ -279,7 +273,6 @@ lemma edge_vertex_indicator_sum_eq_endpoint_sq_sum (y : α → ℝ)
 
 lemma edge_endpoint_sq_sum_eq_deg_norm (y : α → ℝ) :
     ∑ e ∈ G.edgeFinset, edgeEndpointSqSum y e = G.deg_norm y := by
-  classical
   calc
     ∑ e ∈ G.edgeFinset, edgeEndpointSqSum y e
       = ∑ e ∈ G.edgeFinset, ∑ v ∈ G.vertexFinset, (if v ∈ e then y v ^ 2 else 0) := by
@@ -308,7 +301,6 @@ lemma level_cut_sum_le_edge_abs_sq_diff_sum (y : α → ℝ)
         coareaWeight levels t *
           (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card ≤
       ∑ e ∈ G.edgeFinset, edgeAbsSqDiff G y e := by
-  classical
   intro levels
   calc
     ∑ t ∈ levels, coareaWeight levels t * (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card
@@ -389,7 +381,6 @@ lemma level_coarea_volume_identity (d : ℕ) (y : α → ℝ)
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
     ∑ t ∈ levels, coareaWeight levels t *
     ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ) = G.deg_norm y := by
-  classical
   intro levels
   calc
     ∑ t ∈ levels, coareaWeight levels t *
@@ -433,7 +424,6 @@ lemma level_coarea_cut_bound (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) :
 
 lemma edgeSet_empty_of_regular_zero (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = 0) :
     G.edgeFinset = ∅ := by
-  classical
   apply Finset.eq_empty_iff_forall_notMem.mpr; intro e he; induction e using Sym2.ind
   case h u v =>
     have huV : u ∈ G.vertexFinset := by grind+suggestions
@@ -449,7 +439,6 @@ lemma edgeSet_empty_of_regular_zero (h_reg : ∀ v ∈ G.vertexFinset, G.degree 
 lemma R_values_eq_singleton_zero_of_regular_zero [Finite α]
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = 0) (hV : 2 ≤ #G.vertexFinset) :
     R_values G = {0} := by
-  classical
   have hE : G.edgeFinset = ∅ := edgeSet_empty_of_regular_zero G h_reg
   ext r; constructor
   · grind
@@ -471,7 +460,6 @@ lemma deg_norm_pos_of_supported_orthogonal_of_regular_pos (d : ℕ)
     (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     {x : α → ℝ} (hx : x ∈ orthogonalVectors G) :
     0 < G.deg_norm (restrictToVertexSet G x) := by
-  classical
   have hy : restrictToVertexSet G x ∈ orthogonalVectors G :=
     orthogonalVectors_restrictToVertexSet G x hx
   rcases hy with ⟨_, hy_ne⟩
@@ -484,7 +472,6 @@ omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
 lemma normalizedSupportedOrthogonal_isCompact [Finite α] (d : ℕ)
     (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     IsCompact (normalizedSupportedOrthogonal G) := by
-  classical
   haveI := Fintype.ofFinite α
   haveI : ProperSpace (α → ℝ) := FiniteDimensional.proper ℝ (α → ℝ)
   let K : Set (α → ℝ) := normalizedSupportedOrthogonal G
@@ -544,7 +531,6 @@ lemma normalizedSupportedOrthogonal_isCompact [Finite α] (d : ℕ)
 lemma continuous_rayleighQuotient_on_normalizedSupportedOrthogonal :
     ContinuousOn (fun x : α → ℝ => G.rayleighQuotient x)
       (normalizedSupportedOrthogonal G) := by
-  classical
   unfold SimpleGraph.rayleighQuotient; apply ContinuousOn.div
   · apply Continuous.continuousOn; apply continuous_finsetSum; intro e he
     induction e using Sym2.ind with
@@ -557,7 +543,6 @@ lemma R_values_eq_rayleigh_image_normalizedSupportedOrthogonal [Finite α]
     (d : ℕ) (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     R_values G =
       (fun x : α → ℝ => G.rayleighQuotient x) '' normalizedSupportedOrthogonal G := by
-  classical
   ext r; constructor
   · intro hr; rcases hr with ⟨x, hxorth, rfl⟩
     let y0 := restrictToVertexSet G x
@@ -596,7 +581,6 @@ lemma level_coarea_counting (d : ℕ) (y : α → ℝ)
         Real.sqrt (2 * G.energy y * G.deg_norm y)) ∧
       (∑ t ∈ levels, w t * ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ) =
         G.deg_norm y) := by
-  classical
   let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
   let w := coareaWeight levels
   refine ⟨levels, w, ?_, ?_, ?_, ?_, ?_, ?_⟩
