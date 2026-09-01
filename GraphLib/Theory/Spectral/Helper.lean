@@ -24,8 +24,6 @@ lemma sum_sq_pos (x : α → ℝ)
     exact eq_zero_of_pow_eq_zero h_sq_zero
   grind
 
-lemma pos_neg_sq_add (a : ℝ) : max a 0 ^ 2 + max (-a) 0 ^ 2 = a ^ 2 := by grind
-
 lemma pos_neg_sub_sq_add_le (a b : ℝ) :
     (max a 0 - max b 0) ^ 2 + (max (-a) 0 - max (-b) 0) ^ 2 ≤ (a - b) ^ 2 := by
   by_cases ha : 0 ≤ a <;> by_cases hb : 0 ≤ b
@@ -86,10 +84,6 @@ lemma positive_value_level_set_nonempty (y : α → ℝ) :
       (G.vertexFinset.filter (fun v => y v ≥ t)).Nonempty := by
   intro t ht; rcases Finset.mem_image.mp (Finset.mem_filter.mp ht).1 with ⟨v, hv, rfl⟩
   exact ⟨v, by simp [hv]⟩
-
-lemma positive_value_level_mem_image {y : α → ℝ} {t : ℝ}
-    (ht : t ∈ (G.vertexFinset.image y).filter (fun t => 0 < t)) :
-  t ∈ G.vertexFinset.image y := (Finset.mem_filter.mp ht).1
 
 end Spectral
 end GraphLib

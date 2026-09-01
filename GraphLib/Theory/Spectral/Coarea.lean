@@ -85,13 +85,6 @@ lemma sum_coareaWeight_eq_max_sq_or_zero (levels : Finset ℝ) :
       · exact Finset.le_max' _ a (by simp)
     grind
 
-lemma sum_coareaWeight_le_value_sq {levels : Finset ℝ} {a : ℝ} :
-    ∑ t ∈ levels.filter (fun t => t ≤ a), coareaWeight (levels.filter (fun t => t ≤ a)) t =
-      if h : (levels.filter (fun t => t ≤ a)).Nonempty then
-        ((levels.filter (fun t => t ≤ a)).max' h) ^ 2
-      else 0 := by
-  exact sum_coareaWeight_eq_max_sq_or_zero _
-
 lemma previousLevel_filter_le_eq {levels : Finset ℝ} {a t : ℝ}
     (ht_le : t ≤ a) :
     previousLevel (levels.filter (fun s => s ≤ a)) t = previousLevel levels t := by
@@ -191,17 +184,6 @@ lemma edge_mem_level_cut_of_ge_lt (y : α → ℝ)
   rw [Cut, Finset.mem_filter]; refine ⟨he, ?_⟩
   refine ⟨u, ?_, Sym2.mem_mk_left u v, v, ?_, Sym2.mem_mk_right u v⟩
   all_goals grind
-
-lemma edge_mem_level_cut_of_lt_ge (y : α → ℝ) {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
-    (hu : y u < t) (hv : t ≤ y v) :
-    s(u, v) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t)) := by
-  have hcut : s(v, u) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t)) :=
-    edge_mem_level_cut_of_ge_lt G y (by grind) hv hu
-  simpa [Sym2.eq_swap] using hcut
-
-lemma level_cut_edge_between_endpoints (y : α → ℝ) {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
-    (hcut : s(u, v) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t))) :
-    (t ≤ y u ∧ y v < t) ∨ (t ≤ y v ∧ y u < t) := by grind
 
 lemma edge_level_cut_weight_sum_le_abs_sq_sub (y : α → ℝ)
     (h_pos : ∀ v, 0 ≤ y v) {u v : α} (he : s(u, v) ∈ G.edgeFinset) :
