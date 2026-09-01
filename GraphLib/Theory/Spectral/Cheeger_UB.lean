@@ -3,17 +3,19 @@ import GraphLib.Theory.Spectral.Coarea
 import GraphLib.Theory.Spectral.Fiedler
 
 namespace GraphLib
+namespace Spectral
 
 open Finset
 open ProbabilityTheory MeasureTheory
 open Cuts
 
-variable {α : Type*}
+variable {α : Type*} (G : SimpleGraph α)
+  [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
 
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
 /-- A median value for `x` whose strict upper and lower level sets both have
 cardinality at most half of `G.vertexFinset`. -/
-lemma exists_balanced_median (G : SimpleGraph α) [Fintype G.vertexSet]
-    (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) : ∃ m : ℝ,
+lemma exists_balanced_median (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) : ∃ m : ℝ,
     (G.vertexFinset.filter (fun v => x v > m)).card ≤ (G.vertexFinset).card / 2 ∧
     (G.vertexFinset.filter (fun v => x v < m)).card ≤ (G.vertexFinset).card / 2 := by
   classical
@@ -74,9 +76,8 @@ lemma exists_balanced_median (G : SimpleGraph α) [Fintype G.vertexSet]
 
 /-- Shifting by a balanced median does not increase the Rayleigh quotient for a
 degree-regular graph when `x` is degree-orthogonal to constants. -/
-lemma median_shift_rayleigh_le (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (x : α → ℝ) (d : ℕ) (m : ℝ) (h_d_pos : d ≠ 0) (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
+lemma median_shift_rayleigh_le (x : α → ℝ) (d : ℕ) (m : ℝ) (h_d_pos : d ≠ 0)
+    (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
     (h_orth : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     SimpleGraph.rayleighQuotient G (fun v => x v - m) ≤ SimpleGraph.rayleighQuotient G x := by
@@ -105,9 +106,9 @@ lemma median_shift_rayleigh_le (G : SimpleGraph α)
     · exact sum_sq_pos G x h_x_ne
   · exact h_den
 
-lemma exists_pos_of_deg_norm_pos (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (y : α → ℝ) (hy_nonneg : ∀ v, 0 ≤ y v) (h_norm_pos : 0 < G.deg_norm y) :
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
+lemma exists_pos_of_deg_norm_pos (y : α → ℝ) (hy_nonneg : ∀ v, 0 ≤ y v)
+    (h_norm_pos : 0 < G.deg_norm y) :
     ∃ v ∈ G.vertexFinset, 0 < y v := by
   unfold SimpleGraph.deg_norm at h_norm_pos
   have h_term_nonneg : ∀ v ∈ G.vertexFinset, 0 ≤ (↑(G.degree v) : ℝ) * y v ^ 2 := by
@@ -120,9 +121,8 @@ lemma exists_pos_of_deg_norm_pos (G : SimpleGraph α)
 
 /-- From the positive and negative parts of a shifted vector, choose a nonzero
 nonnegative side whose Rayleigh quotient is no larger than that of the shift. -/
-lemma shifted_part_rayleigh_le (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (x : α → ℝ) (m : ℝ) (h_shift_norm_pos : 0 < G.deg_norm (fun v => x v - m)) :
+lemma shifted_part_rayleigh_le (x : α → ℝ) (m : ℝ)
+    (h_shift_norm_pos : 0 < G.deg_norm (fun v => x v - m)) :
     ∃ y : α → ℝ, (y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0)) ∧
     (∀ v, 0 ≤ y v) ∧ (∃ v ∈ G.vertexFinset, 0 < y v) ∧
     SimpleGraph.rayleighQuotient G y ≤ SimpleGraph.rayleighQuotient G (fun v => x v - m) := by
@@ -180,8 +180,9 @@ lemma shifted_part_rayleigh_le (G : SimpleGraph α)
     have hn_le : En / Cn ≤ Rz := by rw [div_le_iff₀ hCn_pos]; nlinarith
     grind
 
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
 /-- A chosen positive or negative shifted part inherits the median support bound. -/
-lemma shifted_part_support_le_half (G : SimpleGraph α) [Fintype G.vertexSet] (x : α → ℝ) (m : ℝ)
+lemma shifted_part_support_le_half (x : α → ℝ) (m : ℝ)
     (y : α → ℝ) (hy_side : y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0))
     (h_upper : (G.vertexFinset.filter (fun v => x v > m)).card ≤ (G.vertexFinset).card / 2)
     (h_lower : (G.vertexFinset.filter (fun v => x v < m)).card ≤ (G.vertexFinset).card / 2) :
@@ -194,10 +195,9 @@ lemma shifted_part_support_le_half (G : SimpleGraph α) [Fintype G.vertexSet] (x
       G.vertexFinset.filter (fun v => x v < m) := by grind
     rw [h_set]; omega
 
+omit [DecidablePred (· ∈ G.edgeSet)] in
 /-- Nonempty level sets of a chosen shifted part are bounded prefix/suffix sweep cuts. -/
-lemma shifted_part_level_mem_sweepCuts (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (x : α → ℝ) (m : ℝ) (y : α → ℝ)
+lemma shifted_part_level_mem_sweepCuts (x : α → ℝ) (m : ℝ) (y : α → ℝ)
     (hy_side : y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0))
     (h_support : 2 * (G.vertexFinset.filter (fun v => y v > 0)).card ≤ (G.vertexFinset).card) :
     ∀ t > 0, ({v ∈ G.vertexFinset | y v ≥ t} : Finset α).Nonempty →
@@ -221,9 +221,7 @@ lemma shifted_part_level_mem_sweepCuts (G : SimpleGraph α)
 It produces a nonzero nonnegative vector with small support, no larger Rayleigh quotient,
 and level sets that are valid sweep cuts of `x`. -/
 -- exists_median_split_witness
-lemma lemma_5_exists_median_split_witness (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (x : α → ℝ) (d : ℕ) (hV : 2 ≤ (G.vertexFinset).card)
+lemma lemma_5_exists_median_split_witness (x : α → ℝ) (d : ℕ) (hV : 2 ≤ (G.vertexFinset).card)
     (h_d_pos : d ≠ 0) (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
     (h_orth : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
@@ -260,9 +258,8 @@ lemma lemma_5_exists_median_split_witness (G : SimpleGraph α)
 
 /-- Lemma 4: For a non-negative vector y, there exists a threshold t such that
     the expansion of the set S_t = {v : y_v ≥ t} is at most sqrt(2 * R_L(y)). -/
-lemma lemma_4_sweep_threshold_expansion_bound (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (y : α → ℝ) (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
+lemma lemma_4_sweep_threshold_expansion_bound (d : ℕ) (y : α → ℝ) (h_d_pos : d ≠ 0)
+    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     (h_pos : ∀ v, 0 ≤ y v) (h_y_pos : ∃ v ∈ G.vertexFinset, 0 < y v) :
     ∃ t > 0, let S_t := G.vertexFinset.filter (fun v => y v ≥ t)
       S_t.Nonempty ∧ edgeExpansion G d S_t ≤ Real.sqrt (2 * SimpleGraph.rayleighQuotient G y) := by
@@ -300,9 +297,7 @@ lemma lemma_4_sweep_threshold_expansion_bound (G : SimpleGraph α)
     field_simp [hw_ne, hdcard_ne]
   grind
 
-lemma lemma3 (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (h_d_pos : d ≠ 0) (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
+lemma lemma3 (d : ℕ) (x : α → ℝ) (h_d_pos : d ≠ 0) (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
     (hV : 2 ≤ (G.vertexFinset).card) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     (h_orth : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0) :
     let S_f := fiedlerCut G d x hV
@@ -331,11 +326,9 @@ lemma lemma3 (G : SimpleGraph α)
 
 /-- Lemma: There exists a non-zero vector x orthogonal to the constant vector
     such that its Rayleigh quotient achieves λ₂. -/
-lemma R_values_nonempty_of_regular_two_vertices (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] [Finite α] (d : ℕ)
+lemma R_values_nonempty_of_regular_two_vertices [Finite α] (d : ℕ)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
     (R_values G).Nonempty := by
-  classical
   have hcard : 1 < (G.vertexFinset).card := by omega
   obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp hcard
   let x : α → ℝ := fun v => if v = a then (1 : ℝ) else if v = b then (-1 : ℝ) else 0
@@ -351,8 +344,7 @@ lemma R_values_nonempty_of_regular_two_vertices (G : SimpleGraph α)
     grind
   · grind
 
-lemma R_values_bddBelow (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+lemma R_values_bddBelow :
     BddBelow (R_values G) := by
   refine ⟨0, ?_⟩; intro r hr; rcases hr with ⟨x, hx, rfl⟩; exact rayleighQuotient_nonneg G x
 
@@ -360,11 +352,9 @@ lemma R_values_bddBelow (G : SimpleGraph α)
 orthogonal to constants.  The proof is by normalizing to `deg_norm = 1`,
 using finite-dimensional compactness of the normalized feasible set, and then
 projecting the continuous SimpleGraph.energy function to `ℝ`. -/
-lemma R_values_isClosed_of_regular_two_vertices (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    [Finite α] (d : ℕ) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
+lemma R_values_isClosed_of_regular_two_vertices [Finite α] (d : ℕ)
+    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
     IsClosed (R_values G) := by
-  classical
   by_cases h_d_pos : d = 0
   · have hreg0 : ∀ v ∈ G.vertexFinset, G.degree v = 0 := by grind
     rw [R_values_eq_singleton_zero_of_regular_zero G hreg0 hV]
@@ -373,17 +363,14 @@ lemma R_values_isClosed_of_regular_two_vertices (G : SimpleGraph α)
     exact ((normalizedSupportedOrthogonal_isCompact G d h_d_pos h_reg).image_of_continuousOn
       (continuous_rayleighQuotient_on_normalizedSupportedOrthogonal G)).isClosed
 
-lemma lambda2_mem_R_values_of_regular_two_vertices (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    [Finite α] (d : ℕ) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
+lemma lambda2_mem_R_values_of_regular_two_vertices [Finite α] (d : ℕ)
+    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
     lambda2 G ∈ R_values G := by
   unfold lambda2
   exact (R_values_isClosed_of_regular_two_vertices G d h_reg hV).csInf_mem
     (R_values_nonempty_of_regular_two_vertices G d h_reg hV) (R_values_bddBelow G)
 
-lemma exists_eigenvector_lambda2 (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-     [Finite α] (d : ℕ)
+lemma exists_eigenvector_lambda2 [Finite α] (d : ℕ)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
     ∃ x : α → ℝ, (∃ v ∈ G.vertexFinset, x v ≠ 0) ∧
       (∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * x v = 0) ∧
@@ -393,13 +380,10 @@ lemma exists_eigenvector_lambda2 (G : SimpleGraph α)
   grind
 
 /-- `graphExpansion` is no larger than the expansion of any valid nonempty subset. -/
-lemma graphExpansion_le_of_valid (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-     (d : ℕ) (S : Finset α)
+lemma graphExpansion_le_of_valid (d : ℕ) (S : Finset α)
     (hS_ne : S.Nonempty) (hS_sub : S ⊆ G.vertexFinset)
     (hS_size : 2 * S.card ≤ (G.vertexFinset).card) :
     graphExpansion G d ≤ edgeExpansion G d S := by
-  classical
   let validSubsets := (G.vertexFinset.powerset).filter
     (fun S : Finset α => S.Nonempty ∧ 2 * S.card ≤ (G.vertexFinset).card)
   have hvalid_nonempty : validSubsets.Nonempty := by
@@ -408,9 +392,7 @@ lemma graphExpansion_le_of_valid (G : SimpleGraph α)
   unfold graphExpansion; dsimp; rw [dif_pos hvalid_nonempty]; apply Finset.min'_le; grind
 
 /-- The Hard Direction of Cheeger's Inequality: h(G) ≤ √(2 * λ₂) -/
-theorem cheeger_hard_direction (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-     [Finite α] (d : ℕ)
+theorem cheeger_hard_direction [Finite α] (d : ℕ)
     (hV : 2 ≤ #G.vertexFinset)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     graphExpansion G d ≤ Real.sqrt (2 * lambda2 G) := by
@@ -435,4 +417,5 @@ theorem cheeger_hard_direction (G : SimpleGraph α)
     _ ≤ Real.sqrt (2 * G.rayleighQuotient x) := hS_phi
     _ = Real.sqrt (2 * lambda2 G) := by rw [h_lambda2]
 
+end Spectral
 end GraphLib

@@ -1,15 +1,17 @@
 import GraphLib.Theory.Spectral.Expansion
 
-open Finset Cuts
+open Finset
 
 namespace GraphLib
+namespace Spectral
 
-variable {α : Type*}
+open Cuts
+
+variable {α : Type*} (G : SimpleGraph α)
+  [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
 
 -- Generates the set of all prefix and suffix cuts (sweep cuts) for a vector x.
-@[grind] noncomputable def sweepCuts (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (x : α → ℝ) :
-    Finset (Finset α) := by
+@[grind] noncomputable def sweepCuts (x : α → ℝ) : Finset (Finset α) := by
   classical
   let sortedV := (G.vertexFinset.toList).mergeSort (fun u v => x u ≤ x v)
   let n := (G.vertexFinset).card
@@ -24,9 +26,8 @@ variable {α : Type*}
       (fun S => S.Nonempty ∧ 2 * S.card ≤ n ∧ ∃ t : ℝ, S = G.vertexFinset.filter (fun v => x v ≥ t))
   exact (prefixes ++ suffixes).toFinset ∪ (lowerLevels ∪ upperLevels)
 
-lemma sweepCut_is_subset (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (x : α → ℝ) :
-    ∀ S ∈ sweepCuts G x, S ⊆ G.vertexFinset := by
+omit [DecidablePred (· ∈ G.edgeSet)] in
+lemma sweepCut_is_subset (x : α → ℝ) : ∀ S ∈ sweepCuts G x, S ⊆ G.vertexFinset := by
   intro S hS; unfold sweepCuts at hS
   simp only [Finset.mem_union, List.mem_toFinset, List.mem_append, List.mem_map, List.mem_range,
     Finset.mem_filter, Finset.mem_powerset] at hS
@@ -36,9 +37,8 @@ lemma sweepCut_is_subset (G : SimpleGraph α)
     rw [List.mem_mergeSort] at h_mem_sorted; rw [← Finset.mem_toList]; grind
   grind
 
-lemma sweepCuts_are_nonempty (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (hV : 2 ≤ (G.vertexFinset).card) (x : α → ℝ) :
+omit [DecidablePred (· ∈ G.edgeSet)] in
+lemma sweepCuts_are_nonempty (hV : 2 ≤ (G.vertexFinset).card) (x : α → ℝ) :
     ∀ S ∈ sweepCuts G x, S.Nonempty := by
   intro S hS; unfold sweepCuts at hS
   simp only [Finset.mem_union, List.mem_toFinset, List.mem_append, List.mem_map, List.mem_range,
@@ -58,9 +58,7 @@ lemma sweepCuts_are_nonempty (G : SimpleGraph α)
       false_or, List.length_nil, nonpos_iff_eq_zero]
   · grind
 
-lemma sweepCuts_expansion_nonempty (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
+lemma sweepCuts_expansion_nonempty (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
     ((sweepCuts G x).image (fun S => edgeExpansion G d S)).Nonempty := by
   rw [Finset.image_nonempty]
   refine ⟨(List.take (0 + 1) ((G.vertexFinset).toList.mergeSort
@@ -68,8 +66,8 @@ lemma sweepCuts_expansion_nonempty (G : SimpleGraph α)
   unfold sweepCuts; simp only [Finset.mem_union, List.mem_toFinset, List.mem_append, List.mem_map]
   grind
 
-lemma sweepCut_card_le_half (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (x : α → ℝ) :
+omit [DecidablePred (· ∈ G.edgeSet)] in
+lemma sweepCut_card_le_half (x : α → ℝ) :
     ∀ S ∈ sweepCuts G x, 2 * S.card ≤ (G.vertexFinset).card := by
   intro S hS; unfold sweepCuts at hS
   simp only [Finset.mem_union, List.mem_toFinset, List.mem_append, List.mem_map, List.mem_range,
@@ -101,8 +99,7 @@ lemma sweepCut_card_le_half (G : SimpleGraph α)
 
 /-- The expansion of the best cut found by Fiedler's algorithm.
     Requires |V| ≥ 2 to ensure at least one cut exists. -/
-@[grind] noncomputable def fiedlerExpansion (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (x : α → ℝ)
+@[grind] noncomputable def fiedlerExpansion (d : ℕ) (x : α → ℝ)
     (hV : 2 ≤ (G.vertexFinset).card) : ℝ :=
   let cuts := sweepCuts G x
   (cuts.image (fun S => edgeExpansion G d S)).min' (by
@@ -110,35 +107,28 @@ lemma sweepCut_card_le_half (G : SimpleGraph α)
   )
 
 /-- The actual set of vertices (cut) that achieves the fiedlerExpansion. -/
-@[grind] noncomputable def fiedlerCut (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) : Finset α :=
+@[grind] noncomputable def fiedlerCut (d : ℕ) (x : α → ℝ)
+    (hV : 2 ≤ (G.vertexFinset).card) : Finset α :=
   -- Pick a cut that attains the minimum expansion
   Classical.choose (Finset.mem_image.mp (Finset.min'_mem _ (sweepCuts_expansion_nonempty G d x hV)))
 
-lemma fiedlerCut_mem_sweep (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
+lemma fiedlerCut_mem_sweep (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
     fiedlerCut G d x hV ∈ sweepCuts G x := by
   unfold fiedlerCut; grind
 
-lemma fiedlerCut_nonempty (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) : (fiedlerCut G d x hV).Nonempty := by
+lemma fiedlerCut_nonempty (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
+    (fiedlerCut G d x hV).Nonempty := by
   let S_f := fiedlerCut G d x hV
   have hS_mem : S_f ∈ sweepCuts G x := fiedlerCut_mem_sweep G d x hV
   apply sweepCuts_are_nonempty G hV x; exact hS_mem
 
-lemma fiedlerCut_is_subset (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
+lemma fiedlerCut_is_subset (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
     fiedlerCut G d x hV ⊆ G.vertexFinset := by
   apply sweepCut_is_subset G x; exact fiedlerCut_mem_sweep G d x hV
 
-lemma fiedlerCut_card_le_half (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
+lemma fiedlerCut_card_le_half (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) :
     2 * (fiedlerCut G d x hV).card ≤ (G.vertexFinset).card := by
   apply sweepCut_card_le_half G x; exact fiedlerCut_mem_sweep G d x hV
 
+end Spectral
 end GraphLib

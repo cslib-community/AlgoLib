@@ -10,12 +10,15 @@ import Mathlib.MeasureTheory.MeasurableSpace.Basic
 
 
 open Finset
-open Cuts
 open ProbabilityTheory MeasureTheory
 
 namespace GraphLib
+namespace Spectral
 
-variable {α : Type*}
+open Cuts
+
+variable {α : Type*} (G : SimpleGraph α)
+  [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
 
 @[grind] noncomputable def previousLevel (levels : Finset ℝ) (t : ℝ) : ℝ :=
   if h : (levels.filter (fun s => s < t)).Nonempty then
@@ -119,9 +122,9 @@ lemma sum_coareaWeight_initial_segment_eq_max_sq {levels : Finset ℝ} {a : ℝ}
         (Finset.mem_filter.mpr ⟨ha_mem, le_rfl⟩)
   rw [hsum_filter, sum_coareaWeight_eq_max_sq_or_zero, dif_pos hne, hmax]
 
-lemma sum_coareaWeight_initial_segment_eq_value_sq (G : SimpleGraph α)
-    [Fintype G.vertexSet]
-    (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) (v : α) (hv : v ∈ G.vertexFinset) :
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
+lemma sum_coareaWeight_initial_segment_eq_value_sq (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) (v : α)
+    (hv : v ∈ G.vertexFinset) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
     ∑ t ∈ levels.filter (fun t => t ≤ y v), coareaWeight levels t = y v ^ 2 := by
   classical
@@ -132,8 +135,8 @@ lemma sum_coareaWeight_initial_segment_eq_value_sq (G : SimpleGraph α)
     have hfilter_empty : levels.filter (fun t => t ≤ 0) = ∅ := by grind
     simp [hy_zero, hfilter_empty]
 
-lemma sum_coareaWeight_between_vertex_values_eq_sq_sub (G : SimpleGraph α)
-    [Fintype G.vertexSet] (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) {u v : α}
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
+lemma sum_coareaWeight_between_vertex_values_eq_sq_sub (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) {u v : α}
     (huV : u ∈ G.vertexFinset) (hvV : v ∈ G.vertexFinset) (huv : y u ≤ y v) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
       ∑ t ∈ levels.filter (fun t => y u < t ∧ t ≤ y v),
@@ -155,8 +158,8 @@ lemma sum_coareaWeight_between_vertex_values_eq_sq_sub (G : SimpleGraph α)
     rw [hpartition, Finset.sum_union hdisjoint]
   dsimp [levels] at hv_sum hu_sum; nlinarith
 
-lemma regular_level_volume_as_vertex_sum (G : SimpleGraph α)
-    [Fintype G.vertexSet] (d : ℕ) (y : α → ℝ) (t : ℝ) :
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
+lemma regular_level_volume_as_vertex_sum (d : ℕ) (y : α → ℝ) (t : ℝ) :
     (((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ)) =
       ∑ v ∈ G.vertexFinset, if t ≤ y v then (d : ℝ) else 0 := by
   calc
@@ -170,9 +173,7 @@ lemma regular_level_volume_as_vertex_sum (G : SimpleGraph α)
     _ = ∑ v ∈ G.vertexFinset, if t ≤ y v then (d : ℝ) else 0 := by
         rw [Finset.sum_filter]
 
-lemma cut_card_eq_edge_indicator_sum (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (U : Finset α) : ((Cut G U).card : ℝ) =
+lemma cut_card_eq_edge_indicator_sum (U : Finset α) : ((Cut G U).card : ℝ) =
       ∑ e ∈ G.edgeFinset, if e ∈ Cut G U then (1 : ℝ) else 0 := by
   have hfilter : {e ∈ G.edgeFinset | e ∈ Cut G U} = Cut G U := by grind
   calc
@@ -181,8 +182,7 @@ lemma cut_card_eq_edge_indicator_sum (G : SimpleGraph α)
     _ = ∑ e ∈ G.edgeFinset, if e ∈ Cut G U then (1 : ℝ) else 0 := by
       rw [← Finset.sum_filter, hfilter]
 
-lemma edge_mem_level_cut_of_ge_lt (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ)
+lemma edge_mem_level_cut_of_ge_lt (y : α → ℝ)
     {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
     (hu : t ≤ y u) (hv : y v < t) :
     s(u, v) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t)) := by
@@ -192,23 +192,18 @@ lemma edge_mem_level_cut_of_ge_lt (G : SimpleGraph α)
   refine ⟨u, ?_, Sym2.mem_mk_left u v, v, ?_, Sym2.mem_mk_right u v⟩
   all_goals grind
 
-lemma edge_mem_level_cut_of_lt_ge (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (y : α → ℝ) {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
+lemma edge_mem_level_cut_of_lt_ge (y : α → ℝ) {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
     (hu : y u < t) (hv : t ≤ y v) :
     s(u, v) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t)) := by
   have hcut : s(v, u) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t)) :=
     edge_mem_level_cut_of_ge_lt G y (by grind) hv hu
   simpa [Sym2.eq_swap] using hcut
 
-lemma level_cut_edge_between_endpoints (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (y : α → ℝ) {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
+lemma level_cut_edge_between_endpoints (y : α → ℝ) {u v : α} {t : ℝ} (he : s(u, v) ∈ G.edgeFinset)
     (hcut : s(u, v) ∈ Cut G (G.vertexFinset.filter (fun w => y w ≥ t))) :
     (t ≤ y u ∧ y v < t) ∨ (t ≤ y v ∧ y u < t) := by grind
 
-lemma edge_level_cut_weight_sum_le_abs_sq_sub (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ)
+lemma edge_level_cut_weight_sum_le_abs_sq_sub (y : α → ℝ)
     (h_pos : ∀ v, 0 ≤ y v) {u v : α} (he : s(u, v) ∈ G.edgeFinset) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
     ∑ t ∈ levels,
@@ -265,20 +260,23 @@ lemma edge_level_cut_weight_sum_le_abs_sq_sub (G : SimpleGraph α)
       sum_coareaWeight_between_vertex_values_eq_sq_sub G y h_pos hvV huV hvu
     grind
 
-@[grind] noncomputable def edgeAbsSqDiff (y : α → ℝ) : Sym2 α → ℝ :=
+omit G in
+@[grind] noncomputable def edgeAbsSqDiff {α : Type*} (y : α → ℝ) : Sym2 α → ℝ :=
   Sym2.lift ⟨fun u v => |y u ^ 2 - y v ^ 2|, by grind⟩
 
-@[grind] noncomputable def edgeEndpointSqSum (y : α → ℝ) : Sym2 α → ℝ :=
+omit G in
+@[grind] noncomputable def edgeEndpointSqSum {α : Type*} (y : α → ℝ) : Sym2 α → ℝ :=
   Sym2.lift ⟨fun u v => y u ^ 2 + y v ^ 2, by grind⟩
 
-@[grind] noncomputable def edgeAbsDiff (y : α → ℝ) : Sym2 α → ℝ :=
+omit G in
+@[grind] noncomputable def edgeAbsDiff {α : Type*} (y : α → ℝ) : Sym2 α → ℝ :=
   Sym2.lift ⟨fun u v => |y u - y v|, by grind⟩
 
-@[grind] noncomputable def edgeEndpointSum (y : α → ℝ) : Sym2 α → ℝ :=
+omit G in
+@[grind] noncomputable def edgeEndpointSum {α : Type*} (y : α → ℝ) : Sym2 α → ℝ :=
   Sym2.lift ⟨fun u v => y u + y v, by grind⟩
 
-lemma edge_vertex_indicator_sum_eq_endpoint_sq_sum (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ)
+lemma edge_vertex_indicator_sum_eq_endpoint_sq_sum (y : α → ℝ)
     {u v : α} (he : s(u, v) ∈ G.edgeFinset) :
     ∑ x ∈ G.vertexFinset, (if x ∈ s(u, v) then y x ^ 2 else 0) =
       y u ^ 2 + y v ^ 2 := by
@@ -297,8 +295,7 @@ lemma edge_vertex_indicator_sum_eq_endpoint_sq_sum (G : SimpleGraph α)
         rw [hfilter]
     _ = y u ^ 2 + y v ^ 2 := by rw [Finset.sum_pair huv_ne]
 
-lemma edge_endpoint_sq_sum_eq_deg_norm (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ) :
+lemma edge_endpoint_sq_sum_eq_deg_norm (y : α → ℝ) :
     ∑ e ∈ G.edgeFinset, edgeEndpointSqSum y e = G.deg_norm y := by
   classical
   calc
@@ -322,15 +319,13 @@ lemma edge_endpoint_sq_sum_eq_deg_norm (G : SimpleGraph α)
               rw [hcard]
     _ = G.deg_norm y := by rfl
 
-
-lemma level_cut_sum_le_edge_abs_sq_diff_sum (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ)
+lemma level_cut_sum_le_edge_abs_sq_diff_sum (y : α → ℝ)
     (h_pos : ∀ v, 0 ≤ y v) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
     ∑ t ∈ levels,
         coareaWeight levels t *
           (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card ≤
-      ∑ e ∈ G.edgeFinset, edgeAbsSqDiff y e := by
+      ∑ e ∈ G.edgeFinset, edgeAbsSqDiff G y e := by
   classical
   intro levels
   calc
@@ -344,20 +339,18 @@ lemma level_cut_sum_le_edge_abs_sq_diff_sum (G : SimpleGraph α)
     _ = ∑ e ∈ G.edgeFinset, ∑ t ∈ levels, coareaWeight levels t *
           (if e ∈ Cut G (G.vertexFinset.filter (fun v => y v ≥ t)) then (1 : ℝ) else 0) := by
         rw [Finset.sum_comm]
-    _ ≤ ∑ e ∈ G.edgeFinset, edgeAbsSqDiff y e := by
+    _ ≤ ∑ e ∈ G.edgeFinset, edgeAbsSqDiff G y e := by
         apply Finset.sum_le_sum; intro e he; induction e using Sym2.ind
         case h u v => simpa [edgeAbsSqDiff, levels] using
             edge_level_cut_weight_sum_le_abs_sq_sub G y h_pos he
 
-lemma edge_abs_diff_sq_sum_eq_energy (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ) :
-    ∑ e ∈ G.edgeFinset, (edgeAbsDiff y e) ^ 2 = G.energy y := by
+lemma edge_abs_diff_sq_sum_eq_energy (y : α → ℝ) :
+    ∑ e ∈ G.edgeFinset, (edgeAbsDiff G y e) ^ 2 = G.energy y := by
   unfold SimpleGraph.energy; apply Finset.sum_congr rfl; intro e he
   induction e using Sym2.ind
   case h u v => simp [edgeAbsDiff, sq_abs]
 
-lemma edge_endpoint_sum_sq_le_two_deg_norm (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ) :
+lemma edge_endpoint_sum_sq_le_two_deg_norm (y : α → ℝ) :
     ∑ e ∈ G.edgeFinset, (edgeEndpointSum y e) ^ 2 ≤ 2 * G.deg_norm y := by
   calc
     ∑ e ∈ G.edgeFinset, (edgeEndpointSum y e) ^ 2
@@ -370,23 +363,23 @@ lemma edge_endpoint_sum_sq_le_two_deg_norm (G : SimpleGraph α)
     _ = 2 * G.deg_norm y := by
         rw [← Finset.mul_sum, edge_endpoint_sq_sum_eq_deg_norm]
 
-lemma edge_abs_sq_diff_sum_le_sqrt_energy_deg_norm (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ)
+lemma edge_abs_sq_diff_sum_le_sqrt_energy_deg_norm (y : α → ℝ)
     (h_pos : ∀ v, 0 ≤ y v) :
-    ∑ e ∈ G.edgeFinset, edgeAbsSqDiff y e ≤
+    ∑ e ∈ G.edgeFinset, edgeAbsSqDiff G y e ≤
       Real.sqrt (2 * G.energy y * G.deg_norm y) := by
-  have hpoint : ∀ e ∈ G.edgeFinset, edgeAbsSqDiff y e ≤ edgeAbsDiff y e * edgeEndpointSum y e := by
+  have hpoint : ∀ e ∈ G.edgeFinset, edgeAbsSqDiff G y e
+      ≤ edgeAbsDiff G y e * edgeEndpointSum y e := by
     intro e he; induction e using Sym2.ind
     case h u v => simpa [edgeAbsSqDiff, edgeAbsDiff, edgeEndpointSum] using
       abs_sq_sub_sq_le_abs_sub_mul_add_of_nonneg (h_pos u) (h_pos v)
-  have hcs := sum_le_sqrt_mul_sqrt_of_le_mul (G.edgeFinset) (edgeAbsSqDiff y)
-      (edgeAbsDiff y) (edgeEndpointSum y) hpoint
-  have hA : ∑ e ∈ G.edgeFinset, (edgeAbsDiff y e) ^ 2 = G.energy y :=
+  have hcs := sum_le_sqrt_mul_sqrt_of_le_mul (G.edgeFinset) (edgeAbsSqDiff G y)
+      (edgeAbsDiff G y) (edgeEndpointSum y) hpoint
+  have hA : ∑ e ∈ G.edgeFinset, (edgeAbsDiff G y e) ^ 2 = G.energy y :=
     edge_abs_diff_sq_sum_eq_energy G y
   have hB : ∑ e ∈ G.edgeFinset, (edgeEndpointSum y e) ^ 2 ≤ 2 * G.deg_norm y :=
     edge_endpoint_sum_sq_le_two_deg_norm G y
   have hmul_sqrt :
-      Real.sqrt (∑ e ∈ G.edgeFinset, (edgeAbsDiff y e) ^ 2) *
+      Real.sqrt (∑ e ∈ G.edgeFinset, (edgeAbsDiff G y e) ^ 2) *
       Real.sqrt (∑ e ∈ G.edgeFinset, (edgeEndpointSum y e) ^ 2)
       ≤ Real.sqrt (2 * G.energy y * G.deg_norm y) := by
     rw [hA]
@@ -404,11 +397,11 @@ lemma edge_abs_sq_diff_sum_le_sqrt_energy_deg_norm (G : SimpleGraph α)
           ring_nf
   grind
 
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
 /-- Vertex-side layer-cake formula for the canonical positive levels of `y`.
 With `w t = t^2 - pred(t)^2`, summing the level volumes recovers the
 degree norm. -/
-lemma level_coarea_volume_identity (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (y : α → ℝ)
+lemma level_coarea_volume_identity (d : ℕ) (y : α → ℝ)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     (h_pos : ∀ v, 0 ≤ y v) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
@@ -445,9 +438,7 @@ lemma level_coarea_volume_identity (G : SimpleGraph α)
 /-- Edge-side coarea estimate for the canonical positive levels of `y`.
 The weighted count of threshold cuts is bounded by the Cauchy-Schwarz
 quantity `sqrt (2 * energy * deg_norm)`. -/
-lemma level_coarea_cut_bound (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) :
+lemma level_coarea_cut_bound (y : α → ℝ) (h_pos : ∀ v, 0 ≤ y v) :
     let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
     ∑ t ∈ levels, coareaWeight levels t *
         (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card ≤
@@ -455,13 +446,11 @@ lemma level_coarea_cut_bound (G : SimpleGraph α)
   intro levels; exact (level_cut_sum_le_edge_abs_sq_diff_sum G y h_pos).trans
     (edge_abs_sq_diff_sum_le_sqrt_energy_deg_norm G y h_pos)
 
-@[grind] noncomputable def normalizedSupportedOrthogonal (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : Set (α → ℝ) :=
+@[grind] noncomputable def normalizedSupportedOrthogonal : Set (α → ℝ) :=
   {x | (∀ v, v ∉ G.vertexFinset → x v = 0) ∧ x ∈ orthogonalVectors G ∧ G.deg_norm x = 1}
 
-lemma edgeSet_empty_of_regular_zero (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = 0) : G.edgeFinset = ∅ := by
+lemma edgeSet_empty_of_regular_zero (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = 0) :
+    G.edgeFinset = ∅ := by
   classical
   apply Finset.eq_empty_iff_forall_notMem.mpr; intro e he; induction e using Sym2.ind
   case h u v =>
@@ -475,8 +464,7 @@ lemma edgeSet_empty_of_regular_zero (G : SimpleGraph α)
       · exact G.edgeSet_finite.subset (by intro e he'; exact he'.1)
     grind
 
-lemma R_values_eq_singleton_zero_of_regular_zero (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] [Finite α]
+lemma R_values_eq_singleton_zero_of_regular_zero [Finite α]
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = 0) (hV : 2 ≤ #G.vertexFinset) :
     R_values G = {0} := by
   classical
@@ -496,8 +484,8 @@ lemma R_values_eq_singleton_zero_of_regular_zero (G : SimpleGraph α)
       · grind
     · grind
 
-lemma deg_norm_pos_of_supported_orthogonal_of_regular_pos (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ)
+omit [DecidablePred (· ∈ G.edgeSet)] in
+lemma deg_norm_pos_of_supported_orthogonal_of_regular_pos (d : ℕ)
     (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     {x : α → ℝ} (hx : x ∈ orthogonalVectors G) :
     0 < G.deg_norm (restrictToVertexSet G x) := by
@@ -510,8 +498,8 @@ lemma deg_norm_pos_of_supported_orthogonal_of_regular_pos (G : SimpleGraph α)
   · exact_mod_cast Nat.pos_of_ne_zero h_d_pos
   · exact sum_sq_pos G (restrictToVertexSet G x) hy_ne
 
-lemma normalizedSupportedOrthogonal_isCompact (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] [Finite α] (d : ℕ)
+omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
+lemma normalizedSupportedOrthogonal_isCompact [Finite α] (d : ℕ)
     (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     IsCompact (normalizedSupportedOrthogonal G) := by
   classical
@@ -571,8 +559,7 @@ lemma normalizedSupportedOrthogonal_isCompact (G : SimpleGraph α)
       exact NNReal.coe_le_coe.mp (by simp [hxv])
   exact hbounded.isCompact_closure.of_isClosed_subset hclosed subset_closure
 
-lemma continuous_rayleighQuotient_on_normalizedSupportedOrthogonal (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+lemma continuous_rayleighQuotient_on_normalizedSupportedOrthogonal :
     ContinuousOn (fun x : α → ℝ => G.rayleighQuotient x)
       (normalizedSupportedOrthogonal G) := by
   classical
@@ -584,8 +571,7 @@ lemma continuous_rayleighQuotient_on_normalizedSupportedOrthogonal (G : SimpleGr
     intro v hv; exact continuous_const.mul ((continuous_apply v).pow 2)
   · grind
 
-lemma R_values_eq_rayleigh_image_normalizedSupportedOrthogonal (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] [Finite α]
+lemma R_values_eq_rayleigh_image_normalizedSupportedOrthogonal [Finite α]
     (d : ℕ) (h_d_pos : d ≠ 0) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     R_values G =
       (fun x : α → ℝ => G.rayleighQuotient x) '' normalizedSupportedOrthogonal G := by
@@ -619,8 +605,7 @@ lemma R_values_eq_rayleigh_image_normalizedSupportedOrthogonal (G : SimpleGraph 
 
 /-- Level-set coarea counting for the sweep proof.  The finite set `levels`
 and positive weights `w` are shared with `volume_coarea_counting` below. -/
-lemma level_coarea_counting (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (y : α → ℝ)
+lemma level_coarea_counting (d : ℕ) (y : α → ℝ)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (h_pos : ∀ v, 0 ≤ y v)
     (h_y_pos : ∃ v ∈ G.vertexFinset, 0 < y v) :
     ∃ levels : Finset ℝ, ∃ w : ℝ → ℝ, levels.Nonempty ∧ (∀ t ∈ levels, 0 < t) ∧
@@ -643,8 +628,7 @@ lemma level_coarea_counting (G : SimpleGraph α)
 
 /-- Cauchy-Schwarz step in the sweep proof, converting the coarea numerator
 bound into a Rayleigh-quotient bound. -/
-lemma coarea_bound_to_rayleigh (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (y : α → ℝ)
+lemma coarea_bound_to_rayleigh (y : α → ℝ)
     (d : ℕ) (levels : Finset ℝ) (w : ℝ → ℝ) (h_norm_pos : 0 < G.deg_norm y)
     (h_level_bound : ∑ t ∈ levels, w t * (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card ≤
       Real.sqrt (2 * G.energy y * G.deg_norm y))
@@ -675,4 +659,5 @@ lemma coarea_bound_to_rayleigh (G : SimpleGraph α)
       ≤ Real.sqrt (2 * G.energy y * G.deg_norm y) := h_level_bound
     _ = Real.sqrt (2 * (G.energy y / G.deg_norm y)) * G.deg_norm y := h_sqrt_eq
 
+end Spectral
 end GraphLib

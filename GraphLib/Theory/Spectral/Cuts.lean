@@ -9,11 +9,13 @@ import GraphLib.Graph.Finite
 -- Cuts (undirected simple)
 -- Authors: Weixuan Yuan
 
-variable {α : Type*}
-open GraphLib
+namespace GraphLib
+namespace Spectral
 
-@[grind] def Cut (G : SimpleGraph α) (U : Finset α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+variable {α : Type*} (G : SimpleGraph α)
+  [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
+
+@[grind] def Cut (U : Finset α) :
     Finset (Sym2 α) := {e ∈ G.edgeFinset | ∃ u ∈ U, u ∈ e ∧ ∃ v ∈ G.vertexFinset \ U, v ∈ e}
 
 --Weight function
@@ -26,13 +28,11 @@ variable {R : Type*} [LinearOrderedAddCommMonoid R]
 open Finset BigOperators
 namespace Cuts
 
-@[grind] def weight (G : SimpleGraph α) (U : Finset α) (w : Sym2 α → R)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : R :=
+@[grind] def weight (U : Finset α) (w : Sym2 α → R)
+    : R :=
     Finset.sum (Cut G U) w
 
-lemma cut_submodular (G : SimpleGraph α) (U W : Finset α)
-    (w : Sym2 α → R) (w_pos : ∀ e, 0 ≤ w e)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+lemma cut_submodular (U W : Finset α) (w : Sym2 α → R) (w_pos : ∀ e, 0 ≤ w e) :
     weight G (U ∩ W) w + weight G (U ∪ W) w ≤ weight G U w + weight G W w := by
   have h1 : Cut G (U ∩ W) ⊆ Cut G U ∪ Cut G W := by grind [Cut]
   have h2 : Cut G (U ∪ W) ⊆ Cut G U ∪ Cut G W := by grind [Cut]
@@ -50,26 +50,20 @@ lemma cut_submodular (G : SimpleGraph α) (U W : Finset α)
     grind [Cut]
   apply add_le_add h1 h2
 
-@[grind] def is_st_cut (G : SimpleGraph α) (U : Finset α) (s t : α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : Prop :=
+@[grind] def is_st_cut (U : Finset α) (s t : α) : Prop :=
     s ∈ U ∧ t ∉ U ∧ U.Nonempty ∧ U ⊂ G.vertexFinset
 
-@[grind] def is_st_mincut (G : SimpleGraph α) (U : Finset α) (s t : α) (w : Sym2 α → R)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : Prop :=
+@[grind] def is_st_mincut (U : Finset α) (s t : α) (w : Sym2 α → R) : Prop :=
     is_st_cut G U s t ∧ ∀ W : Finset α, is_st_cut G W s t → weight G U w ≤ weight G W w
 
-instance (G : SimpleGraph α) (s t : α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
+instance (s t : α) :
     DecidablePred (fun U : Finset α => is_st_cut G U s t) := by
   intro U; unfold is_st_cut; infer_instance
 
-@[grind] def st_cuts (G : SimpleGraph α) (s t : α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : Finset (Finset α) :=
+@[grind] def st_cuts (s t : α) : Finset (Finset α) :=
     G.vertexFinset.powerset.filter (fun U => is_st_cut G U s t)
 
-@[grind] def st_mincut_value (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    (s t : α) (w : Sym2 α → R) (h : (st_cuts G s t).Nonempty) : R := by
+@[grind] def st_mincut_value (s t : α) (w : Sym2 α → R) (h : (st_cuts G s t).Nonempty) : R := by
   classical
   apply Finset.nonempty_def.1 at h;
   refine ((st_cuts G s t).image (fun U => weight G U w)).min' ?_
@@ -77,9 +71,7 @@ instance (G : SimpleGraph α) (s t : α)
   exact ⟨weight G U w, by
     exact Finset.mem_image_of_mem (fun X => weight G X w) hU⟩
 
-lemma st_min_cut {G : SimpleGraph α}
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
-    {U : Finset α} {s t : α} {w : Sym2 α → R} (h : (st_cuts G s t).Nonempty) :
+lemma st_min_cut {U : Finset α} {s t : α} {w : Sym2 α → R} (h : (st_cuts G s t).Nonempty) :
   is_st_mincut G U s t w ↔ is_st_cut G U s t ∧ weight G U w = st_mincut_value G s t w h := by
   constructor
   · intro hmin;  simp_all only [is_st_mincut, true_and]
@@ -93,3 +85,6 @@ lemma st_min_cut {G : SimpleGraph α}
     grind [st_cuts, is_st_cut]
 
 end Cuts
+
+end Spectral
+end GraphLib
