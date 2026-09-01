@@ -7,7 +7,7 @@ namespace GraphLib
 variable {α : Type*}
 
 -- Generates the set of all prefix and suffix cuts (sweep cuts) for a vector x.
-noncomputable def sweepCuts (G : SimpleGraph α)
+@[grind] noncomputable def sweepCuts (G : SimpleGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (x : α → ℝ) :
     Finset (Finset α) := by
   classical
@@ -101,7 +101,7 @@ lemma sweepCut_card_le_half (G : SimpleGraph α)
 
 /-- The expansion of the best cut found by Fiedler's algorithm.
     Requires |V| ≥ 2 to ensure at least one cut exists. -/
-noncomputable def fiedlerExpansion (G : SimpleGraph α)
+@[grind] noncomputable def fiedlerExpansion (G : SimpleGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (x : α → ℝ)
     (hV : 2 ≤ (G.vertexFinset).card) : ℝ :=
   let cuts := sweepCuts G x
@@ -110,7 +110,7 @@ noncomputable def fiedlerExpansion (G : SimpleGraph α)
   )
 
 /-- The actual set of vertices (cut) that achieves the fiedlerExpansion. -/
-noncomputable def fiedlerCut (G : SimpleGraph α)
+@[grind] noncomputable def fiedlerCut (G : SimpleGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
     (d : ℕ) (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) : Finset α :=
   -- Pick a cut that attains the minimum expansion
