@@ -4,11 +4,10 @@ import GraphLib.Theory.Spectral.Expansion
 -- Authors: Weixuan Yuan, Yuchen Zhong
 -- LLM: Gemini, GPT-5.5 on codex
 
-open Finset
 namespace GraphLib
 namespace Spectral
 
-open Cuts
+open Finset Cuts
 
 variable {α : Type*} (G : SimpleGraph α)
   [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]

@@ -1,11 +1,9 @@
 import GraphLib.Theory.Spectral.Expansion
 
-open Finset
-
 namespace GraphLib
 namespace Spectral
 
-open Cuts
+open Finset Cuts
 
 variable {α : Type*} (G : SimpleGraph α)
   [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]

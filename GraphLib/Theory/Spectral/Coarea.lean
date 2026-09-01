@@ -1,21 +1,9 @@
 import GraphLib.Theory.Spectral.Expansion
 
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.Order.Compact
-
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.MeasurableSpace.Basic
-
-
-open Finset
-open ProbabilityTheory MeasureTheory
-
 namespace GraphLib
 namespace Spectral
 
-open Cuts
+open Finset Cuts
 
 variable {α : Type*} (G : SimpleGraph α)
   [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]

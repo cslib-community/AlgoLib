@@ -5,9 +5,7 @@ import GraphLib.Theory.Spectral.Fiedler
 namespace GraphLib
 namespace Spectral
 
-open Finset
-open ProbabilityTheory MeasureTheory
-open Cuts
+open Finset ProbabilityTheory MeasureTheory Cuts
 
 variable {α : Type*} (G : SimpleGraph α)
   [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
