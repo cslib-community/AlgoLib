@@ -146,12 +146,12 @@ theorem SimpleDiGraph.fin_vertexSet_fin_edgeSet (G : SimpleDiGraph α)
 /-! ## Vertex finset -/
 
 /-- The vertex set of `G` as a `Finset`, when it is finite. -/
-def SimpleGraph.vertexFinset (G : SimpleGraph α) [Fintype G.vertexSet] :
+@[grind] def SimpleGraph.vertexFinset (G : SimpleGraph α) [Fintype G.vertexSet] :
     Finset α :=
   (G.vertexSet).toFinset
 
 /-- The vertex set of `G` as a `Finset`, when it is finite. -/
-def SimpleDiGraph.vertexFinset (G : SimpleDiGraph α) [Fintype G.vertexSet] :
+@[grind] def SimpleDiGraph.vertexFinset (G : SimpleDiGraph α) [Fintype G.vertexSet] :
     Finset α :=
   (G.vertexSet).toFinset
 
@@ -173,13 +173,13 @@ def SimpleDiGraph.vertexFinset (G : SimpleDiGraph α) [Fintype G.vertexSet] :
 
 /-! ## Edge finset -/
 
-def SimpleGraph.edgeFinset (G : SimpleGraph α)
+@[grind] def SimpleGraph.edgeFinset (G : SimpleGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
     Finset (Sym2 α) :=
   (G.edgeSet).toFinset
 
 /-- The edge set of `G` as a `Finset`. -/
-def SimpleDiGraph.edgeFinset (G : SimpleDiGraph α)
+@[grind] def SimpleDiGraph.edgeFinset (G : SimpleDiGraph α)
     [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] :
     Finset (α × α) :=
   (G.edgeSet).toFinset
