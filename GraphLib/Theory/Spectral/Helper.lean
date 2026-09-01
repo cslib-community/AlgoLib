@@ -7,9 +7,11 @@ import GraphLib.Graph.Finite
 -- LLM: Gemini, GPT-5.5 on codex
 
 namespace GraphLib
-variable {α : Type*}
+namespace Spectral
 
-lemma sum_sq_pos (G : SimpleGraph α) [Fintype G.vertexSet] (x : α → ℝ)
+variable {α : Type*} (G : SimpleGraph α) [Fintype G.vertexSet]
+
+lemma sum_sq_pos (x : α → ℝ)
     (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0) : 0 < ∑ i ∈ G.vertexFinset, x i ^ 2 := by
   have h_nonneg : 0 ≤ ∑ i ∈ G.vertexFinset, x i ^ 2 :=
     Finset.sum_nonneg (fun i _ => sq_nonneg (x i))
@@ -21,8 +23,6 @@ lemma sum_sq_pos (G : SimpleGraph α) [Fintype G.vertexSet] (x : α → ℝ)
       intro j hj; apply sq_nonneg
     exact eq_zero_of_pow_eq_zero h_sq_zero
   grind
-
-lemma pos_neg_sq_add (a : ℝ) : max a 0 ^ 2 + max (-a) 0 ^ 2 = a ^ 2 := by grind
 
 lemma pos_neg_sub_sq_add_le (a b : ℝ) :
     (max a 0 - max b 0) ^ 2 + (max (-a) 0 - max (-b) 0) ^ 2 ≤ (a - b) ^ 2 := by
@@ -70,23 +70,20 @@ lemma abs_sq_sub_sq_le_abs_sub_mul_add_of_nonneg {a b : ℝ} (ha : 0 ≤ a) (hb 
     _ = |a - b| * |a + b| := abs_mul _ _
     _ ≤ |a - b| * (a + b) := by rw [abs_of_nonneg hab_nonneg]
 
-lemma positive_value_levels_nonempty (G : SimpleGraph α) [Fintype G.vertexSet] (y : α → ℝ)
+lemma positive_value_levels_nonempty (y : α → ℝ)
     (h_y_pos : ∃ v ∈ G.vertexFinset, 0 < y v) :
     ((G.vertexFinset.image y).filter (fun t => 0 < t)).Nonempty := by
   rcases h_y_pos with ⟨v, hv, hv_pos⟩; exact ⟨y v, by grind⟩
 
-lemma positive_value_level_pos (G : SimpleGraph α) [Fintype G.vertexSet] (y : α → ℝ) :
+lemma positive_value_level_pos (y : α → ℝ) :
     ∀ t ∈ (G.vertexFinset.image y).filter (fun t => 0 < t), 0 < t := by
   intro t ht; exact (Finset.mem_filter.mp ht).2
 
-lemma positive_value_level_set_nonempty (G : SimpleGraph α) [Fintype G.vertexSet] (y : α → ℝ) :
+lemma positive_value_level_set_nonempty (y : α → ℝ) :
     ∀ t ∈ (G.vertexFinset.image y).filter (fun t => 0 < t),
       (G.vertexFinset.filter (fun v => y v ≥ t)).Nonempty := by
   intro t ht; rcases Finset.mem_image.mp (Finset.mem_filter.mp ht).1 with ⟨v, hv, rfl⟩
   exact ⟨v, by simp [hv]⟩
 
-lemma positive_value_level_mem_image {G : SimpleGraph α} [Fintype G.vertexSet] {y : α → ℝ} {t : ℝ}
-    (ht : t ∈ (G.vertexFinset.image y).filter (fun t => 0 < t)) :
-  t ∈ G.vertexFinset.image y := (Finset.mem_filter.mp ht).1
-
+end Spectral
 end GraphLib

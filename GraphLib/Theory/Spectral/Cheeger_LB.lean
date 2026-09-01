@@ -4,22 +4,23 @@ import GraphLib.Theory.Spectral.Expansion
 -- Authors: Weixuan Yuan, Yuchen Zhong
 -- LLM: Gemini, GPT-5.5 on codex
 
-open Finset Cuts
 namespace GraphLib
-variable {α : Type*}
+namespace Spectral
 
-@[grind] noncomputable def nG (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] : ℝ :=
-  (#G.vertexFinset : ℝ)
+open Finset Cuts
+
+variable {α : Type*} (G : SimpleGraph α)
+  [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
+
+@[grind] noncomputable def nG : ℝ := (#G.vertexFinset : ℝ)
 
 -- 1. Define a specific test vector x based on S.
-@[grind] noncomputable def xS (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (S : Finset α) : α → ℝ :=
+@[grind] noncomputable def xS (S : Finset α) : α → ℝ :=
   let n : ℝ := nG G; let s : ℝ := #S; fun v => if v ∈ S then (n - s) else -s
 
 -- 2. Show x satisfy x ⊥ D1.
-lemma xS_orth (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (S : Finset α)
+omit [DecidablePred (· ∈ G.edgeSet)] in
+lemma xS_orth (d : ℕ) (S : Finset α)
     (hS_nonempty : S.Nonempty) (hS_subset : S ⊆ G.vertexFinset)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     let x : α → ℝ := xS G S; ∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * x v = 0 := by
@@ -40,8 +41,7 @@ lemma xS_orth (G : SimpleGraph α)
   apply Finset.sum_congr rfl; intro v hv; simp [h_reg v hv]
 
 -- 3. Show λ₂ ≤ RQ(x)
-lemma lambda_le_rq (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (S : Finset α)
+lemma lambda_le_rq (S : Finset α)
     (hS_nonempty : S.Nonempty) (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset)
     (h_orth : ∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * (xS G S) v = 0) :
     let x : α → ℝ := xS G S; lambda2 G ≤ G.rayleighQuotient x := by
@@ -54,15 +54,13 @@ lemma lambda_le_rq (G : SimpleGraph α)
     have h_x_ne_zero : ∃ v ∈ G.vertexFinset, x v ≠ 0 := by grind
     refine ⟨x, ?_, rfl⟩; exact ⟨h_orth, h_x_ne_zero⟩
 
-@[grind] noncomputable def edge_diff_sq (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (x : α → ℝ) :
+@[grind] noncomputable def edge_diff_sq (x : α → ℝ) :
     Sym2 α → ℝ := Sym2.lift ⟨fun u v => (x u - x v)^2, by intro u v; dsimp; ring⟩
 
-lemma num_eq (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (S : Finset α)
+lemma num_eq (S : Finset α)
     (hS_nonempty : S.Nonempty) :
     let n : ℝ := nG G; let x : α → ℝ := xS G S; let dS := Cut G S
-    let edge_diff := edge_diff_sq G x; ∑ e ∈ G.edgeFinset, edge_diff e = n^2 * ↑(#dS) := by
+    let edge_diff := edge_diff_sq x; ∑ e ∈ G.edgeFinset, edge_diff e = n^2 * ↑(#dS) := by
   intro n x dS edge_diff
   have h_sub : dS ⊆ G.edgeFinset := by grind
   -- Edges outside dS contribute 0, hence the full sum equals the dS-sum.
@@ -83,8 +81,8 @@ lemma num_eq (G : SimpleGraph α)
     unfold edge_diff edge_diff_sq x; simp only [Sym2.lift_mk]; grind
   rw [h_sum_is_dS, Finset.sum_congr rfl h_const]; simp only [sum_const, nsmul_eq_mul]; grind
 
-lemma denom_eq (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (S : Finset α)
+omit [DecidablePred (· ∈ G.edgeSet)] in
+lemma denom_eq (d : ℕ) (S : Finset α)
     (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset) :
     let n : ℝ := nG G; let s : ℝ := #S; let x : α → ℝ := xS G S
     (d : ℝ) * ∑ v ∈ G.vertexFinset, (x v)^2 = (d : ℝ) * n * s * (n - s) := by
@@ -101,14 +99,13 @@ lemma denom_eq (G : SimpleGraph α)
   rw [← Finset.sum_sdiff hS_subset, h_sum_S, h_sum_Sc]; ring
 
 -- 4. Compute RQ(x) = |E(S, V \ S)| * |V| / (d * |S| * |V \ S|), using num_eq and denom_eq
-lemma rq_eq (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (S : Finset α)
+lemma rq_eq (d : ℕ) (S : Finset α)
     (hS_nonempty : S.Nonempty) (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     let n : ℝ := nG G; let s : ℝ := #S; let x : α → ℝ := xS G S; let dS := Cut G S
     (have num := n ^ 2 * ↑(#dS); have denom := ↑d * n * ↑s * (n - ↑s);
     G.rayleighQuotient x = num / denom) := by
-  intro n s x dS; let edge_diff := edge_diff_sq G x; unfold SimpleGraph.rayleighQuotient
+  intro n s x dS; let edge_diff := edge_diff_sq x; unfold SimpleGraph.rayleighQuotient
   have h_num_total := num_eq G S hS_nonempty
   -- pull out regular degree in denominator.
   have h_den_match :
@@ -119,8 +116,7 @@ lemma rq_eq (G : SimpleGraph α)
   rw [h_num_total, h_den_match, h_denom]
 
 -- 5. Show RQ(x) ≤ 2 * ϕ(S) from |S| ≤ |V| / 2.
-lemma rq_le_two_phi (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (S : Finset α)
+lemma rq_le_two_phi (d : ℕ) (S : Finset α)
     (hS_nonempty : S.Nonempty) (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hd : d > 0) :
     let x : α → ℝ := xS G S; G.rayleighQuotient x ≤ 2 * edgeExpansion G d S := by
@@ -142,8 +138,7 @@ lemma rq_le_two_phi (G : SimpleGraph α)
   convert hmul using 1; repeat grind
 
 -- The "Easy Direction" of Cheeger's Inequality: For a d-regular graph, λ₂ / 2 ≤ ϕ(G).
-theorem cheeger_easy_direction (G : SimpleGraph α)
-    [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] (d : ℕ) (S : Finset α)
+theorem cheeger_easy_direction (d : ℕ) (S : Finset α)
     (hS_nonempty : S.Nonempty) (hS_size : 2 * #S ≤ #G.vertexFinset) (hS_subset : S ⊆ G.vertexFinset)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hd : d > 0) :
     (lambda2 G) / 2 ≤ edgeExpansion G d S := by
@@ -153,4 +148,5 @@ theorem cheeger_easy_direction (G : SimpleGraph α)
   have h_rq_le_two_phi := rq_le_two_phi G d S hS_nonempty hS_size hS_subset h_reg hd
   grind
 
+end Spectral
 end GraphLib
