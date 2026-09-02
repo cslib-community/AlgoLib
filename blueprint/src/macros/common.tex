@@ -21,27 +21,34 @@
 \usepackage{amssymb}
 \usepackage{hyperref}
 
-\providecommand{\G}{{\mathbb G}}
+% --- Number systems ---------------------------------------------------------
 \providecommand{\N}{{\mathbb N}}
 \providecommand{\Z}{{\mathbb Z}}
+\providecommand{\Q}{{\mathbb Q}}
 \providecommand{\R}{{\mathbb R}}
 \providecommand{\bbC}{{\mathbb C}}
-\providecommand{\MCA}{{\mathcal A}}
 
-\DeclareMathOperator{\Grp}{Grp}
-\DeclareMathOperator{\Bialg}{Bialg}
-\DeclareMathOperator{\Hopf}{Hopf}
-\DeclareMathOperator{\Ring}{Ring}
-\DeclareMathOperator{\Sch}{Sch}
-\DeclareMathOperator{\MonSch}{GrpSch}
-\DeclareMathOperator{\GrpSch}{GrpSch}
-\DeclareMathOperator{\Spec}{Spec}
+% --- Graphs -----------------------------------------------------------------
+% G = (V, E); use \V{G} / \E{G} to match the `V(G)` / `E(G)` notation scoped to
+% the `AlgoLib` namespace in Lean.
+\providecommand{\G}{{\mathbb G}}
+\newcommand{\V}[1]{V(#1)}
+\newcommand{\E}[1]{E(#1)}
+\newcommand{\bdry}[2]{\partial(#1, #2)}          % edge boundary of a vertex set
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\girth}{girth}
+\DeclareMathOperator{\diam}{diam}
+\newcommand{\conn}[1]{\kappa(#1)}                 % vertex connectivity
+\newcommand{\edgeconn}[1]{\kappa'(#1)}            % edge connectivity
+
+% --- Algorithms & complexity ------------------------------------------------
+\DeclareMathOperator{\Ack}{A}                     % Ackermann function
+\newcommand{\invAck}{\alpha}                      % inverse Ackermann
+\newcommand{\bigO}{O}
+\newcommand{\bigTheta}{\Theta}
+\newcommand{\bigOmega}{\Omega}
+
+% --- General ----------------------------------------------------------------
 \DeclareMathOperator{\Hom}{Hom}
-\DeclareMathOperator{\GrpLike}{GrpLike}
 \DeclareMathOperator{\im}{im}
-\newcommand{\ox}{\otimes}
-
-\DeclareMathOperator{\Cone}{Cone}
-\DeclareMathOperator{\Conv}{Conv}
 \DeclareMathOperator{\Span}{span}
-\DeclareMathOperator{\Relint}{Relint}
