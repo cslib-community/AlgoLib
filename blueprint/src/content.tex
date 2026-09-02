@@ -2,48 +2,82 @@
 % It will be used both by the web and the print version.
 % It should *not* include the \begin{document}
 %
-% If you want to split the blueprint content into several files then
-% the current file can be a simple sequence of \input. Otherwise It
-% can start with a \section or \chapter for instance.
+% The chapter/section structure below mirrors the AlgoLib source tree:
+%
+%   \chapter{Graph Theory}      <-> AlgoLib/Theory/Graph/
+%   \chapter{Graph Algorithms}  <-> AlgoLib/Algorithms/Graph/
+%   \chapter{Data Structures}   <-> AlgoLib/DataStructures/
+%
+% and each chapters/<path>/Basic.tex mirrors the Lean module of the same path.
+% When you add a Lean module, add the matching .tex file here so the two trees
+% stay in step.
 
 \tableofcontents
 
-\chapter{Graph}
-\input{chapters/Graph/Basic.tex}
+\chapter{Graph Theory}
+% AlgoLib/Theory/Graph/
 
-\chapter{Algorithms}
-\section{Flow}
-\input{chapters/Algorithms/Flow/Basic.tex}
-\section{MST}
-\input{chapters/Algorithms/MST/Basic.tex}
-\section{SCC}
-\input{chapters/Algorithms/SCC/Basic.tex}
+\section{Basic}
+\input{chapters/Theory/Graph/Basic.tex}
+
+\section{Structures}
+\input{chapters/Theory/Graph/Structures/Basic.tex}
+
+\subsection{Trees}
+\input{chapters/Theory/Graph/Structures/Trees/Basic.tex}
+
+\section{Connectivity}
+\input{chapters/Theory/Graph/Connectivity/Basic.tex}
+
+\section{Coloring}
+\input{chapters/Theory/Graph/Coloring/Basic.tex}
+
+\section{Matching}
+\input{chapters/Theory/Graph/Matching/Basic.tex}
+
+\section{Minors}
+\input{chapters/Theory/Graph/Minors/Basic.tex}
+
+\section{Spectral}
+\input{chapters/Theory/Graph/Spectral/Basic.tex}
+
+\section{Embeddings}
+\input{chapters/Theory/Graph/Embeddings/Basic.tex}
+
+\chapter{Graph Algorithms}
+% AlgoLib/Algorithms/Graph/
+
+\section{Traversal}
+\input{chapters/Algorithms/Graph/Traversal/Basic.tex}
+
 \section{Search}
-\input{chapters/Algorithms/Search/Basic.tex}
+\input{chapters/Algorithms/Graph/Search/Basic.tex}
+
 \section{Shortest Path}
-\input{chapters/Algorithms/ShortestPath/Basic.tex}
+\input{chapters/Algorithms/Graph/ShortestPath/Basic.tex}
+
+\section{MST}
+\input{chapters/Algorithms/Graph/MST/Basic.tex}
+
+\section{Flow}
+\input{chapters/Algorithms/Graph/Flow/Basic.tex}
+
+\section{SCC}
+\input{chapters/Algorithms/Graph/SCC/Basic.tex}
 
 \chapter{Data Structures}
-\input{chapters/DataStructures/InverseAckermann.tex}
-\section{Union Find}
-\input{chapters/DataStructures/UnionFind/Blueprint.tex}
+% AlgoLib/DataStructures/
 
-\chapter{Theory}
-\section{Coloring}
-\input{chapters/Theory/Coloring/Basic.tex}
-\section{Connectivity}
-\input{chapters/Theory/Connectivity/Basic.tex}
-\section{Embeddings}
-\input{chapters/Theory/Embeddings/Basic.tex}
-\section{Matching}
-\input{chapters/Theory/Matching/Basic.tex}
-\section{Minors}
-\input{chapters/Theory/Minors/Basic.tex}
-\section{Spectral}
-\input{chapters/Theory/Spectral/Basic.tex}
-\section{Trees}
-\input{chapters/Theory/Trees/Basic.tex}
-\section{Walks}
-\input{chapters/Theory/Walks/Basic.tex}
+\section{Binary Tree}
+\input{chapters/DataStructures/BinaryTree/Basic.tex}
+
+\section{Splay Tree}
+\input{chapters/DataStructures/SplayTree/Basic.tex}
+
+\section{Union Find}
+\input{chapters/DataStructures/UnionFind/Basic.tex}
+
+\subsection{Inverse Ackermann}
+\input{chapters/DataStructures/InverseAckermann/Basic.tex}
 
 \input{chapters/biblio}

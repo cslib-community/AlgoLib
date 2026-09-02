@@ -1,8 +1,5 @@
-_site
-.sass-cache
-.jekyll-cache
-.jekyll-metadata
-vendor
+# Generated at deploy time by .github/workflows/push.yml
 blueprint/
 blueprint.pdf
 docs/
+file_deps.pdf

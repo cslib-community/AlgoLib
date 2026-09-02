@@ -1,8 +1,8 @@
-# GraphLib
+# AlgoLib
 
-A [Lean 4](https://lean-lang.org/) library for **formal graph theory and graph algorithms**, built on top of [Mathlib](https://github.com/leanprover-community/mathlib4). GraphLib aims to provide machine-checked definitions, theorems, and algorithm implementations covering the standard undergraduate-through-graduate curriculum on graphs.
+A [Lean 4](https://lean-lang.org/) library for **algorithms**, built on top of [Mathlib](https://github.com/leanprover-community/mathlib4). AlgoLib aims to provide machine-checked definitions, theorems, and algorithm implementations covering the standard undergraduate-through-graduate curriculum on algorithms.
 
-The graph definitions intentionally diverge from Mathlib's: vertex and edge sets are both carried as `Set`s with minimal axioms, so that dynamic operations (adding/removing vertices and edges, contractions, minors) and algorithmic reasoning stay close to their textbook formulations.
+Since we focus on computable definitions and algorithms, we introduce new definitions for concepts already formalized in Mathlib (e.g., out definition of graphs). Our primarly goals is to provide a concise formalization of algorithms that stays close to their textbook formulation without compromising on generality. 
 
 ## Roadmap — v1
 
@@ -32,7 +32,7 @@ Every algorithm comes with a proof of correctness and a proof of runtime.
 ## Repository layout
 
 ```
-GraphLib/
+AlgoLib/
 ├── Basic/          -- core graph structures (Graph, SimpleGraph, DiGraph, SimpleDiGraph)
 ├── Theory/         -- mathematical results (walks, trees, spectral, matching, …)
 └── Algorithms/     -- algorithm implementations and correctness proofs
