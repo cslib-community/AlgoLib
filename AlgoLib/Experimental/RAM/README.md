@@ -3,6 +3,12 @@
 For adjacency-list BFS, graph refinement, and linear time, see
 [`BFS/README.md`](BFS/README.md) and `AlgoLib.Experimental.RAM.BFS.Demo`.
 
+`Checked.Procedure InputType OutputType` now supplies a reusable typed RAM
+interface: an input encoder, fixed code, restricted output descriptor, and
+termination certificate. BFS exposes `Arguments G → Result`, with named
+`visited` and `steps` fields, and a `graph_program (...) returns ...` declaration
+whose body reads like the textbook algorithm. See the BFS walkthrough above.
+
 Start with `AlgoLib.Experimental.RAM.Demo`. Its programs execute without fuel:
 
 ```lean

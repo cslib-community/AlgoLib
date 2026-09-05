@@ -46,6 +46,51 @@ theorem zero_potential_rejected {Ghost : Type*} {q : Test} {body : Code}
   obtain ⟨_, k, _, _, _, hk⟩ := vc.step g s h hq
   omega
 
+/-- Renaming bound variables does not change the compiled algorithm. -/
+def renamed : Paper.Program := graph_program (vertices, neighbors, root) returns reached {
+  for x in vertices { reached[x] := false; }
+  reached[root] := true;
+  frontier := [root];
+  while frontier is not empty {
+    current := dequeue(frontier);
+    for nextVertex in neighbors[current] {
+      if not reached[nextVertex] {
+        reached[nextVertex] := true;
+        enqueue(frontier, nextVertex);
+      }
+    }
+  }
+  return reached;
+}
+
+example : renamed.compile = bfsCode := rfl
+
+/-- Removing discovery changes the code: syntax is executable, not decoration. -/
+def withoutDiscovery : Paper.Program := graph_program (V, adjacency, s) returns visited {
+  for v in V { visited[v] := false; }
+  visited[s] := true;
+  Q := [s];
+  while Q is not empty {
+    u := dequeue(Q);
+    for v in adjacency[u] { }
+  }
+  return visited;
+}
+
+example : withoutDiscovery.compile ≠ bfsCode := by decide
+
+/-- error: expected `visited`, found `other` -/
+#guard_msgs in
+example : Paper.Program := graph_program (V, adjacency, s) returns visited {
+  return other;
+}
+
+/-- error: name `V` is already bound -/
+#guard_msgs in
+example : Paper.Program := graph_program (V, V, s) returns visited {
+  return visited;
+}
+
 /- Runtime checks cover all 64 simple graphs on four vertices and all four
 sources, plus loops, parallel edges, an isolated source, and the singleton.
 The reference computes finite closure; the tested program executes RAM code. -/
@@ -59,6 +104,10 @@ set_option linter.hashCommand false in
       let result := input.run
       let reached := (List.range 4).filter (fun v => result.2.memory (5 * v + 1) == 1)
       let expected := reference graph source.val
+      let publicResult := BFS.run (graph.arguments source.val source.isLt)
+      unless publicResult.visited.toList == expected && publicResult.steps == result.1 &&
+          publicResult.visited.length == 4 do
+        throw <| IO.userError s!"public interface mismatch: mask={mask}, source={source.val}"
       unless reached == expected do
         throw <| IO.userError s!"reachability mismatch: mask={mask}, source={source.val}"
       unless result.1 ≤ 32 * (4 + graph.edges.length) do

@@ -1,24 +1,97 @@
-# BFS: graph specification, adjacency lists, and linear RAM time
+# BFS with explicit inputs, outputs, and paper syntax
 
-Start with [`Demo.lean`](Demo.lean). It executes the same fixed RAM program on
-any valid, finite undirected input, with no fuel argument:
+The declaration in [`Paper.lean`](Paper.lean) is actual Lean syntax:
+
+```lean
+def bfs : Program := graph_program (V, adjacency, s) returns visited {
+  for v in V { visited[v] := false; }
+  visited[s] := true;
+  Q := [s];
+  while Q is not empty {
+    u := dequeue(Q);
+    for v in adjacency[u] {
+      if not visited[v] {
+        visited[v] := true;
+        enqueue(Q, v);
+      }
+    }
+  }
+  return visited;
+}
+```
+
+Inputs and output are explicit:
+
+| Name | Meaning |
+| --- | --- |
+| `V` | Vertices `0, …, n-1`, obtained from the adjacency input's size |
+| `adjacency` | The adjacency lists, with a proved graph representation |
+| `s` | Source vertex, required to belong to `V` |
+| `visited` | Returned bitmap: `visited.contains v` tells whether `v` was reached |
+
+The public API in [`Interface.lean`](Interface.lean) accepts `Arguments G` and
+returns a `Result` with named `visited` and `steps` fields. No caller needs
+register names, memory addresses, fuel, or a raw RAM state:
 
 ```lean
 import AlgoLib.Experimental.RAM.BFS
 open AlgoLib.Experimental.RAM.BFS Demo
 
-#eval report path 0 (by decide)
--- ([0, 1, 2, 3], 142)
-#eval report splitGraph 0 (by decide)
--- ([0, 1, 2], 107)
-#eval report splitGraph 3 (by decide)
--- ([3], 37)
+def args : Arguments path.graph := path.arguments (source := 0) (by decide)
+def answer : Result := run args
+
+#eval answer.visited.toList
+-- [0, 1, 2, 3]
+#eval answer.steps
+-- 142
 ```
 
-`report` formats the visited bitmap. Its second component is the exact RAM
-instruction count of BFS, including initialization. The convenience encoder
-and output formatting are outside this count. The host Lean evaluator's speed
-is not the modeled RAM time.
+`Arguments` has explicit `adjacency`, `representation`, and `source` fields.
+The bounds and representation proofs are erased during execution. `G` is the
+mathematical specification, not a second runtime graph.
+
+The underlying reusable RAM abstraction is
+`Checked.Procedure InputType OutputType`, in [`../Interface.lean`](../Interface.lean).
+It declares an input encoder, a fixed code body, a restricted output descriptor,
+and a termination certificate. Output descriptors expose registers, bitmap
+views, or pairs of these. They cannot run an arbitrary Lean transformation to
+compute the answer after the measured program has finished.
+
+`return visited` exposes the final bitmap as a view without copying it.
+`visited.toList` is a host-side formatting operation, outside the reported RAM
+count, as is input encoding. BFS initialization is counted. The existing
+`report path 0 (by decide)` convenience function now uses this public interface.
+
+## Lowering and verification
+
+The frontend constructs a structured `Plan`, then lowers it compositionally to
+the existing imperative source language. Vertex and adjacency iterators insert
+their cursor instructions; FIFO operations expand into memory reads and writes.
+Adjacent instructions are grouped into blocks. The source compiler then lowers
+these blocks and loops into RAM code.
+
+`Paper.bfs_compiles` proves that the displayed program compiles **exactly** to
+the existing `bfsCode`. `Paper.Program.compile_correct` relates the lowered
+source execution to RAM execution, preserving the final state and exact cost.
+The established correctness, connectivity, termination, and linear-time proofs
+therefore carry through unchanged.
+
+The public theorems are:
+
+- `result_correct`: `visited.contains v = true ↔ Reachable G s v`.
+- `result_list_correct`: the same contract for `visited.toList`.
+- `result_connected`: visiting every vertex is equivalent to connectedness.
+- `result_linear`: `steps ≤ 32(n + m)`.
+- `result_length`: the returned bitmap has exactly `n` entries.
+
+This is a focused traversal frontend with one FIFO and one bitmap. It supports
+the constructs above, bound-variable renaming, and sequential traversal bodies.
+Seeding and mark-before-enqueue are recognized as paired operations so their
+lowering can reuse an address calculation. All names and both statements are
+checked. Unsupported bodies, incorrect references, missing returns, and
+conflicting interface names are rejected. It is not a general variable allocator
+or arbitrary-array language. Editing the algorithm changes its compiled code;
+the edited program needs its own verification certificate.
 
 ## The theorem to state
 
@@ -81,8 +154,8 @@ while Q is not empty:
             enqueue(Q, v)
 ```
 
-The executable [`bfsSource`](Program.lean) uses the existing imperative syntax,
-with short helper procedures for the memory operations:
+Below the paper frontend, [`bfsSource`](Program.lean) remains the intermediate
+imperative form, with short helper procedures for memory operations:
 
 ```lean
 def bfsSource : Stmt := imperative {
@@ -249,6 +322,8 @@ adjacency input through `Input` uses the same theorem.
 | `Scan.lean` | Row-scanning VCs and RAM contract |
 | `Algorithm.lean` | Paper-style invariant maintenance, potential, outer VCs |
 | `Program.lean` | Initialization, fixed source/code, public executable and theorems |
+| `Paper.lean` | Paper syntax, binding checks, and structured lowering |
+| `Interface.lean` | Explicit input arguments, named output, and public contracts |
 | `Demo.lean` | Client examples and theorem statements |
 | `Tests.lean` | All 256 graph/source combinations on four vertices and boundary cases |
 
@@ -258,7 +333,12 @@ lake build
 ```
 
 Tests compare the actual RAM runner against an independent finite-closure
-reference, check FIFO uniqueness and the time bound, and cover a singleton,
+reference, check both the raw runner and the public input/output interface,
+check FIFO uniqueness and the time bound, and cover a singleton,
 an isolated source, a diamond, reverse discovery order, loops, and parallel
 edges. Logical regressions reject an empty-graph source and zero credits at a
 true guard. All mathematical guarantees are kernel-checked proofs.
+
+Syntax regressions also check bound-variable renaming, reject incorrect output
+names and duplicate interface names, and confirm that removing discovery changes
+the compiled code.
