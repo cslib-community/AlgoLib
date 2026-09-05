@@ -83,3 +83,6 @@ import AlgoLib.DataStructures.UnionFind.Basic
 -- Utilities
 import AlgoLib.Util.Decidable
 import AlgoLib.Util.Finset
+
+-- Experimental models
+import AlgoLib.Experimental.RAM
