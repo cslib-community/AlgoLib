@@ -91,3 +91,5 @@ import AlgoLib.Experimental.RAM.Demo
 import AlgoLib.Experimental.RAM.Tests
 import AlgoLib.Experimental.RAM.BFS
 import AlgoLib.Experimental.RAM.BFS.Tests
+import AlgoLib.Experimental.RAM.Language
+import AlgoLib.Experimental.RAM.Language.Tests

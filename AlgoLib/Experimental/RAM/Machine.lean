@@ -15,7 +15,7 @@ and conditional transfer cost one unit. `Exec` derives the time from these
 rules. Machine state has no clock to overwrite, and the language has no way
 to insert a caller-supplied state transformer or cost annotation.
 
-This is a structured unit-cost natural-number RAM with eight named registers,
+This is a structured unit-cost natural-number RAM with named registers,
 unbounded addressed memory, saturating subtraction, and unbounded arithmetic.
 Names are conveniences; all registers have the same machine semantics. The
 choice of word arithmetic is part of the model, not a bit-complexity claim.
@@ -30,9 +30,12 @@ encoding is not an implementation of that uniform algorithm.
 
 namespace AlgoLib.Experimental.RAM.Checked
 
-/-- A fixed finite register bank; names make the sorting program readable. -/
+/-- Named registers and compiler temporaries. Each finite program uses finitely many. -/
 inductive Reg where
   | base | count | limit | cursor | key | next | temp | live
+  | user (kind : Nat) (name : String)
+  | scratch (index : Nat)
+  | saved (depth : Nat)
   deriving DecidableEq, Repr
 
 /-- There is no time field in the machine state. -/

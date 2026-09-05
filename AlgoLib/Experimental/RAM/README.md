@@ -1,5 +1,11 @@
 # Verified RAM algorithms with an imperative source language
 
+For new programs, start with the [compositional typed language](Language/README.md).
+It provides named variables, nested expressions, arrays, inlined procedures,
+independent source semantics, a generic verified RAM compiler, and reusable
+queue, stack, array, and graph contracts. The earlier sorting and BFS examples
+below remain available with their established proofs.
+
 For adjacency-list BFS, graph refinement, and linear time, see
 [`BFS/README.md`](BFS/README.md) and `AlgoLib.Experimental.RAM.BFS.Demo`.
 

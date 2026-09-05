@@ -1,5 +1,10 @@
 # BFS with explicit inputs, outputs, and paper syntax
 
+For extensible programs, use the new [typed language and verified libraries](../Language/README.md).
+Its [discovery example](../Language/Demo.lean) supports distance and parent
+updates through ordinary syntax. This page documents the original BFS proof;
+its specialized `Paper` frontend remains for compatibility.
+
 The declaration in [`Paper.lean`](Paper.lean) is actual Lean syntax:
 
 ```lean
