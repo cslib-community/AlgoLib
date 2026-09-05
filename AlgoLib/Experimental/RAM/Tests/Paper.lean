@@ -3,17 +3,26 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Paper.Examples
+import AlgoLib.Experimental.RAM.Programs.Examples
 import AlgoLib.Experimental.RAM.Tests.Algorithms
 
 /-!
+# Regression checks: Paper
+
+Checks the relevant executable, proof, or compiler guarantees against regressions. Expected-output
+assertions and theorem checks are part of the test, not extra algorithm implementations.
+
+See Tests/README.md for coverage and build commands. Canonical programs live exclusively under
+Programs.
+
+## Further details
+
 # Regression tests for paper-level RAM verification
 
 Check compositional syntax, symbolic framing, rejected budgets, and compiled
 sorting and graph traversal against independent reference implementations.
 -/
-
-namespace AlgoLib.Experimental.RAM.Paper.Tests
+namespace AlgoLib.Experimental.RAM.Authoring.Tests
 open Experimental.RAM.BFS
 
 /-- The syntax is compositional: nested control flow is not a BFS macro. -/
@@ -62,7 +71,7 @@ set_option linter.hashCommand false in
   for n in List.range 6 do
     for mask in List.range (3 ^ n) do
       let xs := (List.range n).map (fun i => mask / 3 ^ i % 3)
-      let r := Insertion.run xs
+      let r := Programs.Sorting.run xs
       unless r.value == xs.mergeSort (· ≤ ·) do
         throw <| IO.userError s!"paper sort: {xs}"
       unless r.steps ≤ 50*n*n + 100*n + 55 do
@@ -70,16 +79,16 @@ set_option linter.hashCommand false in
   for mask in List.range 64 do
     for source in List.finRange 4 do
       let graph := Experimental.RAM.Tests.smallGraph mask
-      let r := BFS.run (graph.fromSource source.val source.isLt)
+      let r := Programs.Connectivity.run (graph.fromSource source.val source.isLt)
       unless r.value.toList == Experimental.RAM.Tests.reference graph source.val do
         throw <| IO.userError s!"paper BFS: mask={mask}, source={source.val}"
       unless r.steps ≤ 370 * (4 + graph.edges.length) do
         throw <| IO.userError s!"paper BFS budget: mask={mask}, source={source.val}"
-  let singleton := Experimental.RAM.Algorithms.Examples.singleton
-  unless (BFS.run (singleton.fromSource 0 (by decide))).value.toList == [0] do
+  let singleton := Experimental.RAM.Legacy.Examples.singleton
+  unless (Programs.Connectivity.run (singleton.fromSource 0 (by decide))).value.toList == [0] do
     throw <| IO.userError "paper singleton"
-  let multi := Experimental.RAM.Algorithms.Examples.multigraph
-  unless (BFS.run (multi.fromSource 0 (by decide))).value.toList == [0, 1, 2] do
+  let multi := Experimental.RAM.Legacy.Examples.multigraph
+  unless (Programs.Connectivity.run (multi.fromSource 0 (by decide))).value.toList == [0, 1, 2] do
     throw <| IO.userError "paper loops/parallel edges"
 
-end AlgoLib.Experimental.RAM.Paper.Tests
+end AlgoLib.Experimental.RAM.Authoring.Tests

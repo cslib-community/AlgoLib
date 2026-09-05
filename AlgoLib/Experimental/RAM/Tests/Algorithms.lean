@@ -3,11 +3,23 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Algorithms.Examples
+import AlgoLib.Experimental.RAM.Legacy.Examples
 
-/-! Regression checks for complete compiled algorithms and their cost bounds. -/
+/-!
+# Regression checks: Algorithms
+
+Checks the relevant executable, proof, or compiler guarantees against regressions. Expected-output
+assertions and theorem checks are part of the test, not extra algorithm implementations.
+
+See Tests/README.md for coverage and build commands. Canonical programs live exclusively under
+Programs.
+
+## Further details
+
+Regression checks for complete compiled algorithms and their cost bounds.
+-/
 namespace AlgoLib.Experimental.RAM.Tests
-open Checked Experimental.RAM.BFS Algorithms.Examples
+open Checked Experimental.RAM.BFS Legacy.Examples
 
 /-- Six possible undirected edges on four vertices, in a fixed input order. -/
 def pairs : List EdgeData :=
@@ -51,7 +63,7 @@ def offsetInput : Language.Store where
 set_option linter.hashCommand false in
 #guard_msgs in
 #eval show IO Unit from do
-  let offset := Algorithms.InsertionSort.method.run offsetInput (by
+  let offset := Legacy.InsertionSort.method.run offsetInput (by
     change Language.Refinement.Ready offsetInput
     simp [Language.Refinement.Ready, offsetInput, Language.Refinement.memory])
   unless contents offset.2.heap 0 7 == [99, 88, 1, 2, 3, 3, 77] do
@@ -59,7 +71,7 @@ set_option linter.hashCommand false in
   for mask in List.range 64 do
     for source in List.finRange 4 do
       let graph := smallGraph mask
-      let result := Algorithms.BFS.run (graph.fromSource source.val source.isLt)
+      let result := Legacy.BFS.run (graph.fromSource source.val source.isLt)
       unless result.visited.toList == reference graph source.val && result.visited.length == 4 do
         throw <| IO.userError s!"reachability mismatch: mask={mask}, source={source.val}"
       unless result.steps ≤ 160 * (4 + graph.edges.length) do
@@ -75,10 +87,10 @@ set_option linter.hashCommand false in
   for n in List.range 6 do
     for mask in List.range (3 ^ n) do
       let xs := (List.range n).map (fun i => mask / 3 ^ i % 3)
-      let r := Algorithms.InsertionSort.run xs
+      let r := Legacy.InsertionSort.run xs
       unless r.values == xs.mergeSort (· ≤ ·) do
         throw <| IO.userError s!"sorting mismatch: {xs}"
-      unless r.steps ≤ Algorithms.InsertionSort.budget n do
+      unless r.steps ≤ Legacy.InsertionSort.budget n do
         throw <| IO.userError s!"sorting cost: {xs}"
 
 end AlgoLib.Experimental.RAM.Tests

@@ -8,6 +8,16 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
+# Graph-level algorithm specification
+
+Uses the repository Graph to define reachability, connectivity, finite adjacency representations,
+and the BFS frontier invariant.
+
+Contains the mathematical contract that Programs/Connectivity proves. Physical heap layouts are
+confined to Backend/Memory.
+
+## Further details
+
 # The graph specification of breadth-first search
 
 The specification uses AlgoLib's `Graph`, including isolated vertices, loops,

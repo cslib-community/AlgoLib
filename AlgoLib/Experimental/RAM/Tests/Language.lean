@@ -3,9 +3,21 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Algorithms.LanguageExamples
+import AlgoLib.Experimental.RAM.Legacy.LanguageExamples
 
-/-! # Compiler, executable-interface, and data-structure regressions -/
+/-!
+# Regression checks: Language
+
+Checks the relevant executable, proof, or compiler guarantees against regressions. Expected-output
+assertions and theorem checks are part of the test, not extra algorithm implementations.
+
+See Tests/README.md for coverage and build commands. Canonical programs live exclusively under
+Programs.
+
+## Further details
+
+# Compiler, executable-interface, and data-structure regressions
+-/
 namespace AlgoLib.Experimental.RAM.Checked.Language.Tests
 open Demo
 

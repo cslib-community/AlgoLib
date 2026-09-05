@@ -1,64 +1,67 @@
-# Architecture and theorem ledger
+# How the abstraction layers connect
 
-Algorithm authors start in [Paper/README.md](../Paper/README.md). This document is for maintainers auditing the automated path.
+The user starts with [Programs/Sorting.lean](../Programs/Sorting.lean) or [Programs/Connectivity.lean](../Programs/Connectivity.lean). Each file states the target claim, declares the high-level method with input/output contracts, solves its generated obligations, and exposes the complete theorem. Supporting implementations are not competing program entry points.
 
 ```mermaid
 flowchart TD
-  A[Paper Program + logical State] --> V[Paper.VC]
-  I[User invariant + potential] --> V
-  C[Action / Procedure contracts] --> V
-  V -->|VC.sound / LoopProof.correct| R[Paper.Run + correctness + budget]
-  R -->|Run.refines| E[Typed Language.Eval]
-  C -->|certified implementation| E
-  P[Interface: input preparation] --> E
-  E -->|Eval.compile| X[RAM Exec + same typed-source cost]
-  X -->|Checked.run| O[Output + steps]
-  O -->|Interface.correct| T[Functional result and RAM bound]
+  Goal["Claim: output property + RAM bound"] --> Method["ram_method: inputs, outputs, contracts, fixed body"]
+  Method --> VC["Method.VCs: logical correctness + payment"]
+  Math["Author: invariant + preservation + charging + exit"] --> VC
+  Contracts["Library: certified operation and procedure summaries"] --> VC
+  VC --> Checked["VerifiedMethod"]
+  Checked --> Run["run input: value + actual steps"]
+  Checked --> Main["main: declared property and time bound"]
+  Contracts -. implemented by .-> Adapters["Backend adapters and physical memory contracts"]
+  Checked -. automatic .-> Source["Typed source and costed evaluation"]
+  Source --> Compiler["Verified compilation"]
+  Compiler --> RAM["RAM instructions and total runner"]
+  RAM --> Run
 ```
 
-## Boundaries
+## 1. A mathematical target
 
-| Component | Responsibility | Does not ask algorithm clients for |
+`Claim` contains no heap addresses, registers, or compiler states. Sorting requires a sorted permutation and a quadratic bound. Connectivity requires the exact reachable set, `Connected G ↔ S = G.vertexSet`, and a linear bound. The graph specification uses this repository's labelled undirected `Graph` and a finite adjacency representation.
+
+## 2. One displayed method
+
+`ram_method` elaborates to `Authoring.Method`. Its body is a single `Program`, independent of the input value. Input and output binders scope over contracts and budgets. An adapter supplies input preparation and output interpretation; the method body contains the actual certified-operation program. There is no separately selected implementation when it is run.
+
+The public language is deliberately an operation/procedure language with compositional `call`, `while`, and `if`. Library subroutines can summarize common textbook blocks. BFS's neighbor loop is such a subroutine. This is distinct from pretending that an arbitrary Lean function or a display-only pseudocode block is verified executable code.
+
+## 3. Generated verification conditions
+
+`Method.VCs` asks, for every permitted input, for a logical VC of the body from the prepared state within the declared credits, plus an inequality paying the advertised RAM bound. `paper_steps` substitutes logical effects and collects local payments. `method_vc` opens the method contract. `method_time` uses registered library accounting equations and arithmetic; it does not unfold memory or compiler definitions in a program proof.
+
+A `LoopProof` supplies preservation, payment, and exit. `Correct.output_vc` reuses that proof while exposing only initial validity, the available credits, and the mathematical meaning of the output. `Run.vc` justifies this reuse against the independent logical semantics. It is a generic theorem, not an algorithm-specific escape hatch.
+
+## 4. Verified operation and procedure contracts
+
+An `Action` includes a precondition, effect, work allowance, implementation, and proof. The implementation must realize the effect for every represented input and stay within its certified cost. A `Procedure` packages a verified composition as another action; symbolic execution uses its summary, while compilation includes its body.
+
+The public `Library` files expose these logical contracts and stable adapter equations. Backend adapters prove concrete state representations and use physical array/queue/graph contracts. Read/write footprint framing preserves unrelated memory. Unchanged logical fields simplify at the public layer.
+
+## 5. Automatic translation and execution
+
+`Program.source` replaces actions with their certified implementations and preserves control flow. `Run.refines` establishes the represented result and implementation cost bound. `Backend.Language.Eval.compile` relates typed evaluation to RAM execution with the same observation and typed charged cost. The generic runner receives the resulting termination certificate.
+
+`VerifiedMethod.correct` combines these results with the adapter's output observation and the declared time payment. The same `run` therefore satisfies both the result property and the RAM-step bound. A program author never supplies normalization, instruction lifting, register correspondence, or compiler-overhead transport.
+
+## Directory boundaries and dependencies
+
+| Location | Owns | May depend on |
 |---|---|---|
-| `Paper/Syntax.lean` | Compositional calls, branches, loops; symbolic effects and credit arithmetic | Normalization proofs |
-| `Paper/Basic.lean` | Independent mathematical semantics, VC soundness, procedure contracts, implementation refinement | Compiler transport |
-| `Paper/Interface.lean` | Paid initialization, compilation, termination, execution, output interpretation | Fuel or store encoding proofs |
-| `Paper/Search.lean`, `Paper/Array.lean` | Stable mathematical APIs | Physical representation unfolding |
-| `Internal/Search*.lean`, `Internal/Insertion*.lean` | Representations, implementations, local certificates, input/output bindings | Repeated proofs from each client |
-| `Library/Framing.lean` | Generic footprint frame rules | Re-proving every unrelated cell is unchanged |
-| `Language/` | Typed variables/expressions/arrays/procedures, semantics, verified compiler | Knowledge of the user invariant |
-| `Core/` | RAM instruction semantics and fuel-free execution | Host computation or fabricated cost annotations |
+| `Programs` | Complete public algorithms | Public `Library`, `Authoring`, mathematical specifications |
+| `Authoring` | Generic contract/VC/runner API | Generic typed backend and machine types |
+| `Library` | Public logical operation and adapter equations | Authoring interfaces and concrete backend adapters |
+| `Backend/Adapters` | Implementations of authoring interfaces | Authoring primitives, memory, typed language, certificates |
+| `Backend/Memory` | Concrete representation and data-structure contracts | Typed contracts, machine types, graph specifications |
+| `Backend/Language` | Typed semantics and compiler | Machine semantics; implementation libraries where needed |
+| `Backend/Certificates` | Instruction-level evidence | Machine, memory, and mathematical facts |
+| `Machine`, `Specification` | Execution foundation and mathematical graph meaning | Repository mathematics, without public algorithms |
+| `Legacy` | Earlier optional demos | Backend interfaces; never imported by the public entry point |
 
-## Key theorems
+The dependency graph is acyclic, but adapters implementing authoring interfaces mean the directory order is not a simple one-way numbered stack. The enforced architectural boundary is that reusable layers do not import `Programs` or `Legacy`, and public program files do not import `Backend`, `Machine`, or `Legacy` directly.
 
-| Theorem | Meaning |
-|---|---|
-| `Paper.VC.sound` | Generated VCs establish a terminating mathematical run and remaining credits |
-| `Paper.LoopProof.correct` | Named loop obligations establish total correctness using a potential |
-| `Paper.Run.refines` | Every mathematical run has a represented typed execution within library overhead |
-| `Paper.Procedure.call` | A verified body becomes a reusable action without exposing its proof to callers |
-| `Paper.Correct.method` | A paper proof automatically supplies a typed method contract |
-| `Paper.Interface.correct` | Paid preparation and compiled execution satisfy the observed postcondition and RAM bound |
-| `Language.Framing.frame` | Disjoint read/write footprints preserve an arbitrary registered representation |
-| `Language.Eval.compile` | Typed execution compiles with its exact source cost and observable state |
-| `Paper.BFS.run_correct`, `.connected_iff`, `.linear` | End-to-end reachability, connectivity, and linear RAM work |
-| `Paper.Insertion.run_correct`, `.quadratic` | End-to-end sorted permutation and quadratic RAM work |
+## Cost model and scope
 
-## Why this is not just a wrapper around a whole-algorithm theorem
-
-BFS's new outer proof uses mathematical frontier maintenance and a potential. Its adjacency loop is a separately verified `Procedure`; its primitive `visit` and `dequeue` contracts reuse local implementation lemmas. The new proof never invokes `bfs_correct` or `bfs_loop_correct` to prove the new algorithm.
-
-Insertion sort's new outer proof uses sortedness and permutation of lists. Its library insertion operation is certified using `insertCode_exec`, not the old whole-sort theorem. Thus a different outer invariant, client, or composition can reuse the local operation without redoing its memory proof.
-
-Inside the library, the existing instruction adapter remains a way to reuse local proofs. Its normalization/register/cost details are implementation responsibilities. They are not VCs exposed to paper authors. The same typed compiler and RAM runner are used throughout; there is no host evaluator substituted for the charged executable.
-
-## Review checks
-
-1. Check the `Action.correct` implementation theorem and the guard correspondence, not just its advertised cost.
-2. Check input preparation is included, and distinguish host encoding/formatting costs.
-3. Check logical invariants and charging lemmas in the two paper proofs.
-4. Check footprint disjointness before accepting a library frame.
-5. Run `lake build` and `lake build AlgoLib.Experimental.RAM.Tests.Paper`.
-6. Inspect kernel axioms of the generic soundness and final algorithm theorems.
-
-The existing presentation deck describes the pre-Paper typed stack. Its compiler and RAM layers remain relevant; use this diagram and the new tutorial for the current authoring path.
+The RAM uses unit-cost natural-number operations. The counted computation includes compiled preparation and the body. Host input encoding, list/bitmap display, proof checking, and wall-clock time are outside the count. Constants are upper bounds, not exact runtimes. An arbitrary new encoder/decoder or operation implementation is a library-design responsibility and must be reviewed together with its cost boundary. Time receipts remain deferred.

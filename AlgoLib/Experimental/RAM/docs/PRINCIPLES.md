@@ -2,11 +2,13 @@
 
 ## Algorithm authors prove mathematics
 
-The primary interface is now `Paper`. Users supply an algorithm invariant, its initialization, a charging scheme, and mathematical preservation/exit arguments. They do not prove normalization equalities, register correspondence, address disjointness inside queue operations, instruction-certificate lifting, or compiler-overhead transport.
+The primary interface is `Programs` for complete algorithms and `Authoring` for reusable proof rules. Users supply an algorithm invariant, its initialization, a charging scheme, and mathematical preservation/exit arguments. They do not prove normalization equalities, register correspondence, address disjointness inside queue operations, instruction-certificate lifting, or compiler-overhead transport.
 
-`Paper/BFS.lean` and `Paper/InsertionSort.lean` are the acceptance examples: neither mentions `Store`, `Exec`, heap addresses, normalization, or the compiler. Their executable bindings use the generic input/output interface. Existing low-level proofs remain reusable implementation evidence inside the library.
+`Programs/Connectivity.lean` and `Programs/Sorting.lean` are the acceptance examples: neither mentions `Store`, `Exec`, heap addresses, normalization, or the compiler. Each file contains its input/output method declaration, generated VCs, proof, and executable. Existing low-level proofs remain reusable implementation evidence inside the library.
 
 ## Automation must produce checked proofs
+
+`ram_method` binds a displayed, input-independent body to input/output contracts and declared budgets. `method_vc` opens its generated obligations; `method_time` pays routine adapter overhead using public library equations. `VerifiedMethod.correct` provides the output and time theorem for its actual run.
 
 `paper_steps` substitutes logical operation contracts and composes verification conditions. It uses a curated `paper_simps` theorem set; it does not unfold physical implementations. `paper_credits` handles routine natural-number polynomial arithmetic and subtraction. `LoopProof` leaves named preservation, payment, and exit obligations for the author.
 
@@ -32,7 +34,7 @@ Ghost state never executes. In particular BFS's processed-set update emits no in
 
 Every RAM instruction and guard costs one. A library work unit has a proved upper bound on actual compiled cost, including expression evaluation, loads/stores, and control flow. Framework theorems multiply and compose these bounds automatically. A true paper loop spends a positive guard credit, making its verified potential argument establish termination. No fuel is supplied to the runner.
 
-The new conservative bounds are `50n² + 100n + 55` for insertion sort and `370(n+m)` for BFS with a valid source. The executable theorem counts input preparation, including clearing arbitrary visited flags. Existing compatibility APIs retain their earlier tighter constants; these are different contracts for related compiled programs, not contradictory measurements.
+The new conservative bounds are `50n² + 100n + 55` for insertion sort and `370(n+m)` for BFS with a valid source. The executable theorem counts input preparation, including clearing arbitrary visited flags. Explicitly imported legacy APIs retain their earlier tighter constants; these are different contracts for related compiled programs, not contradictory measurements.
 
 These are upper bounds, not exact runtimes or lower bounds. Time receipts are deferred.
 

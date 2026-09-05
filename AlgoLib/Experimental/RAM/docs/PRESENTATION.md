@@ -1,10 +1,12 @@
-> This deck documents the earlier typed stack. For the new automated paper-proof authoring layer, see [Architecture](ARCHITECTURE.md) and the [authoring tutorial](../Paper/README.md). The existing compiler and RAM layers remain in use.
+> Historical presentation: this file and the accompanying slide deck describe the pre-layer layout. For current code locations and method declarations, use [ARCHITECTURE.md](ARCHITECTURE.md) and [MIGRATION.md](MIGRATION.md).
+
+> This deck documents the earlier typed stack. For the new automated paper-proof authoring layer, see [Architecture](ARCHITECTURE.md) and the [authoring tutorial](../Authoring/README.md). The existing compiler and RAM layers remain in use.
 
 # Verified RAM in Lean: presentation
 
 [Download the editable slides](verified-ram-stack.pptx). The slides cover the executable stack, proof dependencies, algorithm guarantees, and repository reading routes.
 
-See [Architecture](ARCHITECTURE.md) for clickable theorem paths and [Examples](../Algorithms/Examples.lean) to run the demos.
+See [Architecture](ARCHITECTURE.md) for clickable theorem paths and [Examples](../Programs/Examples.lean) to run the demos.
 
 ## 1. Verified RAM in Lean
 

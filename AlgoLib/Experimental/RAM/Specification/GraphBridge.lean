@@ -7,6 +7,15 @@ import AlgoLib.Experimental.RAM.Specification.Graph
 import AlgoLib.Theory.Graph.Connectivity.Basic
 
 /-!
+# Connect graph specification APIs
+
+Relates this experiment's reachability and connectedness statements to existing graph-theory
+interfaces.
+
+This is a specification bridge, not an implementation refinement or another graph algorithm.
+
+## Further details
+
 # Agreement with the repository's walk-based connectivity definitions
 
 The general-graph specification specializes exactly to the existing

@@ -1,6 +1,16 @@
-import AlgoLib.Experimental.RAM.Paper.Examples
+import AlgoLib.Experimental.RAM.Programs.Examples
 
 /-!
+# Tutorial companion for the current layer layout
+
+Runnable local examples for the illustrated tutorial, updated to the current module paths and
+program namespaces.
+
+The PDF illustrates the older layout at its pinned commit. See docs/MIGRATION.md and Programs for
+the current method declarations.
+
+## Further details
+
 # Student tutorial companion
 
 Run from the repository root with `lake env lean StudentDemo.lean` after copying
@@ -8,7 +18,7 @@ this file there. Read the matching PDF for the trace, invariant, and cost proof.
 The component walkthrough constructs `twoInsertions`, calls it through `client`,
 and binds that client to `sortTwo` with functional and compiled-cost theorems.
 -/
-namespace AlgoLib.Experimental.RAM.Paper.StudentDemo
+namespace AlgoLib.Experimental.RAM.Authoring.StudentDemo
 open Experimental.RAM.BFS
 
 /-- A diamond on vertices 0..3 and one isolated vertex, 4.
@@ -22,25 +32,25 @@ def graph : EdgeInput where
 set_option linter.hashCommand false in
 /-- info: [0, 1, 2, 3] -/
 #guard_msgs in
-#eval (BFS.run (graph.fromSource 0 (by decide))).value.toList
+#eval (Programs.Connectivity.run (graph.fromSource 0 (by decide))).value.toList
 
 set_option linter.hashCommand false in
 /-- info: [4] -/
 #guard_msgs in
-#eval (BFS.run (graph.fromSource 4 (by decide))).value.toList
+#eval (Programs.Connectivity.run (graph.fromSource 4 (by decide))).value.toList
 
 set_option linter.hashCommand false in
 /-- info: [1, 2, 3] -/
 #guard_msgs in
-#eval (Insertion.run [3, 1, 2]).value
+#eval (Programs.Sorting.run [3, 1, 2]).value
 
 /-- A use of the generic correctness theorem; no compiler proof is needed. -/
-example (xs : List Nat) : (Insertion.run xs).value.Perm xs :=
-  (Insertion.run_correct xs).2
+example (xs : List Nat) : (Programs.Sorting.run xs).value.Perm xs :=
+  (Programs.Sorting.run_correct xs).2
 
 /-- The bound concerns actual compiled RAM steps. -/
-example : (BFS.run (graph.fromSource 0 (by decide))).steps <= 370 * (5 + 4) := by
-  have h := BFS.linear (graph.fromSource 0 (by decide))
+example : (Programs.Connectivity.run (graph.fromSource 0 (by decide))).steps <= 370 * (5 + 4) := by
+  have h := Programs.Connectivity.linear (graph.fromSource 0 (by decide))
   exact h
 
 /-- Prove a local specification using symbolic execution and a supplied budget. -/
@@ -52,15 +62,15 @@ example (s : Insertion.State) (safe : s.todo ≠ []) :
 
 /-- An algorithmic exit argument: no remaining values means the suffix is the result. -/
 example (xs : List Nat) (s : Insertion.State)
-    (h : Insertion.invariant xs s) (empty : s.todo = []) :
+    (h : Programs.Sorting.invariant xs s) (empty : s.todo = []) :
     s.sorted.Pairwise (· ≤ ·) ∧ s.sorted.Perm xs := by
-  simpa [Insertion.invariant, empty] using h
+  simpa [Programs.Sorting.invariant, empty] using h
 
 /-- Both reachability directions hold, even when the graph is disconnected. -/
 example {β : Type} {a : Adjacency} {G : Graph Nat β}
     (input : Input a G) (v : Nat) :
-    (BFS.run input).value.contains v = true ↔ Reachable G input.source v :=
-  BFS.run_correct input v
+    (Programs.Connectivity.run input).value.contains v = true ↔ Reachable G input.source v :=
+  Programs.Connectivity.run_correct input v
 
 /-- Compose two existing certified array operations. -/
 def twoBody : Program Insertion.model := paper {
@@ -167,4 +177,4 @@ example (a : Adjacency) (s : Search.State) (safe : (Search.visit a).requires s) 
   paper_steps [Search.visitEffect]
   exact ⟨safe, by omega, by trivial⟩
 
-end AlgoLib.Experimental.RAM.Paper.StudentDemo
+end AlgoLib.Experimental.RAM.Authoring.StudentDemo
