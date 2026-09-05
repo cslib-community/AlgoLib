@@ -9,6 +9,11 @@ import Mathlib.Tactic.Linarith
 /-!
 # Experimental RAM: ordinary programs, memory, and a cost
 
+This is the original shallow reference model. For enforced operation counts
+and a uniform sorting-existence theorem, use `RAM.Machine` and
+`RAM.InsertionSort` in the `AlgoLib.Experimental.RAM.Checked` namespace.
+The checked sorting proof reuses this file's *memory* specification only.
+
 This is a small, shallow, unit-cost RAM model intended for algorithm proofs.
 A program returns a value, a memory, and a natural-number operation count.
 Use ordinary `do` notation and structural recursion; use `simp` to expose the
@@ -27,7 +32,8 @@ This is a shallow interface, not a cost-safety type system: `pure`, bind, and
 Lean expressions themselves cost zero. Algorithm authors must express machine
 work using the charged primitives. In particular, `tick` records loop control
 that structural recursion hides. Proof-only list views are never RAM operations.
-A future deep instruction language could certify this accounting discipline.
+`RAM.Machine` supplies a restricted instruction language; `RAM.InsertionSort`
+proves correctness and time directly for a fixed program in that language.
 
 The example is in-place insertion sort on `[base, base + n)`, traversed from
 right to left. First sort the suffix, then insert its saved predecessor by
