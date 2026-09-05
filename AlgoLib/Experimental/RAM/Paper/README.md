@@ -1,5 +1,7 @@
 # Writing a paper proof
 
+New to the framework? Start with the [illustrated student tutorial (PDF)](../docs/verified-ram-student-tutorial.pdf) and its [checked Lean companion](../docs/StudentDemo.lean).
+
 You need mathematical invariants, sets/lists, and basic Lean proof syntax. You do not need to know the compiler, register allocation, queue addresses, or memory encoding.
 
 Read [Examples.lean](Examples.lean) first. It runs both compiled algorithms and applies their correctness and time theorems to ordinary inputs. Execution takes no fuel: proving the credit obligations already establishes termination.

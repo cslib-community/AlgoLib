@@ -1,5 +1,7 @@
 # Verified RAM programs from paper proofs
 
+New to the framework? Start with the [illustrated student tutorial (PDF)](docs/verified-ram-student-tutorial.pdf) and its [checked Lean companion](docs/StudentDemo.lean).
+
 Write an algorithm using certified operations, supply its mathematical invariant and a charging argument, and obtain correctness, termination, and a time bound for the compiled RAM program. Algorithm proofs do not mention registers, heap addresses, normalization, or compiler correspondence.
 
 Start with [runnable examples](Paper/Examples.lean), then the [authoring tutorial](Paper/README.md).
