@@ -1,5 +1,8 @@
 # Verified RAM algorithms with an imperative source language
 
+For adjacency-list BFS, graph refinement, and linear time, see
+[`BFS/README.md`](BFS/README.md) and `AlgoLib.Experimental.RAM.BFS.Demo`.
+
 Start with `AlgoLib.Experimental.RAM.Demo`. Its programs execute without fuel:
 
 ```lean
@@ -144,7 +147,9 @@ pretend that a sorted-suffix invariant was inferred automatically.
 | `Machine.lean` | Restricted instructions, deterministic execution costs, no zero-step state changes |
 | `Runner.lean` | Fuel-free evaluator agrees with `Exec`; termination certificates are erased |
 | `Source.lean`: `VC.sound` | Generated conditions imply terminating source execution and the postcondition |
-| `Source.lean`: `Eval.compile` | Compilation preserves final state and exact RAM operation count |
+| `Source.lean`: `Eval.compile`, `Eval.of_compile` | Compilation preserves state and exact cost in both directions |
+| `LoopVC.lean` | Modular ghost invariants and time-credit VCs imply total correctness |
+| `BFS/` | FIFO BFS, graph/adjacency refinement, connectivity, and linear RAM time |
 | `Syntax.lean` | Macros build source syntax; resulting terms and proofs are kernel-checked |
 | `Demo.lean` | Executable insertion sort, its paper-style proof outline, and a complete summation method |
 | `Tests.lean` | Runtime boundary/cost checks and rejection of a nondecreasing loop |

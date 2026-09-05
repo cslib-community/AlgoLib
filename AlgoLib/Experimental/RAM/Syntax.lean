@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Source
+import AlgoLib.Experimental.RAM.LoopVC
 import Lean
 
 /-!
@@ -16,7 +16,10 @@ a variable, a memory read, or one arithmetic operation on atomic operands.
 Use another assignment for a compound expression. `call helper;` inlines a
 source statement whose compilation is subject to the same verified compiler.
 
-Loop annotations are ordinary Lean terms, checked by `Source.VC`. The macros
+Loop annotations are ordinary Lean terms, checked by `Source.VC`.
+Loops without inline annotations are intended for external, modular `LoopVC`
+proofs with ghost views and time potentials. Their placeholder annotations do
+not certify termination: a true iteration cannot pass `Source.VC` with rank zero. The macros
 are untrusted conveniences: the generated `Stmt` and all subsequent proofs
 are checked by Lean's kernel.
 -/
@@ -46,6 +49,7 @@ declare_syntax_cat ramStmt
 syntax ident " := " ramExpr ";" : ramStmt
 syntax "A[" ramAtom "]" " := " ramAtom ";" : ramStmt
 syntax "if " ramTest " {" ramStmt* "}" " else " "{" ramStmt* "}" : ramStmt
+syntax "while " ramTest " {" ramStmt* "}" : ramStmt
 syntax "while " ramTest " invariant " term:max " decreases " term:max " {" ramStmt* "}" : ramStmt
 syntax "call " ident ";" : ramStmt
 
@@ -88,6 +92,8 @@ private partial def expandBlock (ss : Array (TSyntax `ramStmt)) : MacroM (TSynta
       `(Stmt.ite (ram_test% $q) $(← expandBlock yes) $(← expandBlock no))
     | `(ramStmt| while $q:ramTest invariant $inv:term decreases $rank:term { $body:ramStmt* }) =>
       `(Stmt.loop (ram_test% $q) $inv $rank $(← expandBlock body))
+    | `(ramStmt| while $q:ramTest { $body:ramStmt* }) =>
+      `(Stmt.loop (ram_test% $q) (fun _ _ => True) (fun _ => 0) $(← expandBlock body))
     | `(ramStmt| call $name:ident;) => pure (⟨name.raw⟩ : TSyntax `term)
     | other => Macro.throwErrorAt other "expected an assignment, conditional, loop, or call"
   let result ← if i + 1 = ss.size then pure main
@@ -97,11 +103,14 @@ private partial def expandBlock (ss : Array (TSyntax `ramStmt)) : MacroM (TSynta
 
 macro "imperative" " {" ss:ramStmt* "}" : term => expandBlock ss
 
-/-- Expand generated obligations and fixed assignments; users finish arithmetic
-with ordinary tactics such as `omega` or supply their mathematical lemmas. -/
+/-- Generate exit and maintenance/time goals for a modular `LoopVC`, or expand
+inline source obligations and fixed assignments. Users supply mathematical
+invariants and finish the resulting goals with ordinary Lean proofs. -/
 macro "vcgen" : tactic =>
-  `(tactic| simp [VC, block, Simple.eval, Expr.eval, State.set,
-    Operand.eval, BinOp.eval, Test.eval])
+  `(tactic| first
+    | apply LoopVC.mk
+    | simp [VC, block, Simple.eval, Expr.eval, State.set,
+        Operand.eval, BinOp.eval, Test.eval])
 
 
 macro "method" " requires " P:term:max " ensures " Q:term:max

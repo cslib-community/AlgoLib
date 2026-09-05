@@ -101,6 +101,29 @@ theorem Eval.compile {p : Stmt} {s t : State} {k : Nat} (h : Eval p s k t) :
   | whileFalse hq => exact .whileFalse hq
   | whileTrue hq ha hb iha ihb => exact .whileTrue hq iha ihb
 
+/-- Every execution of compiled code has the same source execution. Together
+with `Eval.compile`, this gives refinement in both directions, including cost. -/
+theorem Eval.of_compile {p : Stmt} {s t : State} {k : Nat}
+    (h : Exec p.compile s k t) : Eval p s k t := by
+  induction p generalizing s t k with
+  | block is =>
+    cases h
+    simpa [block_compile] using Eval.block is s
+  | seq a b iha ihb =>
+    cases h with
+    | seq ha hb => exact .seq (iha ha) (ihb hb)
+  | ite q a b iha ihb =>
+    cases h with
+    | ifTrue hq ha => exact .ifTrue hq (iha ha)
+    | ifFalse hq hb => exact .ifFalse hq (ihb hb)
+  | loop q I V b ihb =>
+    induction k using Nat.strongRecOn generalizing s t with
+    | ind k ih =>
+      cases h with
+      | whileFalse hq => exact .whileFalse hq
+      | @whileTrue _ _ _ u _ i j hq hb hl =>
+        exact .whileTrue hq (ihb hb) (ih j (by omega) hl)
+
 /-- Generated verification conditions for a postcondition. The three loop
 obligations are initialization, preservation with strict decrease, and exit.
 The loop-entry snapshot permits frame invariants without runtime ghost code. -/
