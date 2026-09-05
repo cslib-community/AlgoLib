@@ -87,3 +87,5 @@ import AlgoLib.Util.Finset
 -- Experimental models
 import AlgoLib.Experimental.RAM
 import AlgoLib.Experimental.RAM.InsertionSort
+import AlgoLib.Experimental.RAM.Demo
+import AlgoLib.Experimental.RAM.Tests

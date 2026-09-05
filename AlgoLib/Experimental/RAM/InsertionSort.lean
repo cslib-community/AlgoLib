@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Machine
+import AlgoLib.Experimental.RAM.Runner
 import AlgoLib.Experimental.RAM
 
 /-!
@@ -277,30 +277,11 @@ theorem no_zero_time_sort : ¬ ∃ c : Code, SortsWithin c (fun _ => 0) := by
   subst t
   norm_num [s, initial, contents, ofList] at hs
 
--- These evaluate the fixed syntax, not the shallow sorting function.
-example :
-    (run 100 sortCode (initial (ofList [3, 1, 4, 2]) 0 4)).map
-      (fun (k, t) => (contents t.memory 0 4, k)) = some ([1, 2, 3, 4], 71) := by
-  decide +kernel
-
-example :
-    (run 100 sortCode (initial (ofList [99, 88, 3, 1, 3, 2, 77]) 2 4)).map
-      (fun (_, t) => contents t.memory 0 7) = some [99, 88, 1, 2, 3, 3, 77] := by
-  decide +kernel
-
-example :
-    (run 10 sortCode (initial (ofList []) 0 0)).map Prod.fst = some 2 := by decide +kernel
-
-example :
-    (run 20 sortCode (initial (ofList [7]) 0 1)).map
-      (fun (k, t) => (contents t.memory 0 1, k)) = some ([7], 13) := by decide +kernel
-
-example :
-    (run 100 sortCode (initial (ofList [1, 2, 3, 4]) 0 4)).map Prod.fst = some 52 := by
-  decide +kernel
-
-example :
-    (run 100 sortCode (initial (ofList [4, 3, 2, 1]) 0 4)).map Prod.fst = some 88 := by
-  decide +kernel
+/-- Package the RAM program once; callers only supply the input state. -/
+def sortProgram : TotalProgram where
+  code := sortCode
+  terminates s := by
+    obtain ⟨k, t, hx, _, _⟩ := sortCode_exec s
+    exact ⟨k, t, hx⟩
 
 end AlgoLib.Experimental.RAM.Checked
