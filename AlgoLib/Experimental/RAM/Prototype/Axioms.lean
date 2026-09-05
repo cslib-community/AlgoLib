@@ -1,0 +1,81 @@
+/-
+Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Sorrachai Yingchareonthawornchai
+-/
+import AlgoLib.Experimental.RAM.Prototype.InsertionSort
+
+/-!
+# Axiom regression checks for the Loom-style integration
+
+Each guard pins the actual kernel dependencies. Existing production checks remain
+unchanged; these extend the same trust policy to the new observation, VCG, bridge,
+reconstructed certificate, and executable theorem. No external solver is trusted.
+-/
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Computation.pure_bind' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Computation.pure_bind
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Computation.bind_pure' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Computation.bind_pure
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Computation.bind_assoc' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Computation.bind_assoc
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Computation.wp_bind' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Computation.wp_bind
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Computation.wp_loop' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Computation.wp_loop
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.denote_iff_run' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.denote_iff_run
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.denote_deterministic' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.denote_deterministic
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.compilation_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.compilation_sound
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Plan.sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Plan.sound
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.reconstruct' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.reconstruct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.InsertionSort.main' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.InsertionSort.main
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.InsertionSort.quadratic' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.InsertionSort.quadratic
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.InsertionSort.exists_sort' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.InsertionSort.exists_sort

@@ -20,6 +20,19 @@ for module, path in modules.items():
     for dependency in local:
         assert dependency in modules, (path, "missing module", dependency)
     layer = path.relative_to(root).parts[0]
+    if layer in ("Programs", "Authoring", "Library", "Backend", "Machine", "Specification"):
+        assert not any(i.startswith(prefix + "Prototype.") for i in local), (
+            path, "production layer depends on the isolated prototype"
+        )
+    if layer == "Prototype" and path.stem in ("Observation", "Interpretation", "Verification"):
+        assert not any(
+            i.startswith(prefix + blocked + ".")
+            for i in local for blocked in ("Programs", "Legacy", "Library")
+        ), (path, "generic prototype infrastructure depends on an algorithm library/demo")
+        assert not any(
+            i == prefix + "Prototype." + blocked
+            for i in local for blocked in ("InsertionSort", "Tests", "Axioms")
+        ), (path, "generic prototype infrastructure depends on its sorting demo/tests")
     if layer == "Programs":
         assert not any(
             i.startswith(prefix + blocked + ".")

@@ -13,4 +13,9 @@ lake build AlgoLib.Experimental.RAM.Tests.Paper \
 
 The CI style job runs `python3 AlgoLib/Experimental/RAM/Tests/check_layers.py`. It checks local import cycles, missing modules, module documentation, and the public/backend dependency boundary.
 
+The isolated [Loom-style prototype](../Prototype/README.md) adds `Prototype.Tests` and
+`Prototype.Axioms`, both included in the repository build. They check compiled insertion-sort
+execution, rejected contracts/annotations, and exact axiom lists for the observation, compiler
+connection, VCG, reconstruction, and sorting theorems. Existing axiom expectations are unchanged.
+
 Executable checks cover short lists with duplicates, all simple four-vertex graphs and sources, singleton and disconnected graphs, loops, and parallel edges. They compare against independent host reference implementations. Kernel-checked theorem statements, rather than these finite tests, establish the general correctness and cost claims.

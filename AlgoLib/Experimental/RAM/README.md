@@ -2,6 +2,11 @@
 
 Start with **[sorting](Programs/Sorting.lean)** or **[connectivity via BFS](Programs/Connectivity.lean)**. Each file contains one complete story: the target statement, an input/output method, the generated verification conditions, the invariant proof, the executable, and the main theorem. There is no separate algorithm to find in an executable or proof directory.
 
+For the isolated Loom-style integration experiment, see **[Prototype](Prototype/README.md)**.
+It verifies insertion sort using a local monadic observation and program-indexed annotations,
+then reconstructs the existing RAM certificate for the same executable program. Its guide
+explains the connection, explicit Loom/Velvet attribution, and the limits of this specialization.
+
 ```lean
 import AlgoLib.Experimental.RAM
 open AlgoLib.Experimental.RAM
