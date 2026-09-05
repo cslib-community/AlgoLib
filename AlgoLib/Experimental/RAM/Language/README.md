@@ -1,3 +1,5 @@
+> Algorithm authors: start with the [paper-proof interface](../Paper/README.md). This page documents the typed implementation language used by library developers.
+
 # The typed language
 
 This is the only public source language. See the [stack guide](../README.md) for

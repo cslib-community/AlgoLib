@@ -346,7 +346,7 @@ def LoopRep {β : Type*} (a : Adjacency) (G : Graph Nat β) (source : Nat)
   View a.n s.memory (discovered g.1 g.2) g.2 (s.regs head) ∧
   s.regs tail = s.regs head + g.2.length
 
-private def popped (s : State) : State :=
+def popped (s : State) : State :=
   blockEval [
     .bin .mul addr (.lit 5) (.reg head),
     .bin .add addr (.reg addr) (.lit 2),
@@ -355,7 +355,7 @@ private def popped (s : State) : State :=
     .bin .mul addr (.lit 5) (.reg vertex),
     .load ptr (.reg addr)] s
 
-private theorem pop_correct (s : State) :
+theorem pop_correct (s : State) :
     Exec popBody s 6 (popped s) ∧
     (popped s).memory = s.memory ∧
     (popped s).regs head = s.regs head + 1 ∧
@@ -493,7 +493,7 @@ def seed : Code := .block [
   .mov head (.lit 0),
   .mov tail (.lit 1)]
 
-private def seeded (s : State) : State := blockEval [
+def seeded (s : State) : State := blockEval [
   .bin .mul addr (.lit 5) (.reg vertex),
   .bin .add addr (.reg addr) (.lit 1),
   .store (.reg addr) (.lit 1),
@@ -501,7 +501,7 @@ private def seeded (s : State) : State := blockEval [
   .mov head (.lit 0),
   .mov tail (.lit 1)] s
 
-private theorem seed_correct (s : State) : Exec seed s 6 (seeded s) ∧
+theorem seed_correct (s : State) : Exec seed s 6 (seeded s) ∧
     (seeded s).regs head = 0 ∧ (seeded s).regs tail = 1 ∧
     (seeded s).memory = enqueueMemory s.memory (s.regs vertex) 0 := by
   refine ⟨Exec.block _ s, ?_, ?_, ?_⟩ <;>

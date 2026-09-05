@@ -1,82 +1,76 @@
-# One verified RAM stack
+# Verified RAM programs from paper proofs
 
-Write a typed source program, establish its correctness and time contract, compile it to RAM, and run it without fuel. Both complete demos use this pipeline. Their correctness statements and time bounds describe the **same compiled execution**.
+Write an algorithm using certified operations, supply its mathematical invariant and a charging argument, and obtain correctness, termination, and a time bound for the compiled RAM program. Algorithm proofs do not mention registers, heap addresses, normalization, or compiler correspondence.
+
+Start with [runnable examples](Paper/Examples.lean), then the [authoring tutorial](Paper/README.md).
 
 ```lean
 import AlgoLib.Experimental.RAM
-open AlgoLib.Experimental.RAM.Algorithms
+open AlgoLib.Experimental.RAM.Paper
 
-#eval (InsertionSort.run [3, 1, 4, 2, 1]).values
+#eval (Insertion.run [3, 1, 4, 2, 1]).value
 -- [1, 1, 2, 3, 4]
 
-example (xs : List Nat) : (InsertionSort.run xs).values.Perm xs :=
-  (InsertionSort.run_correct xs).2.1
+example (xs : List Nat) : (Insertion.run xs).value.Perm xs :=
+  (Insertion.run_correct xs).2
 ```
 
-Start with [executable examples](Algorithms/Examples.lean), then read the matching [insertion-sort program](Algorithms/InsertionSort.lean) or [BFS program](Algorithms/BFS.lean). These files put source, specification, verification conditions, public input/output, and end-to-end theorems together.
-
-## BFS: explicit input and output
+The user-facing proofs are [BFS](Paper/BFS.lean) and [insertion sort](Paper/InsertionSort.lean). The BFS program is:
 
 ```lean
-import AlgoLib.Experimental.RAM.Algorithms.Examples
-open AlgoLib.Experimental.RAM.Algorithms
-open Examples
-
-#eval report path 0 (by decide)
--- ([0, 1, 2, 3], 574)
-#eval report splitGraph 3 (by decide)
--- ([3], 142)
-
--- Arguments: certified adjacency input and source. No fuel.
-#eval (BFS.run (path.fromSource 0 (by decide))).visited.toList
+def program (a : Adjacency) : Program (model a) := paper {
+  while (queueNonempty a) {
+    call dequeue a;
+    call (scanNeighbors a).call;
+    call finish a;
+  }
+}
 ```
 
-`EdgeInput` supplies labelled undirected edges and their validity proofs. `fromSource` constructs the adjacency representation and certifies its relation to the repository's `Graph`. `BFS.run` returns named `visited` and `steps` fields. `.contains v` queries the bitmap; `.toList` formats it for display.
+`dequeue` removes the queue front and opens its adjacency iterator. `scanNeighbors` is a separately verified loop that marks and enqueues unseen neighbors. `finish` records a processed vertex in ghost state and emits no instructions. Input preparation clears visited flags and seeds the source; its work is included in the executable's bound.
 
-`BFS.run_correct` proves that a vertex is marked **iff it is reachable from the source**, even for disconnected graphs. `BFS.connected_iff` proves that every graph vertex is marked **iff the graph is connected**, assuming a valid source. These are different claims: a correct BFS also solves reachability on a disconnected graph.
+The proof supplies three named obligations: `preservation`, `payment`, and `exit`. `paper_steps` substitutes functional contracts, frames untouched data, and collects payments. `paper_credits` solves routine natural-number budget arithmetic. Loop invariants and the mathematical charging argument are supplied by the author.
 
-| Algorithm | Functional guarantee | Bound on compiled RAM steps |
+## What is proved
+
+| Executable | Correctness | Bound on actual RAM steps |
 |---|---|---|
-| Insertion sort | Sorted permutation; raw contract also preserves outside memory | `20n² + 40n + 10`, hence `70n²` for `n ≥ 1` |
-| BFS | Exactly the reachable vertices; all vertices iff connected | `65n + 160m + 45`, hence `160(n+m)` for a valid source |
+| `Paper.Insertion.run xs` | Sorted permutation | `50n² + 100n + 55`; at most `205n²` for nonempty input |
+| `Paper.BFS.run input` | Marks exactly the reachable vertices | At most `370(n+m)` for a valid source |
 
-Here `m` counts labelled edges, including parallel edges; loops contribute two incidences. The programs are fixed syntax trees independent of the input size and values. These bounds establish uniform upper bounds, not exact `n²` running time or lower bounds.
+For BFS, [the executable theorems](Paper/BFSExecutable.lean) also prove that all graph vertices are marked iff the graph is connected. This uses the repository's `Graph` specification, with an adjacency-list representation supporting self-loops and parallel labelled edges. A disconnected graph still receives a correct reachable-set result.
 
-## Component map
+The constants are conservative library-contract bounds. They are not exact runtimes. Source programs are fixed independently of input size; all instructions, guards, and input preparation are charged. The runner takes no fuel.
+
+## Navigate by role
+
+| Role | Read |
+|---|---|
+| Run algorithms and apply theorems | [Examples](Paper/Examples.lean) |
+| Write an algorithm proof | [Tutorial](Paper/README.md), [BFS](Paper/BFS.lean), [insertion sort](Paper/InsertionSort.lean) |
+| Use functional/cost contracts | [Graph traversal](Paper/Search.lean), [array insertion](Paper/Array.lean) |
+| Extend verification automation | [Proof calculus](Paper/Basic.lean), [syntax and tactics](Paper/Syntax.lean), [input/output](Paper/Interface.lean) |
+| Implement a data structure | [Internal contracts](Internal/), [footprint framing](Library/Framing.lean) |
+| Audit compilation | [Architecture](docs/ARCHITECTURE.md), [principles and limits](docs/PRINCIPLES.md) |
+| Find older interfaces | [Migration](docs/MIGRATION.md) |
+| Check behavior and soundness boundaries | [New regressions](Tests/Paper.lean), [existing regressions](Tests/Algorithms.lean) |
 
 ```mermaid
 flowchart TD
-  DSL["program { … }: typed Cmd"] --> Compile["verified compiler"]
-  DSL --> VC["generated correctness + time VCs"]
-  Spec["Graph / list specification"] --> Lib["memory views + library contracts"]
-  Lib --> Proof["invariants and potentials"]
-  Proof --> VC
-  VC --> Contract["source Eval + postcondition + cost bound"]
-  Contract --> Preserve["Eval.compile"]
-  Compile --> Code["RAM Code"]
-  Code --> Run["fuel-free runner"]
-  Preserve --> Run
-  Run --> Result["named output + steps + correctness theorem"]
+  A[Paper program + invariant + charging argument] --> B[Symbolic VC generation]
+  C[Certified functional and cost contracts] --> B
+  B --> D[Mathematical total correctness]
+  D --> E[Automatic implementation refinement]
+  C --> E
+  E --> F[Typed source + verified compiler]
+  F --> G[RAM instructions + fuel-free execution]
+  G --> H[Output correctness + time bound]
 ```
-
-The demos reuse instruction invariants through a verified source refinement adapter. The adapter is a proof technique: execution still goes through the ordinary typed compiler. [Architecture](docs/ARCHITECTURE.md) spells out this proof path and its conservative factor-five cost bound. Generated VCs do not infer invariants or automatically solve all mathematical obligations.
-
-## Read, extend, and check
-
-| Your task | Entry point |
-|---|---|
-| Run and use theorems | [Algorithms/Examples.lean](Algorithms/Examples.lean) |
-| Write new source code | [Language tutorial](Language/README.md), [Syntax.lean](Language/Syntax.lean) |
-| Understand compilation and VCs | [Architecture and theorem ledger](docs/ARCHITECTURE.md) |
-| Check modeling decisions | [Design principles and limits](docs/PRINCIPLES.md) |
-| Find an old module | [Migration map](docs/MIGRATION.md) |
-| Present the design | [Presentation with speaker notes](docs/PRESENTATION.md) |
-| Inspect regressions | [Algorithm tests](Tests/Algorithms.lean), [language/library tests](Tests/Language.lean) |
 
 ```sh
-lake build                            # entire repository
-lake build AlgoLib.Experimental.RAM   # public stack
-lake env lean AlgoLib/Experimental/RAM/Algorithms/Examples.lean
+lake build
+lake build AlgoLib.Experimental.RAM.Tests.Paper
+lake env lean AlgoLib/Experimental/RAM/Paper/Examples.lean
 ```
 
-The cost model is a **unit-cost natural-number RAM**. Arithmetic and random access each have constant modeled cost; this is not bit complexity or Lean wall-clock time. Input encoding, proof checking, and host-side output formatting are outside `steps`. BFS does pay for clearing flags and initializing its FIFO. See the design principles before comparing theorems for different input encodings.
+The cost model is a unit-cost RAM over natural numbers, not bit complexity or Lean wall-clock time. Encoding an external input and formatting an output are host operations outside the step count. The earlier `Algorithms` and typed `Language` APIs remain available for compatibility and library implementation; they are not the recommended algorithm-authoring tutorial. This is an experimental proof interface, not a full Dafny implementation or an undergraduate IDE.

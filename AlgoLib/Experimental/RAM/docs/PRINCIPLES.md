@@ -1,41 +1,51 @@
-# Design principles and current limits
+# Principles and current limits
 
-## One algorithm, one execution claim
+## Algorithm authors prove mathematics
 
-A runnable algorithm is a fixed typed syntax tree, not a host function that can compute arbitrary results and choose a cost. Its generated verification conditions refer to independently specified source execution. Its final theorem refers to the compiled RAM instructions. Correctness and time quantify over the same result and step count.
+The primary interface is now `Paper`. Users supply an algorithm invariant, its initialization, a charging scheme, and mathematical preservation/exit arguments. They do not prove normalization equalities, register correspondence, address disjointness inside queue operations, instruction-certificate lifting, or compiler-overhead transport.
 
-Changing the displayed source changes the command tree. A reused certificate must still satisfy the checked normalization equality. A false cost bound must still prove a real `Eval`/`Exec` derivation; merely writing a smaller budget does not establish the contract.
+`Paper/BFS.lean` and `Paper/InsertionSort.lean` are the acceptance examples: neither mentions `Store`, `Exec`, heap addresses, normalization, or the compiler. Their executable bindings use the generic input/output interface. Existing low-level proofs remain reusable implementation evidence inside the library.
 
-## Pay for the work the model permits
+## Automation must produce checked proofs
 
-Every RAM instruction and guard costs one. Source expressions pay for their generated instructions, including subexpressions, address arithmetic, loads, and stores. Scoped variables also pay to save, bind, and restore their values. Ghost proofs and specifications do not execute in the machine.
+`paper_steps` substitutes logical operation contracts and composes verification conditions. It uses a curated `paper_simps` theorem set; it does not unfold physical implementations. `paper_credits` handles routine natural-number polynomial arithmetic and subtraction. `LoopProof` leaves named preservation, payment, and exit obligations for the author.
 
-This prevents freely declaring a sorting operation to cost one inside the restricted language. It does not make all possible complexity statements comparable automatically. A client can choose a precondition that already assumes sorted input, or a representation containing precomputed answers. Review preconditions, encoders, output decoders, and the chosen unit-cost arithmetic when interpreting a theorem.
+The generic `VC.sound` theorem proves total correctness of the mathematical program. `Run.refines` automatically connects every certified operation and control-flow construct to typed source execution. The existing verified compiler and runner then provide actual RAM execution. These links are proved once for the framework, not once per user algorithm.
 
-The input encoders are specification/host conveniences. Their construction cost is excluded. The list returned by the sort wrapper and the bitmap's `.toList` are also host views; the charged result is in RAM memory. A theorem about a full external file-to-file pipeline would need additional input/output programs and their costs.
+No invariant inference, unverified oracle, new axiom, or `sorry` is introduced. When automation cannot solve an obligation, it remains a Lean goal.
 
-## Independent semantics, a small compiler theorem
+## Library contracts own memory details
 
-`Store`, typed expressions, and `Eval` are defined before compilation. Correctness is not defined as “whatever the compiler does.” The compiler proves source/machine agreement, scratch-register preservation, and exact cost. The evaluator is justified separately against machine execution.
+An operation specifies a mathematical precondition, effect, and work bound. Its fixed typed implementation must establish the representation of that effect for every represented input satisfying the precondition. This obligation cannot be replaced by a freely chosen cost annotation.
 
-Words and pointers are distinct types. This catches a class of mistakes but does not itself establish memory safety: array bounds, capacity, nonaliasing, and frame obligations remain in contracts. Memory is total, with no faulting out-of-bounds primitive.
+A representation declares a read footprint. A mutation proves its write footprint. The generic frame rule preserves any assertion with a disjoint read footprint, including composed assertions. Graph tables and array segments use this mechanism; clients of certified operations receive their physical frames automatically. Logical ghost fields frame by effect substitution.
 
-## Modular proof state
+This is a reusable footprint discipline, not a complete separation-logic engine. Library developers still establish footprints and disjointness. Arbitrary composition of new layouts, alias inference, ownership inference, and automatic allocation are not implemented. Existing array/stack/queue contracts remain available to library implementers.
 
-Functional contracts describe abstract sequences or graph rows. Representation predicates connect those values to addressed memory. Frame lemmas explain which cells remain unchanged. Loop invariants describe algorithm progress, and potentials account for remaining work. Keep these facts separate so a memory-layout change need not change the graph theorem.
+## Procedures hide proofs, never work
 
-The current queue uses append-only fixed-capacity storage. Dequeue does not reclaim earlier slots. It supports BFS because each vertex is enqueued at most once. It does not implement resizing, allocation, or an unbounded reusable queue.
+A `Procedure` packages a program, mathematical effect, precondition, cost budget, and proof. Calls expose the summary to the VCG and emit the verified body to the compiler. BFS's row traversal is proved independently and reused through this interface. Insertion sort uses a linear-time insertion contract; its outer sortedness/permutation proof is independent of the insertion implementation.
 
-## Honest ergonomics
+Ghost state never executes. In particular BFS's processed-set update emits no instructions. Guards must be certified against real source tests, so ghost-only state cannot silently become an executable oracle. Calls inline finite bodies; recursion, dynamic allocation, and polymorphic runtime objects are future work.
 
-The common DSL supports named typed variables, nested expressions, indexed arrays, branches, loops, scoped locals, and procedures with a typed parameter/result. Calls inline finite command bodies. Recursive procedures, dynamic allocation, polymorphic data types, inferred separation assertions, and automatic invariant synthesis are not implemented.
+## Cost and termination have the same execution witness
 
-The complete algorithms are now on this common frontend. Their source still shows low-level indexing and loop bookkeeping. BFS's most concise textbook presentation is its mathematical invariant and high-level loop structure; the current generic frontend does not restore the removed BFS-specific parser patterns. Further syntax should desugar compositionally and carry library contracts, rather than recognize one whole algorithm.
+Every RAM instruction and guard costs one. A library work unit has a proved upper bound on actual compiled cost, including expression evaluation, loads/stores, and control flow. Framework theorems multiply and compose these bounds automatically. A true paper loop spends a positive guard credit, making its verified potential argument establish termination. No fuel is supplied to the runner.
 
-The complete demos currently discharge generated VCs through verified instruction certificates; the smaller language examples show direct source proofs. This is a unified executable stack with two sound proof techniques. It is still an experimental teaching/research library, not a claim of Dafny-level automation or a finished undergraduate IDE.
+The new conservative bounds are `50n² + 100n + 55` for insertion sort and `370(n+m)` for BFS with a valid source. The executable theorem counts input preparation, including clearing arbitrary visited flags. Existing compatibility APIs retain their earlier tighter constants; these are different contracts for related compiled programs, not contradictory measurements.
 
-## Cost convention
+These are upper bounds, not exact runtimes or lower bounds. Time receipts are deferred.
 
-The machine is a unit-cost RAM over unbounded natural numbers. Subtraction saturates at zero; multiplication has unit cost. Registers are named in the formal model, but every fixed program references finitely many. These conventions establish RAM operation bounds, not bit bounds, cache behavior, physical memory limits, or Lean evaluation time.
+## State the boundary of the claim
 
-For insertion sort the proved bound is an upper bound for every input. `O(n²)` does not state exact `n²` time, and no worst-case lower bound is proved here. For BFS a valid source implies at least one vertex; the empty graph has no admissible source. Loops and parallel labelled edges are supported and counted in `m`.
+The machine is a unit-cost RAM over unbounded natural numbers with saturating subtraction and unit-cost multiplication. It models RAM operation counts, not bit complexity, caches, physical memory capacity, or Lean wall-clock time. Typed words/pointers do not alone prove memory safety; the contracts establish the bounds and representation conditions used by the program.
+
+Input encoders are host conveniences. Output list construction and bitmap formatting are host observations. Their cost is outside the RAM step count; an external file-to-file complexity theorem would need charged I/O code. A cost statement must be read together with its representation and input preconditions.
+
+For graphs, `m` counts labelled edges, including parallel edges, and an undirected self-loop contributes two adjacency incidences. A valid source excludes the empty graph. BFS returns exactly the reachable set on connected and disconnected inputs; returning every vertex is equivalent to connectivity.
+
+## Usability is tested, not declared finished
+
+The public examples run the actual compiler/runner and are checked against independent sorting and reachability references. Negative tests reject zero budgets at true guards, unpaid calls, and invalid frames. Kernel axiom checks audit the end-to-end theorems.
+
+This revision hides implementation obligations for the demonstrated authoring libraries. It still requires Lean syntax and mathematical proof skills. It does not claim Dafny-level automation, a rich IDE, or classroom usability established by student testing. The next usability work should expand certified operation libraries and test the workflow with users, rather than expose more compiler internals.

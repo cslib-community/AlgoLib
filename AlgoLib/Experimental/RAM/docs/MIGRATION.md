@@ -20,3 +20,17 @@ Use `import AlgoLib.Experimental.RAM` for programs, compiler contracts, and algo
 The old eight-register instruction constants are retained as internal invariant certificates. The public compiled programs contain ordinary named typed variables and compiler temporaries. Existing theorem namespaces for graph specifications and certificates remain to avoid needless theorem renaming; see the architecture ledger.
 
 The reported demo costs increase because the common compiler charges typed expression evaluation explicitly. Compare current public `run` results with current source budgets, not with the old direct-instruction example counts.
+
+## Paper-proof authoring revision
+
+The recommended entry point is now `Paper/Examples.lean` and `Paper/README.md`.
+
+| Earlier API | Recommended API |
+|---|---|
+| `Algorithms.InsertionSort.run xs` (`.values`) | `Paper.Insertion.run xs` (`.value`) |
+| `Algorithms.BFS.run input` (`.visited`) | `Paper.BFS.run input` (`.value`) |
+| Algorithm-specific source/certificate transport | `LoopProof` + `paper_steps` + `paper_credits` |
+| Manual method/compiler assembly | `Interface.run` and `Interface.correct` |
+| Ad hoc array/graph frame proof | Registered footprints and `Framing.frame` |
+
+Earlier names are retained to avoid breaking clients and to preserve comparison regressions. New algorithm proofs should not copy their low-level verification bodies. The public paper proofs use local operation contracts and do not invoke the old whole-algorithm correctness theorems. Conservative cost constants differ; use the theorem belonging to the executable you run.

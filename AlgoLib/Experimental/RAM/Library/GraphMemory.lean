@@ -5,6 +5,7 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Specification.Graph
 import AlgoLib.Experimental.RAM.Core.Machine
+import AlgoLib.Experimental.RAM.Library.Framing
 
 namespace AlgoLib.Experimental.RAM.BFS
 open Checked
@@ -47,10 +48,16 @@ theorem GraphFrame.trans {a b c : Memory} (h : GraphFrame a b) (h' : GraphFrame 
 
 theorem graphFrame_write (m : Memory) (i value tag : Nat) (ht : tag = 1 ∨ tag = 2) :
     GraphFrame m (Function.update m (5 * i + tag) value) := by
-  rcases ht with rfl | rfl <;>
-    exact ⟨fun v => Function.update_of_ne (by omega) _ _,
-      fun v => Function.update_of_ne (by omega) _ _,
-      fun v => Function.update_of_ne (by omega) _ _⟩
+  have untouched (offset : Nat) (ho : offset = 0 ∨ offset = 3 ∨ offset = 4) :
+      ∀ v, (Function.update m (5*i+tag) value) (5*v+offset) = m (5*v+offset) := by
+    have reads := Checked.Language.Framing.cells {x | ∃ v, x = 5*v+offset} m
+    have outside : 5*i+tag ∉ {x | ∃ v, x = 5*v+offset} := by
+      rintro ⟨v, hv⟩
+      rcases ht with ht | ht <;> rcases ho with ho | ho | ho <;> omega
+    have framed := Checked.Language.Framing.frame_write reads (v := value) outside (by intros; rfl)
+    exact fun v => framed _ ⟨v, rfl⟩
+  exact ⟨by simpa using untouched 0 (Or.inl rfl),
+    untouched 3 (Or.inr (Or.inl rfl)), untouched 4 (Or.inr (Or.inr rfl))⟩
 
 /-- The live queue occupies consecutive slots starting at `head`. -/
 structure View (n : Nat) (m : Memory) (seen : Finset Nat)

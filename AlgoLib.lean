@@ -88,3 +88,5 @@ import AlgoLib.Util.Finset
 import AlgoLib.Experimental.RAM
 import AlgoLib.Experimental.RAM.Tests.Language
 import AlgoLib.Experimental.RAM.Tests.Algorithms
+import AlgoLib.Experimental.RAM.Tests.Paper
+import AlgoLib.Experimental.RAM.Tests.PaperAxioms

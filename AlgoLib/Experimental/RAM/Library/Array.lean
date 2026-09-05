@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Language.Verification
+import AlgoLib.Experimental.RAM.Library.Framing
 
 /-! # Contiguous arrays: representation, functional contracts, costs, and frames -/
 namespace AlgoLib.Experimental.RAM.Checked.Language
@@ -132,12 +133,19 @@ theorem ArrayRef.set_spec (a : ArrayRef) (xs : List Nat) (i value : Expr .word) 
   subst t
   exact ⟨k, _, hx, ⟨a.put_rep s xs hs.1 _ hs.2 _, rfl⟩, hk⟩
 
-/-- Disjoint clients can retain any assertion about an untouched segment. -/
+/-- A segment representation reads only its owned interval. Registered once
+by the library; clients do not unfold element/address equations to frame it. -/
+theorem Segment.reads (base : Nat) (xs : List Nat) :
+    Framing.ReadsOnly (Set.Ico base (base + xs.length))
+      (fun m => ∀ i (h : i < xs.length), m (base + i) = xs[i]) := by
+  intro m n he h i hi
+  exact (he _ ⟨by omega, by omega⟩).trans (h i hi)
+
+/-- All segment frames follow from the same footprint rule as graph frames. -/
 theorem Segment.frame_write {s : Store} {base address value : Nat} {xs : List Nat}
     (h : Segment s base xs) (outside : address < base ∨ base + xs.length ≤ address) :
     Segment (s.write address value) base xs := by
-  intro i hi
-  have hn : base + i ≠ address := by omega
-  simpa [Store.write, Function.update_apply, hn] using h i hi
+  exact Framing.frame_write (Segment.reads base xs)
+    (by simp only [Set.mem_Ico]; omega) h
 
 end AlgoLib.Experimental.RAM.Checked.Language
