@@ -6,6 +6,13 @@ Authors: Sorrachai Yingchareonthawornchai
 import AlgoLib.Experimental.RAM.Paper.Examples
 import AlgoLib.Experimental.RAM.Tests.Algorithms
 
+/-!
+# Regression tests for paper-level RAM verification
+
+Check compositional syntax, symbolic framing, rejected budgets, and compiled
+sorting and graph traversal against independent reference implementations.
+-/
+
 namespace AlgoLib.Experimental.RAM.Paper.Tests
 open Experimental.RAM.BFS
 
