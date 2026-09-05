@@ -78,4 +78,55 @@ theorem VC.contract (c : Cmd) (P : Store → Prop) (Q : Store → Store → Prop
   obtain ⟨k, t, hx, hk, ht⟩ := VC.sound c (fun t _ => Q s t) s (budget s) (h s hs)
   exact ⟨k, t, hx, ht, hk⟩
 
+/-- Existing semantic contracts can discharge the same generated VCs. Loop
+invariants may describe remaining certified executions. This proof rule lets
+instruction-level invariant certificates be reused without an alternate runner. -/
+theorem VC.complete (c : Cmd) {s t : Store} {k : Nat} (hx : Eval c s k t)
+    (Q : Store → Nat → Prop) (credits : Nat) (hk : k ≤ credits) (hQ : Q t (credits - k)) :
+    VC c Q s credits := by
+  induction c generalizing s t k Q credits with
+  | skip => cases hx; simpa [VC] using hQ
+  | assign v e => cases hx; exact ⟨hk, hQ⟩
+  | write a v => cases hx; exact ⟨hk, hQ⟩
+  | seq a b iha ihb =>
+    cases hx with
+    | @seq _ _ _ u _ i j ha hb =>
+      exact iha ha (VC b Q) credits (by omega)
+        (ihb hb Q (credits - i) (by omega) (by simpa [Nat.sub_sub] using hQ))
+  | branch q a b iha ihb =>
+    cases hx with
+    | ifTrue hq ha =>
+      refine ⟨by omega, ?_⟩
+      simpa [hq] using iha ha Q (credits - q.cost) (by omega)
+        (by simpa [Nat.sub_sub] using hQ)
+    | ifFalse hq hb =>
+      refine ⟨by omega, ?_⟩
+      simpa [hq] using ihb hb Q (credits - q.cost) (by omega)
+        (by simpa [Nat.sub_sub] using hQ)
+  | localVar v e b ih =>
+    cases hx with
+    | localVar hb =>
+      refine ⟨by omega, ?_⟩
+      exact ih hb _ (credits - (e.cost + 3)) (by omega)
+        (by simpa [Nat.sub_sub] using hQ)
+  | loop q b ih =>
+    refine ⟨fun u remaining => ∃ j v, Eval (.loop q b) u j v ∧
+      j ≤ remaining ∧ Q v (remaining - j), ⟨k, t, hx, hk, hQ⟩, ?_⟩
+    rintro u remaining ⟨j, v, hrun, hj, hv⟩
+    cases hrun with
+    | whileFalse hq => exact ⟨hj, by simpa [hq] using hv⟩
+    | @whileTrue _ _ _ w _ a bcost hq ha hb =>
+      refine ⟨by omega, ?_⟩
+      simp only [hq, if_true]
+      apply ih ha _ (remaining - q.cost) (by omega)
+      refine ⟨bcost, v, hb, by omega, ?_⟩
+      simpa [Nat.sub_sub, Nat.add_assoc] using hv
+
+/-- A source contract and the generated total-correctness VCs are equivalent. -/
+theorem Contract.vc {c : Cmd} {P : Store → Prop} {Q : Store → Store → Prop}
+    {budget : Store → Nat} (h : Contract c P Q budget) (s : Store) (hs : P s) :
+    VC c (fun t _ => Q s t) s (budget s) := by
+  obtain ⟨k, t, hx, ht, hk⟩ := h s hs
+  exact VC.complete c hx _ _ hk ht
+
 end AlgoLib.Experimental.RAM.Checked.Language

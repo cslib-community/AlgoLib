@@ -3,23 +3,11 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.BFS.Specification
-import AlgoLib.Experimental.RAM.Syntax
-import AlgoLib.Experimental.RAM.LoopVC
+import AlgoLib.Experimental.RAM.Specification.Graph
+import AlgoLib.Experimental.RAM.Core.Machine
 
-/-!
-# Adjacency lists and FIFO queues in addressed RAM memory
-
-Five disjoint address classes: vertex head `5v`, visited flag `5v+1`, queue
-slot `5i+2`, arc destination `5p+3`, arc next pointer `5p+4`. Pointer zero is
-null. Lists can share immutable tails. Mutable flags and queue entries cannot
-alias the graph, even when a vertex identifier equals an arc pointer.
-
-The mathematical lists and finite sets below are *ghost views* of memory.
-Their membership, append, and cardinality computations are never RAM primitives.
--/
 namespace AlgoLib.Experimental.RAM.BFS
-open Checked Checked.Source
+open Checked
 
 abbrev Memory := Nat → Nat
 
@@ -111,50 +99,13 @@ theorem enqueue_frame (m : Memory) (v tail : Nat) : GraphFrame m (enqueueMemory 
   (graphFrame_write m v 1 1 (Or.inl rfl)).trans
     (graphFrame_write _ tail v 2 (Or.inr rfl))
 
-/-- Register aliases: all are members of the existing fixed eight-register bank. -/
-abbrev head : Reg := .base
-abbrev tail : Reg := .count
-abbrev ptr : Reg := .cursor
-abbrev vertex : Reg := .key
-abbrev addr : Reg := .next
-abbrev neighbor : Reg := .temp
-abbrev marked : Reg := .live
+/-- A valid input to the machine. Proof fields are erased by Lean's evaluator. -/
+structure Input {β : Type*} (a : Adjacency) (G : Graph Nat β) where
+  representation : Represents a G
+  source : Nat
+  source_valid : source < a.n
+  memory : Memory
+  heap : Heap a memory
 
-/-- One adjacency entry, lowered to ordinary RAM loads, stores, and arithmetic. -/
-def scanBody : Stmt := imperative {
-  addr := 5 * ptr;
-  addr := addr + 3;
-  neighbor := A[addr];
-  addr := 5 * neighbor;
-  addr := addr + 1;
-  marked := A[addr];
-  if marked == 0 {
-    A[addr] := 1;
-    addr := 5 * tail;
-    addr := addr + 2;
-    A[addr] := neighbor;
-    tail := tail + 1;
-  } else { }
-  addr := 5 * ptr;
-  addr := addr + 4;
-  ptr := A[addr];
-}
-
-def scanTest : Test := .lt (.lit 0) (.reg ptr)
-def scanCode : Code := .while scanTest scanBody.compile
-
-/-- Preparing one FIFO vertex costs six instructions. -/
-def popBody : Stmt := imperative {
-  addr := 5 * head;
-  addr := addr + 2;
-  vertex := A[addr];
-  head := head + 1;
-  addr := 5 * vertex;
-  ptr := A[addr];
-}
-
-def bfsTest : Test := .lt (.reg head) (.reg tail)
-def bfsBody : Code := .seq popBody.compile scanCode
-def bfsLoop : Code := .while bfsTest bfsBody
 
 end AlgoLib.Experimental.RAM.BFS

@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Library.Sequences
-import AlgoLib.Experimental.RAM.BFS.Specification
+import AlgoLib.Experimental.RAM.Specification.Graph
 import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!

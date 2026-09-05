@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Language.VC
-import AlgoLib.Experimental.RAM.Interface
+import AlgoLib.Experimental.RAM.Core.Output
 
 /-! # Explicit input/output entry points for verified source programs -/
 namespace AlgoLib.Experimental.RAM.Checked.Language

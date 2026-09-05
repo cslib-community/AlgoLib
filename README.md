@@ -45,3 +45,10 @@ lake build
 ```
 
 Requires the Lean toolchain pinned in `lean-toolchain`. `elan` will install it automatically.
+
+## Experimental verified RAM algorithms
+
+The [`experimental-RAM-model` stack](AlgoLib/Experimental/RAM/README.md) provides a typed DSL,
+verified compiler, correctness/time VCs, and fuel-free insertion sort and BFS.
+Start with its [executable examples](AlgoLib/Experimental/RAM/Algorithms/Examples.lean) or
+[architecture guide](AlgoLib/Experimental/RAM/docs/ARCHITECTURE.md).

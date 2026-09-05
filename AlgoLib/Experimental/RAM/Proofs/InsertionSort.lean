@@ -3,8 +3,8 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Runner
-import AlgoLib.Experimental.RAM
+import AlgoLib.Experimental.RAM.Core.Runner
+import AlgoLib.Experimental.RAM.Proofs.SortingSpec
 
 /-!
 # One fixed RAM sorting program
@@ -15,9 +15,8 @@ All other registers can initially contain arbitrary words. The outer loop
 visits the block from right to left; the inner loop inserts each saved word
 into the sorted suffix using reads and writes.
 
-The shallow functions from `RAM.lean` appear only as mathematical specifications
-in the proof. Their cost fields are never used. Every cost bound here accompanies
-an `Exec` derivation for the restricted language in `Machine.lean`.
+The pure functions in `Proofs/SortingSpec.lean` specify memory contents only.
+All time bounds accompany an `Exec` derivation for the restricted RAM.
 -/
 
 namespace AlgoLib.Experimental.RAM.Checked
@@ -195,7 +194,6 @@ theorem outer_prefix (n remaining : Nat) (s : State)
       hu.snoc (by simp [outerTest, Test.eval, Operand.eval, hcount]) hbody,
       ?_, htb.trans hvBase, htc.trans hvCount, hte.trans hvLimit, ?_⟩
     · rw [insertionSort_succ]
-      dsimp only
       rw [htm, hvCursor, hvKey, hvMem, hm]
       congr 3
     · nlinarith

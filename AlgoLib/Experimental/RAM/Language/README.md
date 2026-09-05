@@ -1,14 +1,12 @@
-# Typed programs and verified libraries
+# The typed language
 
-This is the compositional successor to the focused `BFS/Paper.lean` frontend.
-The parser has no BFS cases. Every expression and command has independently
-specified source semantics, and `Eval.compile` proves compilation preserves
-its observable store and **exact operation count**.
+This is the only public source language. See the [stack guide](../README.md) for
+complete algorithms and the [architecture](../docs/ARCHITECTURE.md) for proof dependencies.
 
 ## Write an ordinary program
 
 ```lean
-import AlgoLib.Experimental.RAM.Language
+import AlgoLib.Experimental.RAM
 open AlgoLib.Experimental.RAM.Checked.Language
 
 def counter : Var .word := ⟨"counter"⟩
@@ -179,11 +177,11 @@ expression and command compilation theorems. `Verification.lean` and `VC.lean`:
 contracts, time credits, loop reasoning, and VCG soundness. `Syntax.lean`:
 compositional macros. `Interface.lean`: explicit runnable input/output.
 `Library/Array.lean`, `Library/Sequences.lean`, and `Library/Graph.lean`: reusable
-representations and operational contracts. `Demo.lean`: client proofs.
+representations and operational contracts. [`LanguageExamples.lean`](../Algorithms/LanguageExamples.lean): client proofs.
 
-`Tests.lean` runs compiled nested expressions at 51 inputs, the verified counter
+[`Tests/Language.lean`](../Tests/Language.lean) runs compiled nested expressions at 51 inputs, the verified counter
 at 51 inputs, nested scope restoration and procedure calls at 51 inputs, and
 verified queue/stack operations. It also checks rejected
 word/address mixing, zero-credit assignment, and illegal cursor aliasing. The
-full repository build continues to check the original insertion-sort and BFS
+full repository build continues to check the complete typed insertion-sort and BFS
 correctness, cost, and runtime regressions.

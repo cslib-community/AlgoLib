@@ -86,10 +86,5 @@ import AlgoLib.Util.Finset
 
 -- Experimental models
 import AlgoLib.Experimental.RAM
-import AlgoLib.Experimental.RAM.InsertionSort
-import AlgoLib.Experimental.RAM.Demo
-import AlgoLib.Experimental.RAM.Tests
-import AlgoLib.Experimental.RAM.BFS
-import AlgoLib.Experimental.RAM.BFS.Tests
-import AlgoLib.Experimental.RAM.Language
-import AlgoLib.Experimental.RAM.Language.Tests
+import AlgoLib.Experimental.RAM.Tests.Language
+import AlgoLib.Experimental.RAM.Tests.Algorithms
