@@ -6,6 +6,9 @@ Authors: Sorrachai Yingchareonthawornchai
 import AlgoLib.Experimental.RAM.Prototype.BFS
 import AlgoLib.Experimental.RAM.Prototype.InsertionSort
 import AlgoLib.Experimental.RAM.Prototype.FrameworkTests
+import AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests
+import AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation
+import AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation
 
 /-!
 # Axiom regression checks for the actual Loom/Velvet integration
@@ -154,3 +157,125 @@ set_option linter.hashCommand false in
 /-- info: 'AlgoLib.Experimental.RAM.Prototype.BFS.loom_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.BFS.loom_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetSemantics.Returns.satisfies_wp' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetSemantics.Returns.satisfies_wp
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetSemantics.loom_to_ram' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetSemantics.loom_to_ram
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetSemantics.deterministic_target_impossible' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetSemantics.deterministic_target_impossible
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Nondeterministic.Translation.correct_and_cost' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Nondeterministic.Translation.correct_and_cost
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecIn.trace' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecIn.trace
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Nondeterministic.Trace.exec' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Nondeterministic.Trace.exec
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Nondeterministic.run_correct' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Nondeterministic.run_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecutableTranslation.run_correct_and_cost' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms
+  AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecutableTranslation.run_correct_and_cost
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_write' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_write
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_initial' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_initial
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.method_execution' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.method_execution
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation.translation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation.translation
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation.correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation.correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.chooseWordTranslation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.chooseWordTranslation
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.relayTranslation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.relayTranslation
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.every_word_executable' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.every_word_executable
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.translation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.translation
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.budget' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.budget
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.run_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.run_correct

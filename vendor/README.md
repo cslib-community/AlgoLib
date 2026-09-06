@@ -56,3 +56,9 @@ Unused algebra dictionaries were removed from `invariantGadget`; its semantics
 and proof rules are unchanged. Transformer order instances now reuse Lean core,
 avoiding duplicate-instance diamonds. Supplied loop variants are explicitly typed
 as `Nat` before wrapping them in `Option`, preserving inference for numeric expressions.
+
+The ordinary recursive-method regression also exercises a `do match` port fix:
+Lean 4.30 added the optional `dependent` parameter before `generalizing`. Loom's
+legacy elaborator now reads discriminants and alternatives at the new indices,
+instead of silently losing match alternatives. Explicit dependent-match options
+are rejected with an error until this elaborator supports them.

@@ -24,14 +24,18 @@ for module, path in modules.items():
         assert not any(i.startswith(prefix + "Prototype.") for i in local), (
             path, "production layer depends on the isolated prototype"
         )
-    if layer == "Prototype" and path.stem in ("Observation", "Interpretation", "Verification", "LoomObservation", "Mutable", "Frontend", "Procedures"):
+    if layer == "Prototype" and path.stem in ("Observation", "Interpretation", "Verification", "LoomObservation", "Mutable", "Frontend", "Procedures",
+            "MultipleArrays", "VelvetSemantics", "VelvetWP", "Nondeterministic",
+            "NondeterministicRunner", "ExecutableTranslation", "ExecutionBridge"):
         assert not any(
             i.startswith(prefix + blocked + ".")
             for i in local for blocked in ("Programs", "Legacy", "Library")
         ), (path, "generic prototype infrastructure depends on an algorithm library/demo")
         assert not any(
             i == prefix + "Prototype." + blocked
-            for i in local for blocked in ("InsertionSort", "BFS", "Graph", "GraphTests", "Tests", "Axioms")
+            for i in local for blocked in ("InsertionSort", "BFS", "Graph", "GraphTests", "Tests", "Axioms",
+                "MultipleArrayTests", "VelvetArrayTranslation", "VelvetTranslationTests",
+                "RecursiveTranslation")
         ), (path, "generic prototype infrastructure depends on a domain adapter or demo/tests")
     if layer == "Programs":
         assert not any(

@@ -1659,10 +1659,14 @@ mutual
   /-- Generate `CodeBlock` for `doMatch; doElems` -/
   partial def doMatchToCode (doMatch : Syntax) (doElems: List Syntax) : M CodeBlock := do
     let ref       := doMatch
-    let genParam  := doMatch[1]
-    let optMotive := doMatch[2]
-    let discrs    := doMatch[3]
-    let matchAlts := doMatch[5][0].getArgs -- Array of `doMatchAlt`
+    -- Lean 4.30 adds an optional `dependent` parameter before `generalizing`.
+    -- Reading the old positions silently discarded every match alternative.
+    unless doMatch[1].isNone do
+      throwErrorAt doMatch[1] "Explicit dependent-match options are not supported by Loom do-notation"
+    let genParam  := doMatch[2]
+    let optMotive := doMatch[3]
+    let discrs    := doMatch[4]
+    let matchAlts := doMatch[6][0].getArgs -- Array of `doMatchAlt`
     let matchAlts ← matchAlts.foldlM (init := #[]) fun result matchAlt => return result ++ (expandMatchAlt ⟨matchAlt⟩).map TSyntax.raw
     let alts ←  matchAlts.mapM fun matchAlt => do
       let patterns := matchAlt[1][0]

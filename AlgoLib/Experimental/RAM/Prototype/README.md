@@ -1,5 +1,10 @@
 # Mutable programs, inline invariants, verified RAM execution
 
+For the ordinary-Velvet semantic bridge, nondeterministic execution, recursive
+example, and precise remaining compiler work, see
+[Compilation status and demos](COMPILATION-STATUS.md). Full ordinary-Velvet
+compilation is not yet implemented.
+
 For graph algorithms, start with the [BFS tutorial](GRAPH-TUTORIAL.md),
 [BFS.lean](BFS.lean), and its [graph procedures](Graph.lean). The generic
 `ram_do` frontend now supports typed graph/queue/cursor primitives and verified
@@ -30,7 +35,7 @@ array implementation and all its guards and scalar bookkeeping. `run` takes no f
 ## Write the algorithm
 
 The command is `ram method`, followed by Velvet-style input/output clauses and a
-`do` body. For this adapter, the mutable input and output are one `Array Nat`;
+`do` body. For this adapter, the mutable inputs and outputs are one or more `Array Nat` values;
 `return (u : Unit)` means the result is the updated array, with no additional scalar
 return. `arrOld` denotes the input array in specifications.
 
@@ -170,14 +175,16 @@ There are three entry points:
   adjacency, visited-set, FIFO, and cursor operations; see [the tutorial](GRAPH-TUTORIAL.md).
 - `method`: upstream Velvet, with its full syntax and supported Lean effects.
 - `ram method`: the verified RAM adapter, currently natural-number locals and one
-  mutable `Array Nat`; literals, size, addition/subtraction/multiplication, indexing,
+  or more mutable `Array Nat` parameters; literals, size, addition/subtraction/multiplication, indexing,
   updates, comparisons, branches, nested annotated `while` loops, assertions,
   `done_with`, and final unit return. Nat subtraction is truncated at zero.
 
 **The full Velvet language is not yet fully lowered to RAM.** Arbitrary Lean calls,
-multiple arrays, allocation, nondeterministic choice, recursion, early return,
+allocation, nondeterministic choice, recursive calls, early return,
 `break`/`continue`, and other unimplemented RAM constructs are rejected by this
-adapter. An ordinary Velvet correctness proof alone does not imply a RAM time bound.
+adapter. Separate checked ordinary-Velvet translation examples now cover choice,
+a procedure call, multiple arrays, and recursion; see [the coverage table](COMPILATION-STATUS.md).
+An ordinary Velvet correctness proof alone does not imply a RAM time bound.
 This boundary is deliberate: accepting arbitrary host computations as free RAM
 operations would reintroduce the cheating problem.
 

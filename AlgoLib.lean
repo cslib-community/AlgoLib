@@ -94,4 +94,8 @@ import AlgoLib.Experimental.RAM.Tests.Methods
 import AlgoLib.Experimental.RAM.Prototype.GraphTests
 import AlgoLib.Experimental.RAM.Prototype.FrameworkTests
 import AlgoLib.Experimental.RAM.Prototype.Tests
+import AlgoLib.Experimental.RAM.Prototype.MultipleArrayTests
+import AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests
+import AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation
+import AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation
 import AlgoLib.Experimental.RAM.Prototype.Axioms
