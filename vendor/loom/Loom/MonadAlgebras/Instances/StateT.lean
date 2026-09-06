@@ -1,0 +1,104 @@
+module
+/- AlgoLib port: Lean 4.30 transformer and CCPO compatibility. -/
+import all Init.Prelude
+import all Init.Internal.Order.Basic
+import all Init.Control.State
+import all Init.Control.Reader
+import all Init.Control.Except
+public import Loom.MonadAlgebras.Defs
+public import Loom.MonadAlgebras.Instances.Basic
+
+@[expose] public section
+
+
+/- Ordered Monad Algebra instance for StateT -/
+instance (σ : Type u) (l : Type u) (m : Type u -> Type v)
+  [CompleteLattice l]
+  [Monad m] [LawfulMonad m] [inst: MAlgOrdered m l] : MAlgOrdered (StateT σ m) (σ -> l) where
+  μ := (MAlgOrdered.μ $ (fun fs => fs.1 fs.2) <$> · ·)
+  μ_ord_pure := by intro f; ext s₁; simp [pure, StateT.pure, MAlgOrdered.μ_ord_pure]
+  μ_ord_bind := by
+    intros α f g
+    try simp [Function.comp, Pi.hasLe]
+    intros le x s
+    have leM := @inst.μ_ord_bind (α × σ) (fun as => (fun fs => fs.1 fs.2) <$> f as.1 as.2) (fun as => (fun fs => fs.1 fs.2) <$> g as.1 as.2)
+    simp only [Function.comp, Pi.hasLe, <-map_bind] at leM
+    apply leM; intro; apply le
+
+instance (σ : Type u) (l : Type u) (m : Type u -> Type v)
+  [CompleteLattice l]
+  [Monad m] [LawfulMonad m] [inst: MAlgOrdered m l] [inst': MAlgDet m l]
+   : MAlgDet (StateT σ m) (σ -> l) where
+    angelic := by
+      intros α ι c p _ s;
+      simp [MAlg.lift, MAlg.μ, MAlgOrdered.μ, Functor.map, StateT.map]
+      have h := inst'.angelic (α := α × σ) (c := c s) (ι := ι) (p := fun i x => p i x.1 x.2)
+      simp [MAlg.lift, MAlg.μ] at h
+      apply h
+    demonic := by
+      intros α ι c p _ s;
+      simp [MAlg.lift, MAlg.μ, MAlgOrdered.μ, Functor.map, StateT.map]
+      have h := inst'.demonic (α := α × σ) (c := c s) (ι := ι) (p := fun i x => p i x.1 x.2)
+      simp [MAlg.lift, MAlg.μ] at h
+      apply h
+
+instance [Monad m] [CCPOBot m] : CCPOBot (StateT σ m) where
+  compBot := fun _ => CCPOBot.compBot
+
+instance [Monad m] [inst : ∀ α, Lean.Order.CCPO (m α)] [CCPOBot m] [CCPOBotLawful m] : CCPOBotLawful (StateT σ m) where
+  prop := by
+    intro α
+    apply Lean.Order.PartialOrder.rel_antisymm
+    · intro s
+      change Lean.Order.PartialOrder.rel (CCPOBot.compBot (m := m)) _
+      rw [CCPOBotLawful.prop (m := m)]
+      exact Lean.Order.bot_le _
+    · exact Lean.Order.bot_le _
+
+
+
+lemma MAlg.lift_StateT [Monad m] [LawfulMonad m] [CompleteLattice l] [inst: MAlgOrdered m l] (x : StateT σ m α) :
+  MAlg.lift x post = fun s => MAlg.lift (x s) (fun xs => post xs.1 xs.2) := by
+    simp [MAlg.lift, Functor.map, MAlgOrdered.μ, StateT.map]
+
+open Lean.Order
+instance [Monad m] [LawfulMonad m] [_root_.CompleteLattice l] [inst: MAlgOrdered m l]
+  [∀ α, CCPO (m α)] [MonoBind m]
+  [MAlgPartial m] : MAlgPartial (StateT σ m) where
+  csup_lift {α} chain := by
+    intro post hchain
+    simp only [MAlg.lift_StateT]
+    rw [@Pi.le_def]; simp only [iInf_apply]; intro s
+    rw [← fun_csup_eq]; unfold fun_csup
+    apply le_trans' (MAlgPartial.csup_lift (m := m) _ _ (chain_apply hchain s))
+    repeat rw [@iInf_subtype']
+    refine iInf_mono' ?_; simp [Membership.mem, Set.Mem]; aesop
+
+attribute [-simp] le_bot_iff in
+instance [Monad m] [LawfulMonad m] [_root_.CompleteLattice l] [inst: MAlgOrdered m l]
+  [∀ α, CCPO (m α)]  [MonoBind m]
+  [MAlgTotal m] : MAlgTotal (StateT σ m) where
+  bot_lift := by
+    intro α post s
+    simp only [MAlg.lift_StateT]
+    have hb : (bot : StateT σ m α) s = (bot : m (α × σ)) := by
+      have h := @Lean.Order.bot_le (σ → m (α × σ)) inferInstance
+        (fun (_ : σ) => (bot : m (α × σ)))
+      apply Lean.Order.PartialOrder.rel_antisymm
+      · exact h s
+      · exact Lean.Order.bot_le _
+    rw [hb]
+    apply MAlgTotal.bot_lift (m := m)
+
+instance [Monad m] [LawfulMonad m] [_root_.CompleteLattice l] [inst: MAlgOrdered m l]
+  [inst': NoFailure m] : NoFailure (StateT σ m) where
+  noFailure := by
+    intro _ _; simp [MAlg.lift_StateT, inst'.noFailure]; rfl
+
+/- Monad Transformer Algebra instance for StateT -/
+instance [Monad m] [LawfulMonad m] [_root_.CompleteLattice l] [inst: MAlgOrdered m l] :
+  MAlgLift m l (StateT σ m) (σ -> l) where
+    μ_lift := by
+      intros; simp [MAlg.lift_StateT]; ext
+      simp [liftM, MonadLiftT.monadLift, instMonadLiftTOfMonadLift, MonadLift.monadLift]
+      simp [StateT.lift, MAlg.lift]

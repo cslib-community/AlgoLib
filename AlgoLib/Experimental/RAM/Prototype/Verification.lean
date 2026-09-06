@@ -17,8 +17,9 @@ is justified directly by the Loom-style observation laws, not by a sorting theor
 `certify` reconstructs the existing backend certificate automatically from this
 observation proof. This preserves the existing executable runner and axiom boundary.
 No SMT answers, native decision axioms, compiler obligations, or fuel reach the user.
-The specialization currently supports certified calls, sequence, branches and loops;
-it does not implement all of Velvet's syntax or all of Loom's effect algebras.
+The frontend supplies indexed plans for mutable code and nested loops. `atEntry`
+automatically frames unchanged locals; assertions and variants remain checked
+obligations. `LoomObservation` connects this generator to the upstream algebra.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype
 open Authoring
@@ -33,6 +34,11 @@ inductive Plan : Program M → Type where
   | branch (q : Guard M) {a b : Program M} : Plan a → Plan b → Plan (.branch q a b)
   | loop (q : Guard M) {body : Program M} (invariant : State → Nat → Prop) :
       Plan body → Plan (.loop q body)
+  | loopVariant (q : Guard M) {body : Program M} (invariant : State → Nat → Prop)
+      (variant : State → Nat) : Plan body → Plan (.loop q body)
+  | atEntry {p : Program M} : (State → Plan p) → Plan p
+  | assert (assertion : State → Prop) : Plan .skip
+  | ensure {p : Program M} (assertion : State → Prop) : Plan p → Plan p
 
 /-- Generate purely mathematical obligations by structural symbolic execution. -/
 def Plan.vc {p : Program M} : Plan p → (State → Nat → Prop) → State → Nat → Prop
@@ -43,6 +49,12 @@ def Plan.vc {p : Program M} : Plan p → (State → Nat → Prop) → State → 
       if q.test s then a.vc Q s (c - 1) else b.vc Q s (c - 1)
   | .loop q I body, Q, s, c => I s c ∧ ∀ t d, I t d → 1 ≤ d ∧
       if q.test t then body.vc I t (d - 1) else Q t (d - 1)
+  | .loopVariant q I variant body, Q, s, c => I s c ∧ ∀ t d, I t d → 1 ≤ d ∧
+      if q.test t then body.vc (fun u r => variant u < variant t ∧ I u r) t (d - 1)
+      else Q t (d - 1)
+  | .atEntry plan, Q, s, c => (plan s).vc Q s c
+  | .assert assertion, Q, s, c => assertion s ∧ Q s c
+  | .ensure assertion plan, Q, s, c => plan.vc (fun t r => assertion t ∧ Q t r) s c
 
 /-- VCG soundness is proved through the independent costed observation. -/
 theorem Plan.sound {p : Program M} (plan : Plan p) (Q : State → Nat → Prop)
@@ -74,6 +86,19 @@ theorem Plan.sound {p : Program M} (plan : Plan p) (Q : State → Nat → Prop)
     cases hq : q.test t with
     | true => simpa [hq] using ih I t (d - 1) (by simpa [hq] using hn)
     | false => simpa [hq] using hn
+  | loopVariant q I variant body ih =>
+    apply Computation.wp_loop q.test _ I _ _ s c h.1
+    intro t d ht
+    obtain ⟨hd, hn⟩ := h.2 t d ht
+    refine ⟨hd, ?_⟩
+    cases hq : q.test t with
+    | true =>
+      simp only [hq, ↓reduceIte] at hn ⊢
+      exact Computation.wp_mono (fun _ _ _ hu => hu.2) (ih _ _ _ hn)
+    | false => simpa [hq] using hn
+  | atEntry plan ih => exact ih s Q s c h
+  | assert assertion => exact (Computation.wp_pure () _ _ _).mpr h.2
+  | ensure assertion plan ih => exact Computation.wp_mono (fun _ _ _ ht => ht.2) (ih _ _ _ h)
 
 /-- Input/output and time obligations, with proof annotations separate from runtime input. -/
 def Obligations {api : Interface M Input Output} (method : Method api)

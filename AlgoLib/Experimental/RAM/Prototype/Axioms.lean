@@ -4,9 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.InsertionSort
+import AlgoLib.Experimental.RAM.Prototype.FrameworkTests
 
 /-!
-# Axiom regression checks for the Loom-style integration
+# Axiom regression checks for the actual Loom/Velvet integration
 
 Each guard pins the actual kernel dependencies. Existing production checks remain
 unchanged; these extend the same trust policy to the new observation, VCG, bridge,
@@ -79,3 +80,44 @@ set_option linter.hashCommand false in
  Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.InsertionSort.exists_sort
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.loom_wp_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.loom_wp_eq
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Plan.loom_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Plan.loom_sound
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Mutable.represents_write' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Mutable.represents_write
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.InsertionSort.loom_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.InsertionSort.loom_correct
+
+set_option linter.hashCommand false in
+/-- info: 'NonDetT.runDivM_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms NonDetT.runDivM_eq
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.FrameworkTests.counter_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.FrameworkTests.counter_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.FrameworkTests.callCounter_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.FrameworkTests.callCounter_correct

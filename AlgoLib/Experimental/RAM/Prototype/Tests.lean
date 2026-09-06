@@ -6,15 +6,16 @@ Authors: Sorrachai Yingchareonthawornchai
 import AlgoLib.Experimental.RAM.Prototype.InsertionSort
 
 /-!
-# Executable and negative-contract tests for the prototype
+# Executable and negative-contract tests for the mutable frontend
 
-The exhaustive small-input test runs compiled RAM, comparing its output with an
-independent reference and checking the advertised bound. The examples also reject
-unpaid calls, invalid call preconditions, and mismatched program annotations.
-These tests supplement the universal theorems; they are not correctness certificates.
+The exhaustive small-input test executes compiled RAM, compares with an independent
+reference, and checks the advertised bound. `fill` exercises the same frontend on a
+different algorithm. Negative obligations reject unsafe reads/writes, unpaid work,
+false assertions, false decreasing measures, and certificates for a different body.
+The universal correctness theorems remain the evidence for all inputs.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Tests
-open Authoring Authoring.Insertion
+open Authoring Frontend
 
 set_option linter.hashCommand false in
 #eval show IO Unit from do
@@ -23,50 +24,116 @@ set_option linter.hashCommand false in
       let xs := (List.range n).map (fun i => mask / 3 ^ i % 3)
       let r := InsertionSort.run xs
       unless r.value == xs.mergeSort (· ≤ ·) do
-        throw <| IO.userError s!"prototype sorting: {xs}"
-      unless r.steps ≤ 50 * n * n + 100 * n + 55 do
-        throw <| IO.userError s!"prototype budget: {xs}"
+        throw <| IO.userError s!"mutable sorting: {xs}"
+      unless r.steps ≤ 300 * n * n + 300 * n + 360 do
+        throw <| IO.userError s!"mutable budget: {xs}"
   for xs in [List.range 16, (List.range 16).reverse, List.replicate 20 7] do
     let r := InsertionSort.run xs
     unless r.value == xs.mergeSort (· ≤ ·) do
-      throw <| IO.userError s!"prototype larger input: {xs}"
-    unless r.steps ≤ 205 * xs.length * xs.length do
-      throw <| IO.userError s!"prototype larger budget: {xs}"
+      throw <| IO.userError s!"mutable larger input: {xs}"
+    unless r.steps ≤ 960 * xs.length * xs.length do
+      throw <| IO.userError s!"mutable larger budget: {xs}"
+
+ram method fill (mut arr : Array Nat) return (u : Unit)
+  require True
+  ensures arr.size = arrOld.size
+  ensures ∀ i, i < arr.size → arr[i]! = 0
+  credits 100 * arr.size + 100
+  do
+    let mut i := 0
+    while i < arr.size
+      invariant i ≤ arr.size
+      invariant arr.size = arrOld.size
+      invariant ∀ j, j < i → arr[j]! = 0
+      invariant 20 * (arr.size - i) + 20 ≤ remaining
+      decreasing arr.size - i
+      do
+        arr[i] := 0
+        i := i + 1
+    return
+
+prove_ram fill by
+  ram_solve [SortingFacts.get_set, Array.size_setIfInBounds]
 
 set_option linter.hashCommand false in
-/-- info: [1, 1, 3, 4] -/
+/-- info: #[0, 0, 0] -/
 #guard_msgs in
-#eval (InsertionSort.run [3, 1, 4, 1]).value
+#eval (fillVerified.run #[3, 2, 1] (by trivial)).value
 
-/-- Credits cannot be silently omitted at a procedure call. -/
-example (s : State) : ¬ (Plan.action insertNext).vc (fun _ _ => True) s 0 := by
-  simp [Plan.vc, insert_work]
+/-- Scalar writes cannot be hidden as uncharged Lean computations. -/
+example (s : Mutable.State) :
+    ¬ (Plan.action (Mutable.assign "x" (.literal 1))).vc (fun _ _ => True) s 0 := by
+  simp [Plan.vc, Mutable.assign, Mutable.Value.compile, Checked.Language.Expr.cost]
 
-/-- An insertion is not callable on an empty unprocessed prefix, even with ample credit. -/
-example (c : Nat) : ¬ (Plan.action insertNext).vc (fun _ _ => True) (initial []) c := by
-  simp [Plan.vc, insert_requires, initial]
+/-- Total Lean array indexing does not make out-of-bounds RAM reads safe. -/
+example (c : Nat) : ¬ (Plan.action (Mutable.read "x" (.literal 0))).vc
+    (fun _ _ => True) (Mutable.initial #[]) c := by
+  simp [Plan.vc, Mutable.read, Mutable.Value.eval, Mutable.initial]
 
-/-- An invariant that forgets guard payments cannot certify a loop. -/
-example : ¬ (Plan.loop more (fun _ _ => True) (.action insertNext)).vc
-    (fun _ _ => True) (initial [1]) 0 := by
+/-- Writes beyond the represented allocation are also rejected. -/
+example (c : Nat) : ¬ (Plan.action (Mutable.write (.literal 1) (.literal 7))).vc
+    (fun _ _ => True) (Mutable.initial #[0]) c := by
+  simp [Plan.vc, Mutable.write, Mutable.Value.eval, Mutable.initial]
+
+/-- An assertion is an obligation, never an axiom introduced by the parser. -/
+example (s : Mutable.State) (c : Nat) :
+    ¬ (Plan.assert (M := Mutable.model) (fun _ => False)).vc (fun _ _ => True) s c := by
+  simp [Plan.vc]
+
+/-- A supplied constant variant cannot justify a taken loop iteration. -/
+example (c : Nat) :
+    ¬ (Plan.loopVariant (Mutable.compare .eq "x" "x") (fun _ _ => True)
+      (fun _ => 0) Plan.skip).vc (fun _ _ => True) (Mutable.initial #[]) c := by
   intro h
-  have unpaid := (h.2 (initial []) 0 trivial).1
-  omega
+  have step := h.2 (Mutable.initial #[]) c trivial
+  simpa [Plan.vc, Mutable.compare, Checked.Language.Comparison.eval] using step.2
 
-/-- A proof plan for skip cannot be substituted for an insertion program's plan. -/
+/-- Proof annotations cannot be substituted for a different program. -/
 example : True := by
   fail_if_success
-    have wrong : Plan (.action insertNext) := (Plan.skip : Plan (.skip : Program model))
+    have wrong : Plan (.action (Mutable.assign "x" (.literal 1))) :=
+      (Plan.skip : Plan (.skip : Program Mutable.model))
   trivial
 
-/-- Exercise sequencing and the false branch without relying on the sorting loop. -/
-example : (Plan.seq Plan.skip (Plan.branch more (.action insertNext) Plan.skip)).vc
-    (fun s _ => s = initial []) (initial []) 1 := by
-  simp [Plan.vc, initial]
+/- A host-language function call is outside the supported RAM expression grammar. -/
+set_option linter.hashCommand false in
+/-- error: Unsupported RAM expression: Nat.succ 0 -/
+#guard_msgs in
+ram method rejectHostCall (mut arr : Array Nat) return (u : Unit)
+  credits 100
+  do
+    let x := Nat.succ 0
+    return
 
-/-- The true branch propagates the procedure's effect and its cost. -/
-example : (Plan.branch more (.action insertNext) Plan.skip).vc
-    (fun s _ => s.sorted = [2]) (initial [2]) 2 := by
-  simp [Plan.vc, insert_requires, insert_work, insert_effect, initial, effect]
+/- A logical credit counter cannot be read by executable code. -/
+set_option linter.hashCommand false in
+/-- error: Unknown RAM local 'remaining'; ghost terms cannot occur in executable code -/
+#guard_msgs in
+ram method rejectGhostRead (mut arr : Array Nat) return (u : Unit)
+  credits 100
+  do
+    let x := remaining
+    return
+
+/- Early returns must not be accidentally compiled as skip. -/
+set_option linter.hashCommand false in
+/-- error: RAM return is supported only at method exit -/
+#guard_msgs in
+ram method rejectEarlyReturn (mut arr : Array Nat) return (u : Unit)
+  credits 100
+  do
+    if 0 = 0 then
+      return
+    return
+
+/- Lexical shadowing must not silently change which array an indexing expression uses. -/
+set_option linter.hashCommand false in
+/-- error: This name belongs to the array interface or proof context; choose a fresh local -/
+#guard_msgs in
+ram method rejectArrayShadow (mut arr : Array Nat) return (u : Unit)
+  credits 100
+  do
+    let mut arr := 0
+    return
 
 end AlgoLib.Experimental.RAM.Prototype.Tests

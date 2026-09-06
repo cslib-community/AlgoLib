@@ -24,7 +24,7 @@ for module, path in modules.items():
         assert not any(i.startswith(prefix + "Prototype.") for i in local), (
             path, "production layer depends on the isolated prototype"
         )
-    if layer == "Prototype" and path.stem in ("Observation", "Interpretation", "Verification"):
+    if layer == "Prototype" and path.stem in ("Observation", "Interpretation", "Verification", "LoomObservation", "Mutable", "Frontend"):
         assert not any(
             i.startswith(prefix + blocked + ".")
             for i in local for blocked in ("Programs", "Legacy", "Library")

@@ -5,10 +5,11 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import Mathlib.Tactic
 
-/-!+# A small Loom-style costed observation
+/-!
+# A costed observation for the Loom algebra
 
-This is an original, local specialization of Loom's monadic-observation approach,
-not an import or a port of the full Loom framework. Credit: the Loom authors,
+This independent finite-execution semantics instantiates the actual upstream Loom
+hierarchy in `LoomObservation.lean`. Credit: the Loom authors,
 https://github.com/verse-lab/loom and https://verse-lab.org/papers/loom-popl26.pdf.
 Velvet motivates the separation of executable methods from their proof annotations.
 

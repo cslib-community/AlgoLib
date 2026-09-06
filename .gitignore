@@ -1,3 +1,6 @@
 /.vscode
 /.lake
 .DS_Store
+
+# Local framework package build products
+vendor/**/.lake/

@@ -3,122 +3,126 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Verification
-import AlgoLib.Experimental.RAM.Library.Insertion
+import AlgoLib.Experimental.RAM.Prototype.Frontend
+import AlgoLib.Experimental.RAM.Prototype.SortingFacts
 
 /-!
-# Insertion sort through the Loom-style observation and the RAM compiler
+# Insertion sort with mutable arrays and inline loop invariants
 
-Start at `insertionSort`: ordinary list input/output, a fixed program, and its
-functional/time specification. `annotations` supplies the paper invariant and
-potential. `verification` solves the conditions generated FROM that program.
-`run` executes compiled RAM without fuel; `main` proves its result and RAM bound.
+Read `insertionSort` as pseudocode. Both loops and every array read/write are visible.
+`Prefix` and `Hole` express the textbook argument; `remaining` is the available
+credit budget. `prove_ram` generates safety, correctness, termination, and time
+conditions from this very body. The same body has the actual Loom interpretation
+and compiles to RAM. There is no `insertNext` action or algorithm-specific lowering.
 
-The array is viewed as an unprocessed prefix and a sorted suffix. `insertNext`
-inserts the rightmost remaining element into the suffix. Its contract states the
-list effect and a linear charge; its existing certified RAM body performs the
-inner scan. We reuse that LOCAL procedure certificate, not the existing complete
-sorting theorem. This prototype demonstrates modular procedure calls, rather than
-a new Velvet parser for explicit array assignments and nested inner loops.
+`run` is the familiar list convenience interface to the compiled executable.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.InsertionSort
-open Authoring Authoring.Insertion
+open Authoring Frontend SortingFacts
 
 /-- Preserve multiplicities as well as ordering. -/
 def SortedPermutation (xs ys : List Nat) : Prop := ys.Pairwise (· ≤ ·) ∧ ys.Perm xs
 
-/-- One input-independent program for BOTH interpretations. -/
-def insertionSort : Method Insertion.interface :=
-  ram_method (xs : List Nat) returns (ys : List Nat)
-    using Insertion.interface;
-    requires True;
-    ensures SortedPermutation xs ys;
-    credits (xs.length * (xs.length + 2) + 1);
-    time (50 * xs.length ^ 2 + 100 * xs.length + 55);
-  do {
-    while (more) {
-      call insertNext;
-    }
-  }
+/-- Reserve one linear insertion allowance for each remaining prefix extension. -/
+def potential (n i : Nat) : Nat := 100 * (n - i) * (n + 1) + 100
 
-/-- The sorted suffix is ordered, and no input value has been lost or duplicated. -/
-def invariant (xs : List Nat) (s : State) : Prop :=
-  s.sorted.Pairwise (· ≤ ·) ∧ (s.todo ++ s.sorted).Perm xs
+/-- Each loop test is paid for, including its final unsuccessful test. -/
+theorem potential_positive (n i : Nat) : 100 ≤ potential n i := by
+  unfold potential
+  omega
 
-/-- Charge each remaining insertion enough for a scan and its guard. -/
-def potential (s : State) : Nat := s.todo.length * (s.todo.length + s.sorted.length + 2)
+/-- A prefix extension pays for one complete inner scan and its scalar bookkeeping. -/
+theorem insertion_allowance (n i : Nat) (hi : i < n) :
+    potential n (i + 1) + 100 * i + 36 ≤ potential n i := by
+  have eq : n - i = n - (i + 1) + 1 := by omega
+  simp only [potential, eq, Nat.mul_add, Nat.add_mul, Nat.mul_one]
+  omega
 
-/-- Annotations are proof data. Their type fixes the program they describe. -/
-def annotations (xs : List Nat) : Plan insertionSort.body :=
-  .loop more (fun s c => invariant xs s ∧ potential s + 1 ≤ c) (.action insertNext)
+ram method insertionSort (mut arr : Array Nat) return (u : Unit)
+  require True
+  ensures SortedPermutation arrOld.toList arr.toList
+  credits potential arr.size 0 + 20
+  do
+    let mut i := 0
+    while i < arr.size
+      invariant i ≤ arr.size
+      invariant Prefix arr i
+      invariant arr.toList.Perm arrOld.toList
+      invariant arr.size = arrOld.size
+      invariant potential arr.size i ≤ remaining
+      decreasing arr.size - i
+      do
+        let mut j := i
+        while 0 < j
+          invariant j ≤ i
+          invariant i < arr.size
+          invariant Hole arr i j
+          invariant arr.toList.Perm arrOld.toList
+          invariant arr.size = arrOld.size
+          invariant potential arr.size (i + 1) + 100 * j + 20 ≤ remaining
+          decreasing j
+          do
+            let x := arr[j]!
+            let y := arr[j - 1]!
+            if x < y then
+              arr[j] := y
+              arr[j - 1] := x
+            j := j - 1
+        i := i + 1
+    return
 
-/-- The only algorithmic step: insertion preserves order/permutation and pays for its work. -/
-theorem insertion_preserves (xs : List Nat) (s : State) (c : Nat)
-    (hs : invariant xs s) (hc : potential s + 1 ≤ c) (running : more.test s = true) :
-    (Plan.action insertNext).vc (fun t d => invariant xs t ∧ potential t + 1 ≤ d)
-      s (c - 1) := by
-  cases ht : s.todo with
-  | nil => simp [ht] at running
-  | cons x todo =>
-    have permutation := (List.perm_orderedInsert (· ≤ ·) x s.sorted).append_left todo
-    have move : (todo ++ x :: s.sorted).Perm ((x :: todo) ++ s.sorted) :=
-      List.perm_middle
-    have sorted := hs.1.orderedInsert x s.sorted
-    prototype_steps []
-    simp only [effect, ht, invariant, potential, List.orderedInsert_length]
-    simp only [potential, ht, List.length_cons] at hc
-    refine ⟨by simp, by paper_credits, ⟨sorted, permutation.trans (move.trans (ht ▸ hs.2))⟩,
-      ?_⟩
-    paper_credits
+prove_ram insertionSort by
+  ram_solve [potential_positive, insertion_allowance, SortedPermutation,
+    Prefix, Hole, enter, exit, keep, swap, swap_perm, sorted, List.Perm.trans]
 
-/-- Generated conditions: initialization, preservation/payment, exit, and total RAM budget. -/
-theorem verification : Obligations insertionSort annotations := by
-  intro xs _
-  constructor
-  · change (invariant xs (initial xs) ∧
-        potential (initial xs) + 1 ≤ xs.length * (xs.length + 2) + 1) ∧ _
-    constructor
-    · simp [invariant, initial, potential, List.reverse_perm]
-    · intro s c ⟨hs, hc⟩
-      refine ⟨by omega, ?_⟩
-      cases hq : more.test s with
-      | true => simpa only [hq, ↓reduceIte] using insertion_preserves xs s c hs hc hq
-      | false =>
-        simp only [Bool.false_eq_true, ↓reduceIte]
-        intro out view
-        have empty : s.todo = [] := by simpa using hq
-        have result : out = s.sorted := by
-          simpa only [method_simps, empty, List.reverse_nil, List.nil_append] using view
-        change SortedPermutation xs out
-        simpa [SortedPermutation, invariant, empty, result] using hs
-  · change Insertion.interface.preparationCost xs +
-      model.overhead * (xs.length * (xs.length + 2) + 1) ≤
-        50 * xs.length ^ 2 + 100 * xs.length + 55
-    method_time
+/-- The generated certificate packages the very body displayed above. -/
+def certified : VerifiedMethod Mutable.interface := insertionSortVerified
 
-/-- Reconstruction, lowering, and termination proofs are implementation responsibilities. -/
-def certified : VerifiedMethod Insertion.interface := certify insertionSort verification
+/-- Execute compiled RAM, accepting an ordinary list and requiring no fuel. -/
+def run (xs : List Nat) : Result (List Nat) :=
+  let result := certified.run xs.toArray (by trivial)
+  ⟨result.value.toList, result.steps⟩
 
-/-- Actual RAM execution; the argument is just the input list. -/
-def run (xs : List Nat) : Result (List Nat) := certified.run xs (by trivial)
-
-/-- Sorting correctness and quadratic time for the SAME executable. -/
+/-- Correctness and quadratic RAM time for this same executable, including empty inputs. -/
 theorem main (xs : List Nat) : SortedPermutation xs (run xs).value ∧
-    (run xs).steps ≤ 50 * xs.length ^ 2 + 100 * xs.length + 55 :=
-  certified.correct xs (by trivial)
+    (run xs).steps ≤ 300 * xs.length ^ 2 + 300 * xs.length + 360 := by
+  have h := certified.correct xs.toArray (by trivial)
+  change (SortedPermutation xs _ ∧ True) ∧ _ at h
+  refine ⟨h.1.1, ?_⟩
+  have bound := h.2
+  change (run xs).steps ≤ 3 * (potential xs.toArray.size 0 + 20) at bound
+  calc
+    _ ≤ 3 * (potential xs.toArray.size 0 + 20) := bound
+    _ = 300 * xs.length ^ 2 + 300 * xs.length + 360 := by
+      simp [potential]
+      ring
 
-/-- The familiar O(n²) form for nonempty inputs; `main` also covers the empty input. -/
+/-- A conventional big-O witness for nonempty inputs. -/
 theorem quadratic (xs : List Nat) (nonempty : xs ≠ []) :
-    (run xs).steps ≤ 205 * xs.length ^ 2 := by
-  have bound := (main xs).2
-  have positive : 0 < xs.length := List.length_pos_iff.mpr nonempty
-  nlinarith [Nat.mul_self_le_mul_self positive]
+    (run xs).steps ≤ 960 * xs.length ^ 2 := by
+  have h := (main xs).2
+  have hn : 0 < xs.length := List.length_pos_iff.mpr nonempty
+  nlinarith [Nat.mul_self_le_mul_self hn]
 
-/-- Explicit witness: a certified program exists with both functional and cost guarantees. -/
-theorem exists_sort : ∃ p : VerifiedMethod Insertion.interface,
-    p.method.body = insertionSort.body ∧ p.method.requires = (fun _ => True) ∧
-    ∀ xs (h : p.method.requires xs), SortedPermutation xs (p.run xs h).value ∧
-      (xs ≠ [] → (p.run xs h).steps ≤ 205 * xs.length ^ 2) := by
-  exact ⟨certified, rfl, rfl, fun xs _ => ⟨(main xs).1, quadratic xs⟩⟩
+/-- An explicit certified program witnesses the sorting and time claim. -/
+theorem exists_sort : ∃ p : VerifiedMethod Mutable.interface,
+    p.method.body = insertionSort.body ∧ (∀ input, p.method.requires input) ∧
+    ∀ xs (h : p.method.requires xs.toArray),
+      SortedPermutation xs (p.run xs.toArray h).value.toList ∧
+      (xs ≠ [] → (p.run xs.toArray h).steps ≤ 960 * xs.length ^ 2) := by
+  exact ⟨certified, rfl, fun _ => by trivial, fun xs _ => ⟨(main xs).1, quadratic xs⟩⟩
+
+/-- The generated conditions establish the actual upstream Loom WP. -/
+theorem loom_correct (xs : Array Nat) :
+    _root_.wp (denote insertionSort.body)
+      (fun _ t _ => SortedPermutation xs.toList t.array.toList)
+      (Mutable.initial xs) (insertionSort.credits xs) := by
+  have h := (insertionSortVerification xs (by trivial)).1
+  have observed := (insertionSortAnnotations xs).loom_sound _ _ _ h
+  rw [loom_wp_eq] at observed ⊢
+  exact Computation.wp_mono (fun _ t _ ht => (ht t.array rfl).1) observed
+
+set_option linter.hashCommand false in
+#eval (run [5, 2, 4, 1, 6]).value
 
 end AlgoLib.Experimental.RAM.Prototype.InsertionSort

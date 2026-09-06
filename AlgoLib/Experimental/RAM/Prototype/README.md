@@ -1,177 +1,195 @@
-# Insertion-sort integration prototype
+# Mutable programs, inline invariants, verified RAM execution
 
-**One program, two connected interpretations:** [InsertionSort.lean](InsertionSort.lean)
-defines a single `Authoring.Program` through the existing input/output DSL. We reason about
-that program using a local Loom-style costed observation and compile the same program using
-the existing verified RAM backend. Proof plans are indexed by the program they annotate.
-
-This is an isolated experiment, not a replacement for the canonical `Programs` directory.
-The prototype does not import either canonical sorting or its complete correctness theorem.
-
-## Try it
+Start with [InsertionSort.lean](InsertionSort.lean). It exposes both insertion-sort
+loops and every array operation. There is no `InsertNext` action, hidden insertion
+procedure, or student-written `Action.correct` proof.
 
 ```lean
 import AlgoLib.Experimental.RAM.Prototype.InsertionSort
 open AlgoLib.Experimental.RAM.Prototype
 
-#eval (InsertionSort.run [3, 1, 4, 1]).value
--- [1, 1, 3, 4]
+#eval (InsertionSort.run [5, 2, 4, 1, 6]).value
+-- [1, 2, 4, 5, 6]
 
-#eval (InsertionSort.run [3, 1, 4, 1]).steps
-
-example (xs : List Nat) :
-    InsertionSort.SortedPermutation xs (InsertionSort.run xs).value :=
-  (InsertionSort.main xs).1
-
-example (xs : List Nat) (h : xs ≠ []) :
-    (InsertionSort.run xs).steps ≤ 205 * xs.length ^ 2 :=
-  InsertionSort.quadratic xs h
+#check InsertionSort.main
+#check InsertionSort.quadratic
+#check InsertionSort.loom_correct
 ```
 
-Execution needs only an input list. The verified runner executes RAM instructions;
-`List.orderedInsert` occurs in the logical procedure specification, not as a host-language
-shortcut in this runner. The result contains both the output and the measured RAM steps.
-The main bound `50n² + 100n + 55` includes preparation and covers the empty input.
-As in the existing stack, host encoding/decoding and Lean runtime overhead are outside
-the RAM cost model. This is a unit-cost natural-number RAM, not a bit-complexity claim.
+`main` proves a sorted permutation and at most `300*n² + 300*n + 360` executed
+RAM instructions for **every** input, including the empty array. `quadratic` gives
+`960*n²` for nonempty inputs. These conservative constants pay for the explicit
+array implementation and all its guards and scalar bookkeeping. `run` takes no fuel.
 
-## Read the example as a paper proof
+## Write the algorithm
 
-| What an algorithm author does | Where it appears |
-|---|---|
-| Declare input, output, sorted permutation, and time bound | `insertionSort` |
-| Write `while more { call insertNext; }` | The same method's `do` body |
-| State that the suffix is sorted and all values are preserved | `invariant` |
-| Charge the remaining insertions for scans and guard tests | `potential` |
-| Attach that argument to the existing loop | `annotations : Plan insertionSort.body` |
-| Prove insertion preserves the argument | `insertion_preserves` |
-| Discharge initialization, exit, and total payment | `verification` |
-| Obtain the executable and its theorem | `certified`, `run`, `main`, `exists_sort` |
+The command is `ram method`, followed by Velvet-style input/output clauses and a
+`do` body. For this adapter, the mutable input and output are one `Array Nat`;
+`return (u : Unit)` means the result is the updated array, with no additional scalar
+return. `arrOld` denotes the input array in specifications.
 
-The array is viewed as an unprocessed prefix and a sorted suffix. The library's
-`insertNext` removes the rightmost unprocessed value and inserts it into the suffix.
-It is a modular procedure with a certified RAM inner scan, not an arbitrary effect
-assigned a convenient price. Its public contract requires a nonempty prefix, preserves
-the input values, and charges `sorted.length + 1` logical credits.
+The complete checked program includes these lines:
 
-With `k` values remaining and `m` already sorted, the potential is `k(k + m + 2)`.
-One insertion decreases `k`, increases `m`, and leaves `k + m` constant. The released
-potential pays for the procedure and the guard. One additional credit covers the last
-false guard. `prototype_steps` substitutes procedure contracts; arithmetic tactics
-check the payment. The user supplies the invariant and this charging argument.
+```lean
+ram method insertionSort (mut arr : Array Nat) return (u : Unit)
+  require True
+  ensures SortedPermutation arrOld.toList arr.toList
+  credits potential arr.size 0 + 20
+  do
+    let mut i := 0
+    while i < arr.size
+      invariant i ≤ arr.size
+      invariant Prefix arr i
+      invariant arr.toList.Perm arrOld.toList
+      invariant arr.size = arrOld.size
+      invariant potential arr.size i ≤ remaining
+      decreasing arr.size - i
+      do
+        let mut j := i
+        while 0 < j
+          invariant j ≤ i
+          invariant i < arr.size
+          invariant Hole arr i j
+          invariant arr.toList.Perm arrOld.toList
+          invariant arr.size = arrOld.size
+          invariant potential arr.size (i + 1) + 100 * j + 20 ≤ remaining
+          decreasing j
+          do
+            let x := arr[j]!
+            let y := arr[j - 1]!
+            if x < y then
+              arr[j] := y
+              arr[j - 1] := x
+            j := j - 1
+        i := i + 1
+    return
+```
+
+`Prefix arr i` says the positions before `i` are ordered. `Hole arr i j` says the
+prefix through `i` is ordered except possibly at position `j`. A comparison and
+adjacent swap move that exception left. At `j = 0`, the larger prefix is ordered.
+[SortingFacts.lean](SortingFacts.lean) proves precisely those mathematical facts,
+using ordinary arrays, indices, and permutation. It imports no RAM or compiler code.
+
+`remaining` is proof-only: the credits available at a loop boundary. The user
+chooses the potential; the verifier substitutes operation costs and proves the
+arithmetic. The compiler derives the RAM bound automatically from those credits;
+no compiler scaling factor appears in the program. An optional `time` clause can
+request a specific numerical bound, generating an additional checked condition. Decreasing measures generate genuine obligations as well. Invariants
+are supplied by the author, never guessed by the automation.
+
+## Prove and run it
+
+The sorting proof uses the facts about the algorithm:
+
+```lean
+prove_ram insertionSort by
+  ram_solve [potential_positive, insertion_allowance, SortedPermutation,
+    Prefix, Hole, enter, exit, keep, swap, swap_perm, sorted, List.Perm.trans]
+```
+
+This command generates `insertionSortVerification` and `insertionSortVerified`.
+The latter offers `.run input proofOfRequires` and `.correct input proofOfRequires`.
+The list convenience wrapper `InsertionSort.run` discharges its trivial precondition.
+
+For interactive work, use `ram_vc` to expand contracts and costs. Split logical
+conditions and run `ram_names` to replace internal state projections by ordinary
+array and local-variable names. `ram_solve` performs those steps and uses the
+supplied mathematical lemmas with Lean’s proof-producing `grind` tactic. A failed
+condition stays a Lean goal; it is never admitted.
+
+The compiler automatically preserves locals that a nested loop does not write.
+For example, the inner loop retains `i` without an extra user invariant equating it
+to a saved compiler variable. Array updates preserve other locals and the allocation
+size through generic checked primitive contracts. No adjacency pointers, addresses,
+register relations, or compilation certificates appear in this sorting proof.
+
+[Tests.lean](Tests.lean) also verifies a separate array-filling program using the
+same frontend. This checks that the adapter is compositional, rather than recognizing
+insertion sort as a special case.
 
 ## How the components connect
 
-```mermaid
-flowchart TD
-    P["insertionSort.body : Program — single executable syntax"]
-    A["annotations : Plan insertionSort.body — proof only"]
-    V["Plan.vc — generated mathematical obligations"]
-    D["denote — costed monadic interpretation"]
-    W["wp — total correctness and remaining credits"]
-    C["source → typed Cmd → compiled RAM"]
-    R["verified fuel-free runner"]
-    P --> D
-    D --> W
-    P --> C
-    A --> V
-    V -->|Plan.sound| W
-    W -->|reconstruct| R
-    C --> R
-    D -. "compilation_sound: representation + cost" .-> C
+```text
+Velvet do syntax + input/output contracts + inline invariants
+                         │
+                    Frontend.lean
+                         │
+              one fixed Program + indexed Plan
+                    ┌────┴─────┐
+                    │          │
+             Interpretation    existing verified compiler
+                    │          │
+        costed state execution │
+                    │          │
+       actual Loom MAlg / wp   │
+                    │          │
+        Plan.vc → Plan.sound   │
+                    │          │
+               reconstruct ────┤
+                               │
+                      RAM execution + theorem
 ```
 
-1. **Program construction.** The existing DSL elaborates the method body once to
-   `Authoring.Program`. Inputs scope over contracts and budgets, not over code generation.
-   The supported nodes are certified calls, sequencing, branches, loops, and skip.
+| Component | Responsibility | What the author supplies |
+|---|---|---|
+| [Frontend](Frontend.lean) | Parse mutable code; choose private locals; materialize guards; infer frames; attach annotations | Program, contracts, invariants, potential |
+| [Mutable](Mutable.lean) | Reusable assignment, array-read, array-write, comparison and memory-frame certificates | Nothing machine-specific |
+| [Observation](Observation.lean), [Interpretation](Interpretation.lean) | Independent finite execution semantics and connection to the existing source/compiler | Nothing |
+| [LoomObservation](LoomObservation.lean) | Instantiate upstream `MAlgOrdered`; identify its `wp` with the cost observation | Nothing |
+| [Verification](Verification.lean) | Generate conditions, prove their soundness, reconstruct a backend certificate | Mathematical lemmas for the generated conditions |
+| [InsertionSort](InsertionSort.lean) | The program, inline annotations, one proof command, executable and main theorem | The textbook sorting argument |
+| [Axioms](Axioms.lean), [FrameworkTests](FrameworkTests.lean), [Tests](Tests.lean) | Kernel-dependency guards, framework integration, runtime and rejection regressions | Nothing |
 
-2. **Mathematical interpretation.** `denote` interprets each node independently as
-   a stateful computation with a logical cost. Sequencing uses monadic bind; loops
-   use a finite-iteration relation. This interpretation does not execute the RAM compiler.
-   [Observation.lean](Observation.lean) proves the monad laws and the pure/bind WP laws.
+The body is independent of the input and invariant proofs. `Plan p` is indexed by
+that exact body, so a proof for one program cannot certify another. `denote_iff_run`
+and `compilation_sound` connect the independent interpretation to actual RAM
+execution. The frontend creates primitive certificates automatically; those
+certificates are checked, not trusted parser assertions.
 
-3. **Annotation and VC generation.** A `Plan p` contains loop invariants and structure
-   matching `p`. It cannot silently annotate a different program. `Plan.vc` substitutes
-   effects, checks call preconditions, and subtracts credits. It does not synthesize
-   invariants. `Plan.sound` derives the observation proof from these conditions.
-   Its proof uses the WP composition laws and the total loop rule.
+## Actual upstream reuse and the compilation boundary
 
-4. **Termination.** `wp_loop` uses strong induction on remaining credits. Every loop
-   guard costs one credit, even when the body costs zero. Thus a valid loop proof
-   establishes termination; a vacuous invariant cannot certify an infinite loop.
-   There is no timeout or user-visible fuel parameter.
+The [vendored frameworks](../../../../vendor/README.md) contain **the actual Velvet
+parser and Loom hierarchy**, with explicit upstream authorship and Apache-2.0
+licenses. This replaces the previous local-only Loom-style specialization.
+Loom’s ordered, deterministic, partial, and total algebras, logical/monadic lifts,
+ReaderT, StateT, ExceptT, nondeterminism, WP generation, and tactics are available.
+`FrameworkTests` checks composed transformers and Velvet’s own `method`, procedure
+contracts, `prove_correct`, `loom_solve`, and executable extraction.
 
-5. **Connection to compilation.** [Interpretation.lean](Interpretation.lean) proves
-   `denote_iff_run` for every supported program, then `compilation_sound`: every
-   denoted execution has a represented RAM execution costing at most the model's
-   implementation overhead times its logical credits. Action/guard certificates
-   and the existing typed compiler discharge this step compositionally.
+There are two entry points:
 
-6. **Certificate reconstruction.** [Verification.lean](Verification.lean)'s
-   `reconstruct` uses the proved observation to construct the backend's existing
-   VC certificate. This uses the generic `Run.vc` theorem inside Lean. It neither
-   invokes the canonical sorting proof nor trusts an external certificate checker.
-   `certify` packages the method for the existing runner, automatically.
+- `method`: upstream Velvet, with its full syntax and supported Lean effects.
+- `ram method`: the verified RAM adapter, currently natural-number locals and one
+  mutable `Array Nat`; literals, size, addition/subtraction/multiplication, indexing,
+  updates, comparisons, branches, nested annotated `while` loops, assertions,
+  `done_with`, and final unit return. Nat subtraction is truncated at zero.
 
-7. **Execution and theorem.** The existing runner executes preparation and the
-   compiled body. `VerifiedMethod.correct` yields the declared output predicate
-   and time bound for that actual run. `main` exposes them together. Users do not
-   prove normalization, register correspondence, frames, or cost transport.
+**The full Velvet language is not yet fully lowered to RAM.** Arbitrary Lean calls,
+multiple arrays, allocation, nondeterministic choice, recursion, early return,
+`break`/`continue`, and other unimplemented RAM constructs are rejected by this
+adapter. An ordinary Velvet correctness proof alone does not imply a RAM time bound.
+This boundary is deliberate: accepting arbitrary host computations as free RAM
+operations would reintroduce the cheating problem.
 
-The computation observation is existential total correctness. This is sufficient here
-because `denote_deterministic` proves uniqueness of the supported program's result and
-logical cost. Do not reuse this observation as a demonic WP for nondeterministic choice.
+Time counts executed unit-cost RAM instructions, including all loop tests, array
+operations, and scalar operations. Input encoding and output observation are the
+interface convention: the input array is already resident in RAM. Host Lean runtime
+and bit complexity of unbounded integers are not what the theorem measures.
 
-## Reused, new, and deliberately limited
+## Trust and checks
 
-| Component | Decision |
-|---|---|
-| RAM machine, typed compiler, termination-based runner | Reused unchanged |
-| Insertion's implementation, memory frame and cost certificate | Reused as a local procedure contract |
-| Executable program representation and method syntax | Reused `Authoring.Program` and `ram_method` |
-| Monadic observation, its laws, and source connection | New kernel-checked local specialization |
-| Program-indexed annotations and observation-based VCG | New |
-| Reconstruction into the existing backend | New, automatic and kernel checked |
-| Full Velvet parser, mutable-variable frontend, nested array-loop UX | Not implemented by this prototype |
-| Full Loom `MAlg` hierarchy, transformer ecosystem, tactic integration | Not implemented by this prototype |
-| Invariant discovery or trusted SMT | Not used |
-
-In particular, the insertion scan remains a certified procedure. This experiment validates
-the shared-representation/observation/compiler boundary and modular reasoning. It does
-**not** yet demonstrate a Velvet-style proof of an explicitly written inner array loop.
-That is the next integration test before considering a wholesale frontend migration.
-
-## Attribution and dependency choice
-
-Explicit credit goes to the **[Loom framework and its authors](https://github.com/verse-lab/loom)**
-for the monadic-observation design ([POPL paper](https://verse-lab.org/papers/loom-popl26.pdf)),
-and **[Velvet and its authors](https://github.com/verse-lab/velvet)** for the method/annotation
-usability direction. These files are an original specialization of those ideas, not a
-vendored copy or a claim that upstream Loom/Velvet is installed.
-
-Upstream Loom's checked `master` toolchain is Lean `v4.24.0`; this repository uses
-`v4.30.0-rc2`. For this bounded experiment we keep the repository's toolchain and dependency
-graph. We have not established that upstream cannot be ported: a genuine upstream dependency
-and its API compatibility remain a separate evaluation. The observation and bridge have
-been kept separate to make that replacement reviewable.
-
-## Build and trust checks
+Every proof is a Lean term checked by the kernel. Trusted SMT and asynchronous
+admission paths from upstream are excluded. The port’s executable specialization
+of Loom extraction is proved equal to the original extractor. Existing production
+axiom checks remain in place; prototype checks cover its new bridges and theorems.
 
 ```sh
 lake build AlgoLib.Experimental.RAM.Prototype.Tests \
+  AlgoLib.Experimental.RAM.Prototype.FrameworkTests \
   AlgoLib.Experimental.RAM.Prototype.Axioms
 python3 AlgoLib/Experimental/RAM/Tests/check_layers.py
-lake build
 ```
 
-[Tests.lean](Tests.lean) executes all 364 lists of length at most five over `{0,1,2}`,
-plus longer ascending, descending, and duplicate-only inputs. It also tests rejected
-budgets/preconditions, both branches, sequence, and mismatched annotations.
-[Axioms.lean](Axioms.lean) pins the actual axiom dependencies of the observation laws,
-semantic/compilation connections, VCG, reconstruction, and end-to-end sorting theorems.
-It permits only the same standard Lean axioms as the existing stack, with exact lists
-per theorem; neither `sorryAx` nor native/SMT oracle axioms are accepted.
-
-Both modules are imported by the repository build. Existing axiom checks are unchanged.
-The structural checker also keeps the reusable prototype modules independent of the
-sorting example and keeps production layers from acquiring a prototype dependency.
+The prototype stays isolated from the production `Programs` directory. Production
+BFS and its proofs have not been migrated to this new frontend in this change.

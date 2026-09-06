@@ -27,3 +27,12 @@ rev = "v4.30.0-rc2"
 
 [[lean_lib]]
 name = "AlgoLib"
+
+# Pinned, locally ported upstream frameworks; see vendor/README.md.
+[[require]]
+name = "Loom"
+path = "vendor/loom"
+
+[[require]]
+name = "Velvet"
+path = "vendor/velvet"

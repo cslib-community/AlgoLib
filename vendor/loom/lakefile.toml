@@ -1,0 +1,10 @@
+name = "Loom"
+version = "0.1.0"
+[leanOptions]
+autoImplicit = true
+relaxedAutoImplicit = true
+backward.isDefEq.respectTransparency = false
+[[lean_lib]]
+name = "Loom"
+[[lean_lib]]
+name = "CaseStudies"
