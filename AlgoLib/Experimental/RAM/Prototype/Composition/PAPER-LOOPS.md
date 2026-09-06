@@ -151,6 +151,54 @@ the array command reconstructs that certificate automatically.
 Input encoding and output observation are host-side conventions. Bounds concern
 unit-cost RAM execution on resident inputs, not Lean wall-clock time or bit complexity.
 
+## 6. Display the inferred polynomial without guessing coefficients
+
+You do not need to know `912`, `384`, or `648` in advance. The framework has
+already constructed `insertionSortBound` from the program, its checked loop
+annotations, and the verified backend. Ask Lean to normalize that expression:
+
+```lean
+import AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution
+import Mathlib.Tactic.Conv
+
+/-! Display the inferred insertion-sort bound symbolically. -/
+open AlgoLib.Experimental.RAM.Prototype.Composition
+open AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
+
+variable (xs : List Nat)
+
+#conv
+  (simp [insertionSortBound, Value.credits, Locals.credits]; ring_nf) =>
+  insertionSortBound xs
+-- 648 + xs.length * 384 + xs.length ^ 2 * 912
+```
+
+This is a complete example for a new Lean file. `simp` unfolds the cost
+definitions, and `ring_nf` collects the polynomial terms. The list remains
+symbolic: this computes the formula for arbitrary input length, without sampling
+inputs or supplying a right-hand side. These normalization details are only needed
+to inspect the formula; they are not obligations in the algorithm proof.
+
+The generated `insertionSortCorrect` theorem already bounds the runner's RAM
+steps by `insertionSortBound xs`. No polynomial presentation lemma is required to
+use that theorem. If you want a separately named equality in a preferred order,
+you can copy the displayed coefficients into a lemma:
+
+```lean
+theorem displayed_bound (xs : List Nat) :
+    insertionSortBound xs = 912 * xs.length ^ 2 + 384 * xs.length + 648 := by
+  simp [insertionSortBound, Value.credits, Locals.credits]
+  ring
+```
+
+Lean checks this equality. The `#conv` command itself only displays the normalized
+expression; it does not save an equality theorem. If the program or backend cost
+contracts change, rerun the command to obtain the new coefficients.
+
+The polynomial is a **certified upper bound**, not the exact number of steps on
+every input. Your counting argument and the backend's cost bounds can introduce
+slack.
+
 ## What is checked
 
 - The source sorting proof uses dependent nested bounds and no manual payments.
