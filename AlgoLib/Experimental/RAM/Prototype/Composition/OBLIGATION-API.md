@@ -69,6 +69,191 @@ editor. The compact form is sugar for separate theorem declarations followed by
 completion. It no longer
 runs the entire verification-condition generator for each proof block.
 
+### How do I choose which goal to prove?
+
+Start from the specification module, which contains the obligations but does not
+import the completed proofs. For insertion sort, a new proof file can begin with:
+
+```lean
+import AlgoLib.Experimental.RAM.Prototype.Composition.SortingSpec
+
+namespace AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
+open Frontend SortingFacts
+
+#named_goals insertionSort
+```
+
+Read the command's messages in Lean's information panel. The status tells you where
+work remains:
+
+| Status | What to do |
+| --- | --- |
+| `[open]` | Inspect the displayed hypotheses and conclusion; supply the mathematical argument. |
+| `[automatic, cached]` | No block is needed: the specification already contains checked evidence. |
+| `[automatic]` | No block is needed: current automation can solve it when completing the algorithm. |
+| `[proved]` | A separate explicit proof already exists. |
+
+These statuses depend on what your file imports. Importing `SortingProofs` instead
+of `SortingSpec` brings in the finished proofs, so it is not the starting point for
+writing your own version. Automation does not remove an obligation's declaration.
+
+**Choose an open responsibility by its meaning in your paper proof, not by its
+position in the goal list.** The name identifies the loop, the kind of argument,
+and, when applicable, the invariant clause:
+
+```text
+outer.inner.preserve.hole
+└─ loop path ─┘   │      └─ invariant named "hole"
+                 └─ show that one iteration preserves it
+```
+
+| Name component | Paper-proof question |
+| --- | --- |
+| `initialize.prefix` | Why does the prefix invariant hold when this loop starts? |
+| `preserve.hole` | Assuming the invariant and guard, why does the body preserve the hole invariant? |
+| `terminate.positive` / `terminate.decrease` | Why can the loop make progress, and why does its termination measure decrease? |
+| `account.initial` / `account.iteration` | Why is the initial allowance sufficient, and why does it pay for each iteration and the remaining work? |
+| `safety` / `requires` | Why is this access in bounds, or this procedure's public precondition satisfied? |
+| `exit` | Why do the invariant and loop exit establish the required result? |
+
+For a first pass, follow the paper argument: initialization, preservation,
+termination and accounting, then exit. This is a reading order, not a dependency
+requirement: you can prove obligations in any order. Skip the automatically solved
+ones. If you cannot recognize an open statement, inspect the corresponding invariant
+and program statement before choosing tactics.
+
+Narrow the preview to the part you are working on:
+
+```lean
+#named_goals insertionSort only outer.inner
+#named_goals insertionSort only outer.inner.initialize.hole
+```
+
+The second command shows the source-level context for entering the inner loop.
+Read the conclusion first, then identify which hypotheses match your mathematical
+lemma. Here the existing array lemma `enter` gives the required argument:
+
+```lean
+prove_obligation insertionSort.ObligationAPI.outer.inner.initialize.hole by
+  grind only [enter]
+
+#named_goals insertionSort only outer.inner.initialize.hole
+```
+
+The final preview now reports `[proved]`. The proof command takes the **full generated
+proposition name**, including `ObligationAPI`; the preview filter takes the **short
+responsibility path**. You can also inspect the frozen proposition directly:
+
+```lean
+#print insertionSort.ObligationAPI.outer.inner.initialize.hole
+```
+
+One responsibility can contain several control-flow paths. For example,
+`outer.inner.preserve.hole` covers both the swap and no-swap branches. You do not
+pick just one branch: the proof block must discharge every remaining path for that
+responsibility. The actual [sorting proof file](SortingProofs.lean) shows the focused
+`swap` and `keep` arguments.
+
+Continue with the other `[open]` responsibilities, then run
+`complete_algorithm insertionSort` as described below. The single `enter` block
+above is only one part of the proof; completion rejects missing mathematical
+arguments. End the proof file with:
+
+```lean
+end AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
+```
+
+### Explore a goal in the editor
+
+The specification import also provides an obligation explorer. Start with one
+responsibility rather than printing the entire method:
+
+```lean
+#explain_obligation insertionSort only outer.inner.preserve.hole
+#proof_template insertionSort only outer.inner.preserve.hole
+```
+
+The explorer reports the mathematical purpose, source file/line/column, frozen
+proposition name, number of retained execution paths, and source-variable roles.
+The responsibility kind is recorded from the source annotation independently of its
+name, so a loop or invariant named `account` cannot change the explanation.
+It then shows the existing status and exact simplified open goals, with all their
+hypotheses. For an imported specification, the message appears at the exploration
+command and includes the original source location as text.
+
+| Binding | Meaning |
+| --- | --- |
+| `arrInput` | The original source input `arr` |
+| `arrState1` | `arr` in the first quantified loop state on this obligation's path |
+| `arrState2` | `arr` in the next nested quantified loop state |
+| `result` | A quantified procedure result |
+| `hInvariant_hole` | A hypothesis from the invariant clause named `hole` |
+
+The names are recorded when the explicitly tagged source quantifiers are opened;
+no tuple-size or variable-name heuristic chooses their roles. Invariant hypothesis
+names come from the explicit invariant labels before simplification removes their
+wrappers. Repeated clauses get fresh suffixes; simplification can remove redundant
+hypotheses. Other mathematical assumptions retain their ordinary Lean context.
+These are also the
+names available inside `prove_obligation` blocks. Ordinary configuration parameters
+retain their names and types. The algorithm syntax still uses `arrOld` for its
+original-input ghost; `arrInput` is the corresponding proof-context name.
+Existing handwritten blocks that refer to old generated local names may need a
+one-time rename. The generated proposition names and mathematical statements remain
+the same; no compatibility alias is silently inserted.
+
+A snapshot is a universally quantified loop state, **not automatically a concrete
+loop-entry or post-assignment state**. Updated arrays appear as expressions in the
+exact goal. Snapshot numbering follows nested quantifiers and can change when the
+program's loop structure changes. Invariant and responsibility identities remain
+the stable selection interface. The explorer does not invent an `arrAfter` variable
+or hide the equations needed to identify a state.
+
+The template command prints a copyable block with the exact generated name:
+
+```lean
+prove_obligation insertionSort.ObligationAPI.outer.inner.preserve.hole by
+  fail "Supply the mathematical argument here"
+```
+
+Replace `fail` with your proof. The command itself creates no declaration; the
+placeholder cannot satisfy a proof or complete an algorithm. Already proved or
+cached automatic responsibilities are reported without generating redundant blocks.
+This is a command-based editor interface, not yet a clickable code action.
+
+### Find the mathematical lemmas
+
+The sorting specification registers `enter` for initialization of `Hole`, and
+`swap` and `keep` for preservation. The explorer displays the fully qualified theorem
+names and their statements when the predicate occurs in the frozen proposition and
+the responsibility phase matches. Read their hypotheses before using them.
+
+A library author can register suggestions explicitly:
+
+```lean
+obligation_lemmas Hole for "initialize" => [enter]
+obligation_lemmas Hole for "preserve" => [swap, keep]
+```
+
+Registrations persist through imports. They are navigation hints, not new axioms,
+automatic invariant discovery, or promises that a theorem applies. Definitions and
+axioms cannot be registered as proved theorems. Every actual application still needs
+a checked proof. Matching is intentionally conservative: it checks occurrences in
+the frozen proposition without unfolding arbitrary mathematical definitions.
+
+For BFS, try this in a file importing `BreadthFirstSpec` and opening its namespace:
+
+```lean
+#explain_obligation bfs only search.preserve.frontier
+#explain_obligation bfs only search.account.iteration
+#proof_template bfs only search.account.iteration
+```
+
+The specification registers frontier lemmas and work-accounting lemmas such as
+`process_head` and `scan_work`. The existing [BFS proof blocks](BreadthFirstProofs.lean)
+show the checked arguments. Neither navigation nor lemma registration imports a RAM
+backend, changes an obligation, or alters either queue implementation.
+
 ## 3. Complete the algorithm
 
 After separate `prove_obligation` commands, write:
@@ -161,6 +346,14 @@ The latter asserts that the API and backend artifacts retain both their timestam
 and content hashes, while the proof module is rechecked. Run these scripts without
 concurrent builds or edits of the proof file.
 
-The proof-edit regression measured **18.14 seconds** for an edit followed by rebuilding
-the sorting executable. Both the generated API and the RAM backend artifacts were
-unchanged, and the original proof file was restored and successfully rechecked.
+With the explorer enabled, the proof-edit regression measured **12.13 seconds** for
+a valid tactic edit (`simp` to `simpa`) and executable rebuild, and **5.17 seconds**
+for a deliberately failing proof edit. These are individual warm-dependency samples,
+not a latency guarantee. In both cases the generated API and RAM backend artifacts
+retained their timestamps and hashes. The original proof was restored and rechecked.
+
+`Tests/ObligationAPI/Explorer.lean` checks persisted roles, phase-sensitive suggestions,
+invalid registrations, and rejection of unfinished templates. `ExplorerExamples.lean`
+checks both insertion-sort paths, imported BFS accounting suggestions, and direct use
+of `hInvariant_hole` in a checked proof. Existing execution, layout-substitution, and
+axiom regressions still cover the underlying stack.

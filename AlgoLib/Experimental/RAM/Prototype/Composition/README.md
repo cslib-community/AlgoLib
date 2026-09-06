@@ -8,6 +8,9 @@ separate modules so proof edits can reuse generation and compilation work.
 For algorithm authors, start with [separate named proof blocks](NAMED-PROOFS.md).
 Sorting and BFS use stable initialization, preservation, termination, and accounting
 responsibilities, with source-linked obligation previews.
+Use `#explain_obligation` for source-state roles and registered mathematical lemmas,
+and `#proof_template` for a copyable standalone proof block.
+See [the explorer walkthrough](OBLIGATION-API.md#explore-a-goal-in-the-editor).
 
 For a complete graph algorithm, start with [one BFS proof, two FIFO backends](OWNED-BFS.md).
 The same owned source program mixes mutable arrays, scalar locals, nested loops, and

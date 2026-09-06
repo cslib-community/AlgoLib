@@ -45,11 +45,16 @@ execution or charges. Unnamed syntax remains supported for existing clients.
 
 ## 2. Inspect the particular obligation you are working on
 
+For a step-by-step guide to statuses, choosing an open goal, and checking a separate
+proof block, see [How do I choose which goal to prove?](OBLIGATION-API.md#how-do-i-choose-which-goal-to-prove).
+
 Place either command after the method declaration:
 
 ```lean
 #named_goals insertionSort
 #named_goals insertionSort only outer.inner.preserve
+#explain_obligation insertionSort only outer.inner.preserve.hole
+#proof_template insertionSort only outer.inner.preserve.hole
 ```
 
 The preview groups obligations by stable name, reports which remaining checks
@@ -75,30 +80,27 @@ You never select a goal by its position in a list.
 
 ## 3. Supply one block per mathematical responsibility
 
-This excerpt is checked in [Sorting.lean](Sorting.lean):
+The standalone blocks in [SortingProofs.lean](SortingProofs.lean) are the recommended
+editing interface. Use `#proof_template` to obtain a block's full declaration name:
 
 ```lean
-prove_algorithm insertionSort where
-  case outer.initialize.prefix => by simp [Prefix]
-  case outer.inner.initialize.hole => by grind only [enter]
-  case outer.inner.preserve.hole => by
-    first
-    | apply swap <;> first | assumption | omega
-    | apply keep <;> first | assumption | omega
-  case outer.inner.preserve.permutation => by
-    grind only [swap_preserves_permutation]
-  case outer.preserve.prefix => by grind only [exit]
-  case outer.terminate => by omega
-  case outer.account => by omega
-  case outer.inner.account => by omega
-  case outer.exit => by grind only [SortedPermutation, sorted]
+prove_obligation insertionSort.ObligationAPI.outer.inner.initialize.hole by
+  grind only [enter]
+
+prove_obligation insertionSort.ObligationAPI.outer.inner.preserve.hole by
+  first
+  | apply swap <;> first | assumption | omega
+  | apply keep <;> first | assumption | omega
 ```
 
-`outer.terminate` selects its remaining termination duties; an exact name can be
-used instead. Overlapping selections are rejected, so every selected responsibility
-has one owner. Unknown names are errors. Every supplied block must finish its
-selected goals, and every unhandled goal must be closed by routine automation.
-Missing mathematical proofs prevent creation of a usable certificate.
+The second block handles both remaining branch paths for the invariant. The explorer
+shows `swap` and `keep` with their theorem statements because the sorting specification
+registers them for preservation of `Hole`. Suggestions supply no proof evidence.
+
+After the other mathematical blocks, `complete_algorithm insertionSort` checks that
+all responsibilities have evidence and assembles the procedure. Routine proofs are
+cached by the specification. The compact `prove_algorithm ... where` form remains
+available, but standalone commands give each edited proof its own command boundary.
 
 The facts `enter`, `swap`, `keep`, and `exit` are ordinary theorems about arrays in
 [SortingFacts.lean](../SortingFacts.lean). They state the familiar sorted-prefix
@@ -107,7 +109,7 @@ There is no normalization, register correspondence, or compiler proof in these b
 
 ## 4. Separate the BFS arguments too
 
-[BreadthFirst.lean](BreadthFirst.lean) has three named loops: `clear`, `search`, and
+[BreadthFirstProgram.lean](BreadthFirstProgram.lean) has three named loops: `clear`, `search`, and
 `search.scan`. Its blocks separate the zeroed prefix, initial frontier, queue
 capacity, preservation of the scan result, and the outer work argument.
 

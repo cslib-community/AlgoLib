@@ -14,6 +14,14 @@ import this API; they do not regenerate it.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst
 
+open Frontend BFSFacts
+
+obligation_lemmas Frontier for "initialize" => [seed]
+obligation_lemmas Frontier for "preserve" => [process_head]
+obligation_lemmas Frontier for "exit" => [finish_bitmap]
+obligation_lemmas work for "account" => [work_le_total, process_head, scan_work]
+obligation_lemmas QueueOK for "preserve" => [queue_enqueue]
+
 generate_obligations bfs
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst

@@ -78,6 +78,7 @@ pure_modules = {prefix + name for name in (
     "Prototype.Composition.Compatibility", "Prototype.Composition.Contracts",
     "Prototype.Composition.Frontend", "Prototype.Composition.BufferAlgorithms",
     "Prototype.ProofGoals", "Prototype.NamedProofs", "Prototype.GeneratedObligations",
+    "Prototype.ObligationExplorer",
     "Prototype.Composition.SortingProgram", "Prototype.Composition.SortingSpec", "Prototype.Composition.SortingProofs",
     "Prototype.Composition.BreadthFirstProgram", "Prototype.Composition.BreadthFirstSpec", "Prototype.Composition.BreadthFirstProofs",
     "Prototype.Composition.Frontend.Syntax", "Prototype.Composition.Frontend.Resources",

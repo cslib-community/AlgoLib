@@ -26,6 +26,8 @@ structure ObligationEntry where
   typeName : Name
   proofName : Name
   site : String
+  contexts : Array (Array SourceBinding) := #[]
+  responsibility : String := "result"
   deriving Inhabited
 
 initialize obligationRegistry :
@@ -85,6 +87,21 @@ private partial def splitHypotheses (goal : MVarId) : MetaM MVarId := goal.withC
       return ← splitHypotheses child.mvarId
   return goal
 
+/-- Preserve the source label on invariant hypotheses before simplification removes wrappers. -/
+private def nameInvariantHypotheses (goal : MVarId) : MetaM (MVarId × Array SourceBinding) := do
+  let mut goal := goal
+  let mut bindings := #[]
+  let declarations ← goal.withContext do
+    pure ((← getLCtx).foldl (init := #[]) fun xs d => xs.push d)
+  for decl in declarations do
+    if decl.type.isAppOfArity ``Composition.InvariantFact 2 then
+      if let .lit (.strVal label) := decl.type.getAppArgs[0]! then
+        let name ← goal.withContext do
+          return (← getLCtx).getUnusedName (Name.mkSimple ("hInvariant_" ++ label))
+        goal ← goal.rename decl.fvarId name
+        bindings := bindings.push { name, source := label, role := "invariant hypothesis" }
+  return (goal, bindings)
+
 syntax "generate_obligation_spec " ident : command
 elab_rules : command
   | `(command| generate_obligation_spec $alg:ident) =>
@@ -108,7 +125,8 @@ elab_rules : command
         leaves ← leaves.mapM fun leaf => do
           let goal ← splitHypotheses leaf.goal
           let goal ← hideGuards goal
-          return { leaf with goal }
+          let (goal, facts) ← nameInvariantHypotheses goal
+          return { leaf with goal, bindings := leaf.bindings ++ facts }
         let keys := leaves.toList.map (·.key) |>.eraseDups
         let groups ← keys.toArray.mapM fun key => do
           let group := leaves.filter (·.key == key)
@@ -121,7 +139,9 @@ elab_rules : command
             key := key
             typeName := typeName
             proofName := typeName.appendAfter "_proof"
-            site := group[0]!.site }
+            site := group[0]!.site
+            contexts := group.map (·.bindings)
+            responsibility := group[0]!.responsibility }
           modifyEnv (obligationRegistry.addEntry · entry)
           return (group, types, typeName)
         let rec assemble (i : Nat) (args : Array Expr) : MetaM Expr := do

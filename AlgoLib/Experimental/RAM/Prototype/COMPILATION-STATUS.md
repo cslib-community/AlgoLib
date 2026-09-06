@@ -223,3 +223,13 @@ See [the authoring workflow](Composition/OBLIGATION-API.md).
 symbolic execution from algorithmic arguments. `SortingBackend` constructs instruction
 certificates without importing a sorting proof. This improves build reuse within the
 supported owned language; it does not expand the ordinary-Velvet compilation boundary.
+
+## Obligation explorer
+
+`#explain_obligation` reads the generated API and reports the responsibility, source
+location, explicitly recorded input/loop/result roles, exact open goals, and registered
+mathematical theorem suggestions. `#proof_template` prints a deliberately incomplete
+standalone block; it does not create evidence. Sorting and BFS specifications register
+their public mathematical vocabulary. The Loom and RAM soundness boundaries remain
+unchanged. This is a command-based editor interface, not a graphical code action or
+automatic discovery of invariants, branch proofs, or intermediate-state equations.

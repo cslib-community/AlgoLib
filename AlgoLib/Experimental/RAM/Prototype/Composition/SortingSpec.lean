@@ -14,6 +14,13 @@ import this API; they do not regenerate it.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
 
+open Frontend SortingFacts
+
+-- Suggestions are mathematical library metadata, not extra proof assumptions.
+obligation_lemmas Hole for "initialize" => [enter]
+obligation_lemmas Hole for "preserve" => [swap, keep]
+obligation_lemmas Prefix for "preserve" => [exit]
+
 generate_obligations insertionSort
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.Sorting

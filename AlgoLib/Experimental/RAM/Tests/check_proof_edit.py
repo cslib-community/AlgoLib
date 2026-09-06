@@ -1,7 +1,7 @@
 """Measure a proof-only edit and assert reuse of the generated API and RAM backend.
 
-Builds dependencies, adds a harmless comment to the proof module, rebuilds the
-executable, then restores and rebuilds the original file even if the check fails.
+Builds dependencies, checks a successful edit and a deliberately failing proof edit,
+then restores and rebuilds the original file even if either check fails.
 Do not run concurrently with other builds or edits of SortingProofs.lean.
 """
 from __future__ import annotations
@@ -28,11 +28,17 @@ def fingerprint(path: Path) -> dict:
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
-def build(label: str) -> float:
+def build(label: str, *, expect_success: bool = True) -> float:
     start = time.perf_counter()
     with (OUT / (label + ".log")).open("w") as log:
-        subprocess.run([LAKE, "build", BASE + "SortingExecution"], cwd=ROOT,
-                       stdout=log, stderr=subprocess.STDOUT, check=True, timeout=600)
+        result = subprocess.run([LAKE, "build", BASE + "SortingExecution"], cwd=ROOT,
+                                stdout=log, stderr=subprocess.STDOUT, timeout=600)
+    if (result.returncode == 0) != expect_success:
+        raise RuntimeError(f"Unexpected build result for {label}: {result.returncode}")
+    if not expect_success:
+        diagnostic = (OUT / (label + ".log")).read_text()
+        if "deliberate proof-edit regression" not in diagnostic:
+            raise RuntimeError("Build failed for a reason other than the deliberate proof edit")
     return time.perf_counter() - start
 
 
@@ -47,15 +53,23 @@ def main() -> None:
     report = {"measurement": "proof-only source edit followed by executable rebuild",
               "before": before}
     try:
-        proof.write_bytes(original + b"\n-- Proof-edit build-cache regression.\n")
+        marker = b"simp [Prefix]"
+        if original.count(marker) != 1:
+            raise RuntimeError("Expected a unique initialization proof to edit")
+        proof.write_bytes(original.replace(marker, b"simpa [Prefix]", 1))
         report["seconds"] = build("edited-proof")
         after = {name: fingerprint(path) for name, path in watched.items()}
         report["after"] = after
         report["api_reused"] = before["SortingSpec"] == after["SortingSpec"]
         report["backend_reused"] = before["SortingBackend"] == after["SortingBackend"]
         report["proof_rechecked"] = before["SortingProofs"] != after["SortingProofs"]
+        proof.write_bytes(original.replace(marker, b'fail "deliberate proof-edit regression"', 1))
+        report["failing_edit_seconds"] = build("failing-proof", expect_success=False)
+        report["failing_api_reused"] = before["SortingSpec"] == fingerprint(watched["SortingSpec"])
+        report["failing_backend_reused"] = before["SortingBackend"] == fingerprint(watched["SortingBackend"])
         report["passed"] = all(report[key] for key in
-                               ("api_reused", "backend_reused", "proof_rechecked"))
+                               ("api_reused", "backend_reused", "proof_rechecked",
+                                "failing_api_reused", "failing_backend_reused"))
     finally:
         proof.write_bytes(original)
         report["restore_seconds"] = build("restored-proof")
@@ -63,7 +77,8 @@ def main() -> None:
     if not report["passed"]:
         raise SystemExit("Proof-edit reuse regression: inspect " + str(OUT / "report.json"))
     print(f"PASS: proof edit and executable rebuild {report['seconds']:.2f}s; "
-          "specification and backend artifacts unchanged")
+          f"failing proof edit {report['failing_edit_seconds']:.2f}s; "
+          "specification and backend artifacts unchanged in both cases")
 
 
 if __name__ == "__main__":
