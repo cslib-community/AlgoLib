@@ -1,5 +1,11 @@
 # Mutable programs, inline invariants, verified RAM execution
 
+For the current modularity boundary, start with **[Composition](Composition/README.md)**:
+typed abstract operations, owned interfaces, private potential, and automatic client linking.
+The buffer demo changes both physical clearing behavior and its payment strategy while
+reusing the same client proof. The compatibility bridge preserves existing logical VCs.
+
+
 Start with [Pure algorithms and interchangeable array backends](../docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
 
 
@@ -14,7 +20,7 @@ For graph algorithms, start with the [BFS tutorial](GRAPH-TUTORIAL.md),
 procedure composition with real inlined RAM bodies. `Prototype.Frontend` exports
 both `ram method` and `ram_do`; import `Prototype.Graph` for the graph operations.
 
-For mutable arrays, start with [InsertionSort.lean](InsertionSort.lean). It exposes
+For mutable arrays, start with [SortingAlgorithm.lean](SortingAlgorithm.lean). It exposes
 both insertion-sort loops and every array operation. There is no `InsertNext` action, hidden insertion
 procedure, or student-written implementation proof.
 

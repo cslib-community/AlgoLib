@@ -62,3 +62,14 @@ Lean 4.30 added the optional `dependent` parameter before `generalizing`. Loom's
 legacy elaborator now reads discriminants and alternatives at the new indices,
 instead of silently losing match alternatives. Explicit dependent-match options
 are rejected with an error until this elaborator supports them.
+
+## Additional refinement/resource-design attribution
+
+The owned composition layer in `AlgoLib/Experimental/RAM/Prototype/Composition` is inspired
+by Peter Lammich's Sepref / Imperative Refinement Framework, especially abstract operation
+interfaces, implementation substitution, and automatic refinement-proof reconstruction:
+[Refinement Based Verification of Imperative Data Structures, CPP 2016](https://www21.in.tum.de/~lammich/pub/cpp2016_impds.pdf).
+Its ownership/private-potential contracts also draw on Robert Atkey's
+[Amortised Resource Analysis with Separation Logic, LMCS 2011](https://bentnib.org/amortised-sep-logic-journal.html).
+These are new Lean definitions and proofs, not a port of Sepref or its automation. The
+actual Loom algebra/WP code continues to be the attributed upstream framework above.

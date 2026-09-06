@@ -1,5 +1,20 @@
 # Principles and current limits
 
+## Modularity is an explicit contract
+
+The [composition layer](../Prototype/Composition/README.md) separates typed client programs,
+abstract operation contracts, owned implementations, and RAM linking. A primitive preserves
+all unowned cells and registers and proves `steps + final potential ≤ rate * charge + initial
+potential`. Sequential linking cancels intermediate potential; spatial framing preserves an
+unrelated component's value and saved potential. Clients see neither layouts nor private
+payment strategies. The generic `client_linking` theorem covers every supported client.
+
+This new boundary is implemented and exercised by independently selected buffer components.
+Existing logical proofs transport by VC equality. An old backend's whole-store simulation
+must still be strengthened with locality before it can enter the owned linker; ownership
+is not inferred from an old certificate. See the linked guide for the fixed-footprint scope.
+
+
 ## Algorithm authors prove mathematics
 
 The primary interface is `Programs` for complete algorithms and `Authoring` for reusable proof rules. Users supply an algorithm invariant, its initialization, a charging scheme, and mathematical preservation/exit arguments. They do not prove normalization equalities, register correspondence, address disjointness inside queue operations, instruction-certificate lifting, or compiler-overhead transport.

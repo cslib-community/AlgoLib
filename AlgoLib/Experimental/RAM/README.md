@@ -1,5 +1,11 @@
 # Verified RAM algorithms, by abstraction layer
 
+The new [composition contract layer](Prototype/Composition/README.md) makes ownership and
+private resource accounting compositional. It includes a generic client-linking theorem,
+actual Loom/RAM interpretations, and one client proof across four independently selected
+lazy/eager buffer implementations. Existing sorting/BFS entry points below remain available.
+
+
 Start with [Pure algorithms and interchangeable array backends](docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
 
 

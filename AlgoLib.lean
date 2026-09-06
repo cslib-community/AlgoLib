@@ -103,3 +103,6 @@ import AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests
 import AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation
 import AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation
 import AlgoLib.Experimental.RAM.Prototype.Axioms
+import AlgoLib.Experimental.RAM.Prototype.Composition
+import AlgoLib.Experimental.RAM.Tests.Composition
+import AlgoLib.Experimental.RAM.Tests.CompositionAxioms

@@ -167,3 +167,12 @@ that compatibility path.
 ## Supported deterministic frontend
 
 The `ram method` frontend now emits a backend-independent `Specification`; `prove_algorithm` verifies it without RAM imports. `Supported.compile` and `loom_to_supported_ram` give the structural compilation guarantee for this deterministic DSL. Contiguous and indirect arrays reuse the same sorting/zeroing proofs. See [the precise scope](../docs/GENERALITY-AND-SUBSTITUTION.md). This does not complete the ordinary-Velvet compiler described above.
+
+## Owned composition and private potential
+
+[Composition](Composition/README.md) now adds typed input/output operations, contract-based
+procedure composition, local ownership, private potential, and a structural client linker.
+Loom reasoning and the existing RAM compiler are reused. The buffer example links one proof
+to all four lazy/eager implementation combinations and counts actual instructions. Existing
+Authoring VCs embed unchanged. This does not add arbitrary ordinary-method reification,
+runtime recursion, allocation, or shared-permission inference to the compiler boundary above.

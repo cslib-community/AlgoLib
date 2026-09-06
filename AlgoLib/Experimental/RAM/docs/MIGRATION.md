@@ -78,3 +78,13 @@ API change; use this guide and the checked Lean demos for current syntax.
 ## Pure frontend declarations
 
 `ram method` now declares a `Specification`, not a backend-indexed `Method`. Import `Prototype.LogicalFrontend` and use `prove_algorithm` for a proof-only file. Attach a backend with `interface.realize name nameCorrect`. Existing `prove_ram` syntax still selects the default array backend. Pure mutable definitions moved to the `Authoring.Mutable` and `Authoring.MultipleArrays` namespaces; their backend modules retain their import paths. See [Generality and substitution](GENERALITY-AND-SUBSTITUTION.md).
+
+## Owned, resource-aware composition
+
+Use `Prototype.Composition.Language` for typed abstract clients and `Composition.Loom` for
+reasoning. `Composition.Linking` and `Execution` are implementation-layer imports. Source
+operations require separately registered `Primitive` and `TestImplementation` contracts;
+`Linked` reconstructs structured composition. `Composition.Compatibility.ofProgram_vc`
+transports existing Authoring proofs. Existing APIs remain available. See the
+[owned composition guide](../Prototype/Composition/README.md) before migrating a backend:
+locality and initial-potential accounting are additional required implementation evidence.

@@ -47,6 +47,13 @@ for module, path in modules.items():
             i.startswith(prefix + blocked + ".")
             for i in local for blocked in ("Programs", "Legacy")
         ), (path, "reusable layer depends on an algorithm/demo")
+    if path.relative_to(root).parts[:2] == ("Prototype", "Composition") and path.stem in (
+        "Language", "Ownership", "Linking", "Loom", "Execution", "Compatibility"
+    ):
+        assert not any(i.startswith(prefix + "Prototype.Composition." + name)
+                       for i in local for name in ("Buffer", "Demo")), (
+            path, "generic composition infrastructure imports a demo or buffer adapter"
+        )
     assert re.search(r"/-!", text), (path, "missing module documentation")
     edges[module] = local
 
@@ -59,6 +66,9 @@ pure_modules = {prefix + name for name in (
     "Prototype.LoomObservation", "Prototype.Procedures", "Prototype.LogicalFrontend",
     "Prototype.SortingFacts", "Prototype.SortingAlgorithm", "Prototype.ZeroAlgorithm",
     "Tests.CreditLogic",
+    "Prototype.Composition", "Prototype.Composition.Language", "Prototype.Composition.Loom",
+    "Prototype.Composition.Buffer", "Prototype.Composition.BufferClient",
+    "Prototype.Composition.Compatibility",
 )}
 for module in pure_modules:
     assert all(i in pure_modules for i in edges[module]), (

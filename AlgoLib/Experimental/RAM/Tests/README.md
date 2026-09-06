@@ -42,3 +42,12 @@ algorithm certificates. Both modules are included in `lake build`.
 The layer checker also follows transitive imports from the logical frontend, Loom
 reasoning, and the two algorithm proofs: none may depend on a RAM backend. See the
 [construction and scope guide](../docs/GENERALITY-AND-SUBSTITUTION.md).
+
+## Ownership and private-resource composition
+
+`Composition.lean` tests the typed owned client linker, all four combinations of lazy/eager
+buffer implementations, exact RAM counts, framed payload preservation, argument/result
+transfer, nested loops, unsupported-operation rejection, overlapping ownership rejection,
+and unchanged insertion-sort proof transport. `CompositionAxioms.lean` pins the generic
+laws and concrete implementation dependencies. Both are part of `lake build`. The import
+checker prevents the abstract buffer interface and client proof from importing implementations.
