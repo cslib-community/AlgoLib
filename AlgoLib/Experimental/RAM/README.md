@@ -1,5 +1,8 @@
 # Verified RAM algorithms, by abstraction layer
 
+Start with [Pure algorithms and interchangeable array backends](docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
+
+
 The [Loom-connected BFS tutorial](Prototype/GRAPH-TUTORIAL.md) demonstrates typed
 graph primitives, modular neighbor-scan and vertex-processing procedures, and a
 checked connectivity/linear-time theorem for their composed RAM program.

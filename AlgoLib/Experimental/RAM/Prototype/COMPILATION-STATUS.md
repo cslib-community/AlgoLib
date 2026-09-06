@@ -163,3 +163,7 @@ The actual Loom/Velvet sources retain their attribution in
 [vendor/README.md](../../../../vendor/README.md). This extension also fixes Loom's
 Lean 4.30 `match` syntax indexing; the recursive ordinary-method test exercises
 that compatibility path.
+
+## Supported deterministic frontend
+
+The `ram method` frontend now emits a backend-independent `Specification`; `prove_algorithm` verifies it without RAM imports. `Supported.compile` and `loom_to_supported_ram` give the structural compilation guarantee for this deterministic DSL. Contiguous and indirect arrays reuse the same sorting/zeroing proofs. See [the precise scope](../docs/GENERALITY-AND-SUBSTITUTION.md). This does not complete the ordinary-Velvet compiler described above.

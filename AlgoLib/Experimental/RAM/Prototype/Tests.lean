@@ -53,7 +53,7 @@ ram method fill (mut arr : Array Nat) return (u : Unit)
     return
 
 prove_ram fill by
-  ram_solve [SortingFacts.get_set, Array.size_setIfInBounds]
+  ram_solve [ArrayFacts.get_set, Array.size_setIfInBounds]
 
 set_option linter.hashCommand false in
 /-- info: #[0, 0, 0] -/
@@ -86,7 +86,7 @@ example (c : Nat) :
       (fun _ => 0) Plan.skip).vc (fun _ _ => True) (Mutable.initial #[]) c := by
   intro h
   have step := h.2 (Mutable.initial #[]) c trivial
-  simpa [Plan.vc, Mutable.compare, Checked.Language.Comparison.eval] using step.2
+  simpa [Plan.vc, Mutable.compare, Mutable.Comparison.eval] using step.2
 
 /-- Proof annotations cannot be substituted for a different program. -/
 example : True := by

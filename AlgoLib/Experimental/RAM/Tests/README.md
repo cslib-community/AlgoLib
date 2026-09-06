@@ -28,3 +28,17 @@ RAM steps. `CreditAxioms.lean` guards concrete certificates as well as generic c
 The layer checker prevents the logical core and this proof fixture from importing a backend.
 Method tests check that preparation remains charged, while frontend tests reject a `time`
 override and missing realizations cannot be turned into executables.
+
+## Supported compilation and implementation substitution
+
+`ArraySubstitution.lean` checks the same insertion-sort and array-zeroing proof with
+contiguous storage and a pointer-table representation. It compares executable results
+against reference outputs and checks the inferred RAM bounds. It also checks structural
+support for nested constructs, rejection of an unsupported action in an unreachable
+branch, and the direct Loom-WP-to-RAM theorem. `GeneralityAxioms.lean` guards the
+generic compiler, that theorem, the indirect representation proofs, and both concrete
+algorithm certificates. Both modules are included in `lake build`.
+
+The layer checker also follows transitive imports from the logical frontend, Loom
+reasoning, and the two algorithm proofs: none may depend on a RAM backend. See the
+[construction and scope guide](../docs/GENERALITY-AND-SUBSTITUTION.md).

@@ -96,9 +96,9 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Prototype.Plan.loom_sound
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.Mutable.represents_write' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Authoring.Mutable.represents_write' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
-#print axioms AlgoLib.Experimental.RAM.Prototype.Mutable.represents_write
+#print axioms AlgoLib.Experimental.RAM.Authoring.Mutable.represents_write
 
 set_option linter.hashCommand false in
 /-- info: 'AlgoLib.Experimental.RAM.Prototype.InsertionSort.loom_correct' depends on axioms: [propext,
@@ -206,18 +206,18 @@ set_option linter.hashCommand false in
   AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecutableTranslation.run_correct_and_cost
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_write' depends on axioms: [propext,
+/-- info: 'AlgoLib.Experimental.RAM.Authoring.MultipleArrays.represents_write' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/
 #guard_msgs in
-#print axioms AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_write
+#print axioms AlgoLib.Experimental.RAM.Authoring.MultipleArrays.represents_write
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_initial' depends on axioms: [propext,
+/-- info: 'AlgoLib.Experimental.RAM.Authoring.MultipleArrays.represents_initial' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/
 #guard_msgs in
-#print axioms AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_initial
+#print axioms AlgoLib.Experimental.RAM.Authoring.MultipleArrays.represents_initial
 
 set_option linter.hashCommand false in
 /-- info: 'AlgoLib.Experimental.RAM.Prototype.method_execution' depends on axioms: [propext, Quot.sound] -/

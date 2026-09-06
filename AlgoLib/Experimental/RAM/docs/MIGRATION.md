@@ -74,3 +74,7 @@ certificates implement them. `method.certify proof` reconstructs those certifica
 See [Credits and backends](CREDITS-AND-BACKENDS.md) for the complete migration and
 runnable proof-reuse example. The previously exported PDF and slides predate this
 API change; use this guide and the checked Lean demos for current syntax.
+
+## Pure frontend declarations
+
+`ram method` now declares a `Specification`, not a backend-indexed `Method`. Import `Prototype.LogicalFrontend` and use `prove_algorithm` for a proof-only file. Attach a backend with `interface.realize name nameCorrect`. Existing `prove_ram` syntax still selects the default array backend. Pure mutable definitions moved to the `Authoring.Mutable` and `Authoring.MultipleArrays` namespaces; their backend modules retain their import paths. See [Generality and substitution](GENERALITY-AND-SUBSTITUTION.md).

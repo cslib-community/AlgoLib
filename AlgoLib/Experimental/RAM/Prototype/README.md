@@ -1,5 +1,8 @@
 # Mutable programs, inline invariants, verified RAM execution
 
+Start with [Pure algorithms and interchangeable array backends](../docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
+
+
 For the ordinary-Velvet semantic bridge, nondeterministic execution, recursive
 example, and precise remaining compiler work, see
 [Compilation status and demos](COMPILATION-STATUS.md). Full ordinary-Velvet

@@ -35,7 +35,7 @@ for module, path in modules.items():
             i == prefix + "Prototype." + blocked
             for i in local for blocked in ("InsertionSort", "BFS", "Graph", "GraphTests", "Tests", "Axioms",
                 "MultipleArrayTests", "VelvetArrayTranslation", "VelvetTranslationTests",
-                "RecursiveTranslation")
+                "RecursiveTranslation", "ArraySubstitution", "SortingAlgorithm", "ZeroAlgorithm")
         ), (path, "generic prototype infrastructure depends on a domain adapter or demo/tests")
     if layer == "Programs":
         assert not any(
@@ -48,12 +48,22 @@ for module, path in modules.items():
             for i in local for blocked in ("Programs", "Legacy")
         ), (path, "reusable layer depends on an algorithm/demo")
     assert re.search(r"/-!", text), (path, "missing module documentation")
-    if module in (prefix + "Authoring.Semantics", prefix + "Authoring.Syntax",
-            prefix + "Tests.CreditLogic"):
-        assert all(i in (prefix + "Authoring.Semantics",) for i in local), (
-            path, "logical credit core depends on a backend or machine"
-        )
     edges[module] = local
+
+# These modules form the complete source-language / Loom reasoning layer.
+# Enforce the boundary transitively, including frontend and actual algorithm proofs.
+pure_modules = {prefix + name for name in (
+    "Authoring.Semantics", "Authoring.Syntax", "Authoring.Contracts",
+    "Authoring.Mutable", "Authoring.MultipleArrays", "Authoring.ArrayFacts", "Prototype.Observation",
+    "Prototype.LogicalInterpretation", "Prototype.LogicalVerification",
+    "Prototype.LoomObservation", "Prototype.Procedures", "Prototype.LogicalFrontend",
+    "Prototype.SortingFacts", "Prototype.SortingAlgorithm", "Prototype.ZeroAlgorithm",
+    "Tests.CreditLogic",
+)}
+for module in pure_modules:
+    assert all(i in pure_modules for i in edges[module]), (
+        modules[module], "logical language/proof layer imports a backend-dependent module"
+    )
 
 active, done = set(), set()
 def visit(module):

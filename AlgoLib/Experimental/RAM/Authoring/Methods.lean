@@ -5,6 +5,7 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Authoring.Interface
 import AlgoLib.Experimental.RAM.Authoring.Syntax
+import AlgoLib.Experimental.RAM.Authoring.Contracts
 
 /-!
 # Procedures with explicit input, output, and logical credit contracts
@@ -20,54 +21,6 @@ perform the algorithm during compilation. Encoding, preparation, observation,
 and compiler transport remain responsibilities of the chosen library adapter.
 -/
 namespace AlgoLib.Experimental.RAM.Authoring
-
-/-- Completeness for the independent mathematical semantics. Used internally to
-turn a previously checked loop contract into the generated method obligation. -/
-theorem Run.vc {State : Type} (p : Program State) :
-    ∀ {s t : State} {k : Nat}, Run p s k t →
-      ∀ (Q : State → Nat → Prop) (c : Nat), k ≤ c → Q t (c-k) → VC p Q s c := by
-  induction p with
-  | skip =>
-    intro s t k h Q c hc hQ
-    cases h
-    simpa [VC] using hQ
-  | action a =>
-    intro s t k h Q c hc hQ
-    cases h with
-    | action _ _ safe => exact ⟨safe, hc, hQ⟩
-  | seq a b iha ihb =>
-    intro s t k h Q c hc hQ
-    cases h with
-    | @seq _ _ _ u _ i j ha hb =>
-      apply iha ha (VC b Q) c (by omega)
-      apply ihb hb Q (c-i) (by omega)
-      simpa [Nat.sub_sub] using hQ
-  | branch q a b iha ihb =>
-    intro s t k h Q c hc hQ
-    cases h with
-    | ifTrue yes ha =>
-      refine ⟨by omega, ?_⟩
-      simp only [yes, ↓reduceIte]
-      apply iha ha Q (c-1) (by omega)
-      simpa [Nat.sub_sub, Nat.add_comm] using hQ
-    | ifFalse no hb =>
-      refine ⟨by omega, ?_⟩
-      simp only [no, Bool.false_eq_true, ↓reduceIte]
-      apply ihb hb Q (c-1) (by omega)
-      simpa [Nat.sub_sub, Nat.add_comm] using hQ
-  | loop q body ih =>
-    intro s t k h Q c hc hQ
-    let I := fun u d => ∃ j z, Run (.loop q body) u j z ∧ j ≤ d ∧ Q z (d-j)
-    refine ⟨I, ⟨k, t, h, hc, hQ⟩, ?_⟩
-    intro u d ⟨j, z, run, hj, hz⟩
-    cases run with
-    | whileFalse no =>
-      exact ⟨by omega, by simpa [no] using hz⟩
-    | @whileTrue _ _ _ v _ i l yes hb hl =>
-      refine ⟨by omega, ?_⟩
-      simp only [yes, ↓reduceIte]
-      apply ih hb I (d-1) (by omega)
-      exact ⟨l, z, hl, by omega, by simpa [Nat.sub_sub, Nat.add_assoc] using hz⟩
 
 /-- Reuse a logical loop/body contract. Only its initial condition, output
 meaning, and sufficient credits remain; no machine state is exposed. -/
@@ -96,6 +49,16 @@ def Method.VCs {State Input Output : Type} {M : Model State}
     VC method.body (fun t _ => ∀ out, api.Observes t out → method.ensures i out)
       (api.initial i) (method.credits i)
 
+/-- Forget the execution backend: retain only the complete logical algorithm. -/
+def Method.specification {State Input Output : Type} {M : Model State}
+    {api : Interface M Input Output} (method : Method api) : Specification State Input Output where
+  body := method.body
+  initial := api.initial
+  observes := api.Observes
+  requires := method.requires
+  ensures := method.ensures
+  credits := method.credits
+
 /-- The backend derives a RAM upper bound from logical credits and input preparation. -/
 def Method.time {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (method : Method api) (i : Input) : Nat :=
@@ -111,8 +74,22 @@ structure VerifiedMethod {State Input Output : Type} {M : Model State}
 /-- Supply only the logical proof. Backend certificates are assembled automatically. -/
 def Method.certify {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (method : Method api) (proof : method.VCs)
-    (compilation : Compilation M method.body := by ram_compile) : VerifiedMethod api :=
-  ⟨method, proof, compilation⟩
+    (supported : Supported M method.body := by ram_supported) : VerifiedMethod api :=
+  ⟨method, proof, supported.compile⟩
+
+/-- Attach any implementation of the same input/output view to one logical proof.
+The source program, specification, and proof are supplied unchanged. -/
+def Interface.realize {State Input Output : Type} {M : Model State}
+    (api : Interface M Input Output) (spec : Specification State Input Output)
+    (proof : spec.VCs)
+    (initial : api.initial = spec.initial := by rfl)
+    (observes : api.Observes = spec.observes := by rfl)
+    (supported : Supported M spec.body := by ram_supported) : VerifiedMethod api :=
+  { method := ⟨spec.body, spec.requires, spec.ensures, spec.credits⟩
+    compilation := supported.compile
+    verification := by
+      intro i hi
+      simpa only [initial, observes] using proof i hi }
 
 private theorem VerifiedMethod.body_correct {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (p : VerifiedMethod api) (i : Input)

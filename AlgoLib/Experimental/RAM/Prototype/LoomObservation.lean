@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Verification
+import AlgoLib.Experimental.RAM.Prototype.LogicalVerification
 import Loom.MonadAlgebras.WP.Basic
 
 /-!
@@ -67,5 +67,16 @@ theorem Plan.loom_sound {State : Type}
     _root_.wp (denote p) (fun _ => Q) s c := by
   rw [loom_wp_eq]
   exact plan.sound Q s c h
+
+open Authoring
+
+/-- Pure annotations establish the actual Loom WP without importing a RAM model. -/
+theorem algorithm_loom_correct {State Input Output : Type}
+    (spec : Specification State Input Output) (plan : Input → Plan spec.body)
+    (proof : AlgorithmObligations spec plan) (input : Input) (valid : spec.requires input) :
+    _root_.wp (denote spec.body)
+      (fun _ t _ => ∀ output, spec.observes t output → spec.ensures input output)
+      (spec.initial input) (spec.credits input) :=
+  (plan input).loom_sound _ _ _ (proof input valid)
 
 end AlgoLib.Experimental.RAM.Prototype

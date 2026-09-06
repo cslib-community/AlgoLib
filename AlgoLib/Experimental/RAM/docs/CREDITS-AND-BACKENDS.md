@@ -1,5 +1,8 @@
 # Logical credits and inferred RAM time
 
+The stronger [generality and array-substitution guide](GENERALITY-AND-SUBSTITUTION.md) now shows two complete algorithms with pure frontend files and materially different array implementations.
+
+
 An algorithm author proves a mathematical result within a **logical credit budget**.
 The selected backend proves how much RAM work implements those credits. The two
 quantities have separate definitions and separate responsibilities.
@@ -122,7 +125,7 @@ or `GuardImplementation M guard`. Keep logical effects and charges independent o
 compiled expressions. Remove the method's `time` clause and the old second RAM-payment
 subgoal. Use `method.certify verification` to assemble the executable automatically.
 
-The executable input/output `Interface` still selects a backend. The reusable
-`Program`, `Correct`, and procedure proofs do not. This refactor does not complete
+`Specification` now includes logical input/output independently of a backend.
+`Interface.realize` attaches an execution backend to that unchanged specification and proof. This refactor does not complete
 the separate experimental compiler for all ordinary Velvet methods; its supported
 boundary is documented in [Prototype/COMPILATION-STATUS.md](../Prototype/COMPILATION-STATUS.md).

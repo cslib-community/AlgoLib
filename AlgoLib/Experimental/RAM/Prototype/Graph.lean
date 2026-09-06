@@ -5,6 +5,7 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Procedures
 import AlgoLib.Experimental.RAM.Library.Search
+import AlgoLib.Experimental.RAM.Prototype.Verification
 
 /-!
 # Graph primitives and reusable adjacency-scan procedures

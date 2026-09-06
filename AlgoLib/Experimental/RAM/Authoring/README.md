@@ -1,5 +1,8 @@
 # From a paper argument to a checked method
 
+Start with [Pure algorithms and interchangeable array backends](../docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
+
+
 Start with a complete example in [Programs](../Programs). This directory supplies the reusable proof rules; it does not contain additional sorting or BFS programs.
 
 ## 1. State what the algorithm returns

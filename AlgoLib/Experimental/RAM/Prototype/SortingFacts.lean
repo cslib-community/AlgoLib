@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import Mathlib.Tactic
+import AlgoLib.Experimental.RAM.Authoring.ArrayFacts
 
 /-!
 # The mathematical argument for adjacent-swap insertion sort
@@ -14,6 +14,7 @@ position left. There is no machine state, compiler, or verification-condition AP
 The frontend can use these ordinary lemmas when it reaches an annotated loop.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.SortingFacts
+open Authoring.ArrayFacts
 
 /-- Positions strictly before `i` are in nondecreasing order. -/
 def Prefix (a : Array Nat) (i : Nat) : Prop :=
@@ -22,14 +23,6 @@ def Prefix (a : Array Nat) (i : Nat) : Prop :=
 /-- In the prefix through `i`, only position `j` may violate the ordering. -/
 def Hole (a : Array Nat) (i j : Nat) : Prop :=
   ∀ p q, p < q → q ≤ i → q ≠ j → a[p]! ≤ a[q]!
-
-/-- An array read after an update: a reusable mathematical substitution rule. -/
-theorem get_set (a : Array Nat) (i j v : Nat) (hj : j < a.size) :
-    (a.setIfInBounds i v)[j]! = if j = i then v else a[j]! := by
-  by_cases hi : i < a.size
-  · simp [Array.setIfInBounds, hi, getElem!_pos, hj, Array.getElem_set, eq_comm]
-  · have hji : j ≠ i := by omega
-    simp [Array.setIfInBounds, hi, hji]
 
 /-- Open the insertion loop at the end of an already sorted prefix. -/
 theorem enter (a : Array Nat) (i : Nat) (h : Prefix a i) : Hole a i i := by
