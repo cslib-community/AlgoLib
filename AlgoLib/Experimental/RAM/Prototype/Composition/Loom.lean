@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.Language
+import AlgoLib.Experimental.RAM.Prototype.Composition.Contracts
 import AlgoLib.Experimental.RAM.Prototype.LoomObservation
 
 /-!
@@ -58,5 +58,13 @@ theorem VC.loom (p : Program A B) (post : B → Nat → Prop) (a : A) (budget : 
   rw [loom_wp_eq]
   obtain ⟨k, b, run, hk, hQ⟩ := VC.sound p post a budget proof
   exact ⟨k, (), b, run, hk, hQ⟩
+
+/-- Contract-directed obligations establish actual Loom WP for the same body. -/
+theorem Algorithm.loom_correct (m : Algorithm A B) (proof : m.Obligations)
+    (a : A) (valid : m.requires a) :
+    _root_.wp (denote m.body a) (fun b _ _ => m.ensures a b) () (m.credits a) := by
+  rw [loom_wp_eq]
+  obtain ⟨k, b, run, post, paid⟩ := (m.certify proof).correct a valid
+  exact ⟨k, (), b, run, paid, post⟩
 
 end AlgoLib.Experimental.RAM.Prototype.Composition

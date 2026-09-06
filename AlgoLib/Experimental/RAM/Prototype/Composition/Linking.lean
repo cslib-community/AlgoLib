@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.Language
+import AlgoLib.Experimental.RAM.Prototype.Composition.Contracts
 import AlgoLib.Experimental.RAM.Prototype.Composition.Ownership
 
 /-!
@@ -44,6 +44,23 @@ class TestImplementation (rate : Nat) (P : Representation A) (test : A → Bool)
   condition : Condition
   correct : ∀ a r s saved, P.holds a r s saved → condition.eval s = test a
   cost : condition.cost ≤ rate
+
+/-- Query lifting borrows the selected component and leaves all ownership unchanged. -/
+instance [impl : TestImplementation rate P test] :
+    TestImplementation rate (P.sep Q) (testLeft test) where
+  condition := impl.condition
+  correct a r s saved rep := by
+    obtain ⟨r₁, r₂, p₁, p₂, _, _, _, hp, _⟩ := rep
+    exact impl.correct a.1 r₁ s p₁ hp
+  cost := impl.cost
+
+instance (P : Representation A) [impl : TestImplementation rate Q test] :
+    TestImplementation rate (P.sep Q) (testRight test) where
+  condition := impl.condition
+  correct a r s saved rep := by
+    obtain ⟨r₁, r₂, p₁, p₂, _, _, _, _, hq⟩ := rep
+    exact impl.correct a.2 r₂ s p₂ hq
+  cost := impl.cost
 
 inductive Supported (rate : Nat) :
     {A B : Type} → Representation A → Representation B → Program A B → Type 1 where

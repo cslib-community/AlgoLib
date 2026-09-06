@@ -176,3 +176,15 @@ Loom reasoning and the existing RAM compiler are reused. The buffer example link
 to all four lazy/eager implementation combinations and counts actual instructions. Existing
 Authoring VCs embed unchanged. This does not add arbitrary ordinary-method reification,
 runtime recursion, allocation, or shared-permission inference to the compiler boundary above.
+
+## Contract-aware mutable owned methods
+
+The existing `ram method` and `prove_algorithm` commands now accept owned-resource
+procedure assignments and receiver calls. They elaborate to `Composition.Program`
+with indexed `Plan` annotations. Call VCs use public pre/postconditions and logical
+allowances, including calls inside branches and loops. The compiler still checks
+the actual body. Straight-line public allowances and unrelated-resource frames are
+generated automatically. See [the source example](Composition/BufferAlgorithms.lean)
+and [the precise supported scope](Composition/README.md#frontend-scope).
+This closes the contract-call gap for this supported frontend path; it does not
+complete the ordinary Velvet compiler or migrate every array/graph adapter.

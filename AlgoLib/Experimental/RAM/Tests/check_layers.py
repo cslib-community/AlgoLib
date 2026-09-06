@@ -48,7 +48,7 @@ for module, path in modules.items():
             for i in local for blocked in ("Programs", "Legacy")
         ), (path, "reusable layer depends on an algorithm/demo")
     if path.relative_to(root).parts[:2] == ("Prototype", "Composition") and path.stem in (
-        "Language", "Ownership", "Linking", "Loom", "Execution", "Compatibility"
+        "Language", "Contracts", "Frontend", "Ownership", "Linking", "Loom", "Execution", "Compatibility"
     ):
         assert not any(i.startswith(prefix + "Prototype.Composition." + name)
                        for i in local for name in ("Buffer", "Demo")), (
@@ -68,7 +68,8 @@ pure_modules = {prefix + name for name in (
     "Tests.CreditLogic",
     "Prototype.Composition", "Prototype.Composition.Language", "Prototype.Composition.Loom",
     "Prototype.Composition.Buffer", "Prototype.Composition.BufferClient",
-    "Prototype.Composition.Compatibility",
+    "Prototype.Composition.Compatibility", "Prototype.Composition.Contracts",
+    "Prototype.Composition.Frontend", "Prototype.Composition.BufferAlgorithms",
 )}
 for module in pure_modules:
     assert all(i in pure_modules for i in edges[module]), (

@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import Velvet.Syntax
+import AlgoLib.Experimental.RAM.Prototype.Composition.Frontend
 import AlgoLib.Experimental.RAM.Authoring.Mutable
 import AlgoLib.Experimental.RAM.Authoring.MultipleArrays
 import AlgoLib.Experimental.RAM.Prototype.Procedures
@@ -315,7 +316,7 @@ syntax "ensures" termBeforeCost : ramEnsures
 syntax "credits" termBeforeCost : ramCredits
 syntax "time" Term.termBeforeDo : ramTime
 syntax "ram" "method" ident leafny_binder* "return" "(" ident ":" term ")"
-  ramRequire* ramEnsures* ramCredits (ramTime)? "do" Term.doSeq : command
+  ramRequire* ramEnsures* (ramCredits)? (ramTime)? "do" Term.doSeq : command
 
 private def declareMultiple (name : Ident) (binders : Array (TSyntax `leafny_binder))
     (ret : Ident) (pre post : Array Term) (creditBudget : Term)
@@ -371,13 +372,26 @@ private def declareMultiple (name : Ident) (binders : Array (TSyntax `leafny_bin
 
 elab_rules : command
   | `(command| ram method $name:ident $binders:leafny_binder* return ($ret:ident : $retTy:term)
-      $pres:ramRequire* $posts:ramEnsures* $creditClause:ramCredits $[$timeClause:ramTime]?
+      $pres:ramRequire* $posts:ramEnsures* $[$creditClause:ramCredits]? $[$timeClause:ramTime]?
       do $body:doSeq) => do
-    let `(ramCredits| credits $creditBudget:term) := creditClause | throwUnsupportedSyntax
+    let creditBudget : Option Term := creditClause.map (fun c => ⟨c.raw[1]⟩)
     if let some clause := timeClause then
       throwErrorAt clause "RAM time is inferred from logical credits; remove the time clause"
     let pre : Array Term := pres.map (fun x => ⟨x.raw[1]⟩)
     let post : Array Term := posts.map (fun x => ⟨x.raw[1]⟩)
+    let allArrays := binders.all fun b => match b with
+      | `(leafny_binder| (mut $_:ident : Array Nat)) => true
+      | _ => false
+    let anyArrays := binders.any fun b => match b with
+      | `(leafny_binder| (mut $_:ident : Array Nat)) => true
+      | _ => false
+    if anyArrays && !allArrays then
+      throwError "RAM inputs must be declared mutable arrays"
+    unless allArrays do
+      Composition.Frontend.declareMethod name binders ret retTy pre post creditBudget body
+      return
+    let some creditBudget := creditBudget
+      | throwErrorAt name "Array methods require a logical credits clause"
     unless retTy.raw.isIdent && retTy.raw.getId == `Unit do
       throwErrorAt retTy "A RAM array method returns Unit and its updated mutable arrays"
     if binders.size > 1 then
@@ -477,9 +491,25 @@ macro "ram_solve" "[" rules:Lean.Parser.Tactic.grindParam,* "]" : tactic =>
     all_goals grind only [Array.set!_eq_setIfInBounds, Array.toList_setIfInBounds,
       $rules,*]))
 
+/-- Generate owned call obligations using only public summaries and mathematical views. -/
+macro "contract_vc" : tactic =>
+  `(tactic| simp [Composition.Algorithm.Obligations, Composition.Plan.vc,
+    Composition.Procedure.uniform, Composition.testLeft, Composition.testRight] at *)
+
 syntax "prove_algorithm" ident "by" tacticSeq : command
 elab_rules : command
   | `(command| prove_algorithm $name:ident by $proof:tacticSeq) => do
+    let owned := mkIdent (name.getId.appendAfter "Obligations")
+    if (← getEnv).contains ((← getCurrNamespace) ++ owned.getId) then
+      let checked := mkIdent (name.getId.appendAfter "Verification")
+      let certified := mkIdent (name.getId.appendAfter "Procedure")
+      let certificate := mkIdent (name.getId.appendAfter "Certificate")
+      elabCommand (← `(command|
+        theorem $checked : $owned := by
+          unfold $owned $name
+          ($proof)))
+      elabCommand (← `(command| @[reducible] def $certified := $certificate $checked))
+      return
     let plan := mkIdent (name.getId.appendAfter "Annotations")
     let checked := mkIdent (name.getId.appendAfter "Verification")
     let checkedVC := mkIdent (name.getId.appendAfter "Correct")

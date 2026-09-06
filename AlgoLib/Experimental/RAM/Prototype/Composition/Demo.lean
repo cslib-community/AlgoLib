@@ -4,13 +4,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.BufferClient
+import AlgoLib.Experimental.RAM.Prototype.Composition.BufferAlgorithms
 import AlgoLib.Experimental.RAM.Prototype.Composition.BufferImplementation
 import AlgoLib.Experimental.RAM.Prototype.Composition.Execution
 
 /-!
 # Execute the same client proof with independently selected buffer implementations
 
-`Buffer.recycle_both` is the only algorithm proof: it imports no machine, layout,
+`BufferAlgorithms.recycleVerification` is the algorithm proof: it imports no machine, layout,
 or potential. The four combinations of lazy/eager implementations link through
 `Linked` instances. Spatial framing and private amortization compose automatically.
 Inputs and outputs are ordinary Lean lists. Initial storage is resident, and initial
@@ -91,34 +92,35 @@ theorem initial (capacity : Nat) (xs ys : List Nat) (hx : xs.length ≤ capacity
 def execute (eagerLeft eagerRight : Bool) (capacity : Nat) (xs ys : List Nat)
     (hx : xs.length + 2 ≤ capacity) (hy : ys.length + 2 ≤ capacity) :
     Result (List Nat × List Nat) :=
-  run (rate := 24)
+  runProcedure (rate := 24)
     (P := (representation (left capacity) eagerLeft).sep
       (representation (right capacity) eagerRight))
     (Q := (representation (left capacity) eagerLeft).sep
       (representation (right capacity) eagerRight))
-    (xs, ys) 10 (fun out => out = ([], [])) (Buffer.recycle_both capacity 7 8 9 10 xs ys hx hy)
+    (BufferAlgorithms.recycleProcedure capacity) (xs, ys) ⟨hx, hy, trivial⟩
     (owned capacity) (encode capacity xs ys)
     (potential eagerLeft xs.length + potential eagerRight ys.length)
     (initial capacity xs ys (by omega) (by omega) eagerLeft eagerRight)
 
 /-- The backend derives the public time bound; clients do not specify one. -/
-def time (eagerLeft eagerRight : Bool) (xs ys : List Nat) : Nat :=
+def «time» (eagerLeft eagerRight : Bool) (xs ys : List Nat) : Nat :=
   240 + potential eagerLeft xs.length + potential eagerRight ys.length
 
 theorem correct (eagerLeft eagerRight : Bool) (capacity : Nat) (xs ys : List Nat)
     (hx : xs.length + 2 ≤ capacity) (hy : ys.length + 2 ≤ capacity) :
     (execute eagerLeft eagerRight capacity xs ys hx hy).value = ([], []) ∧
     (execute eagerLeft eagerRight capacity xs ys hx hy).steps ≤
-      time eagerLeft eagerRight xs ys := by
-  simpa only [execute, time, Nat.add_assoc] using run_correct (rate := 24)
+      «time» eagerLeft eagerRight xs ys := by
+  have h := runProcedure_correct (rate := 24)
     (P := (representation (left capacity) eagerLeft).sep
       (representation (right capacity) eagerRight))
     (Q := (representation (left capacity) eagerLeft).sep
       (representation (right capacity) eagerRight))
-    (xs, ys) 10 (fun out => out = ([], [])) (Buffer.recycle_both capacity 7 8 9 10 xs ys hx hy)
+    (BufferAlgorithms.recycleProcedure capacity) (xs, ys) ⟨hx, hy, trivial⟩
     (owned capacity) (encode capacity xs ys)
     (potential eagerLeft xs.length + potential eagerRight ys.length)
     (initial capacity xs ys (by omega) (by omega) eagerLeft eagerRight)
+  exact ⟨h.1.1, by simpa only [«time», Nat.add_assoc] using h.2⟩
 
 /-- Observe the untouched second buffer after the first has completed. -/
 def executeFramed (eagerLeft eagerRight : Bool) (capacity : Nat) (xs ys : List Nat)
@@ -149,5 +151,18 @@ def executePush (eager : Bool) (capacity : Nat) (xs : List Nat) (value : Nat)
     (p := Buffer.push capacity value) (by simpa [VC, Buffer.argument, Buffer.append] using space)
     (left capacity).footprint (encode capacity xs []) (potential eager xs.length)
     (initial_left capacity xs [] (by omega) eager)
+
+/-- Contract calls inside a conditional inside a loop use the same owned linker. -/
+def executeLoop (eagerLeft eagerRight : Bool) (capacity : Nat) (xs ys : List Nat)
+    (hx : xs.length ≤ capacity) (hy : ys.length ≤ capacity) : Result (List Nat × List Nat) :=
+  runProcedure (rate := 24)
+    (P := (representation (left capacity) eagerLeft).sep
+      (representation (right capacity) eagerRight))
+    (Q := (representation (left capacity) eagerLeft).sep
+      (representation (right capacity) eagerRight))
+    BufferAlgorithms.clearLeftProcedure (xs, ys) trivial
+    (owned capacity) (encode capacity xs ys)
+    (potential eagerLeft xs.length + potential eagerRight ys.length)
+    (initial capacity xs ys hx hy eagerLeft eagerRight)
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.Demo

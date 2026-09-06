@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.Language
+import AlgoLib.Experimental.RAM.Prototype.Composition.Contracts
 
 /-!
 # Abstract bounded buffers: one client, two private clearing strategies
@@ -37,7 +37,7 @@ abbrev push (capacity value : Nat) : Program (List Nat) (List Nat) :=
   .seq (.invoke (argument value)) (.invoke (append capacity))
 
 /-- A reusable logical procedure contract. -/
-def pushProcedure (capacity value : Nat) : Procedure (List Nat) (List Nat) :=
+@[reducible] def pushProcedure (capacity value : Nat) : Procedure (List Nat) (List Nat) :=
   Procedure.verify (push capacity value) (fun xs => xs.length < capacity)
     (fun xs ys => ys = xs ++ [value]) (fun _ => 2) (by
       intro xs hx
@@ -45,5 +45,35 @@ def pushProcedure (capacity value : Nat) : Procedure (List Nat) (List Nat) :=
 
 /-- Abstract query; a selected implementation must certify its test code. -/
 def nonempty (xs : List Nat) : Bool := !xs.isEmpty
+
+/- Public receiver-call API. Only these summaries are needed in client proofs. -/
+namespace API
+
+@[reducible] def append (capacity value : Nat) : Procedure (List Nat) (List Nat) :=
+  pushProcedure capacity value
+
+@[reducible] def clear : Procedure (List Nat) (List Nat) :=
+  Procedure.verify (.invoke Buffer.clear) (fun _ => True) (fun _ ys => ys = [])
+    (fun _ => 1) (by simp [VC, Buffer.clear])
+
+@[simp] theorem append_requires (capacity value : Nat) (xs : List Nat) :
+    (append capacity value).requires xs ↔ xs.length < capacity := Iff.rfl
+@[simp] theorem append_ensures (capacity value : Nat) (xs ys : List Nat) :
+    (append capacity value).ensures xs ys ↔ ys = xs ++ [value] := Iff.rfl
+@[simp] theorem append_credits (capacity value : Nat) (xs : List Nat) :
+    (append capacity value).credits xs = 2 := rfl
+@[simp] theorem clear_requires (xs : List Nat) : clear.requires xs ↔ True := Iff.rfl
+@[simp] theorem clear_ensures (xs ys : List Nat) : clear.ensures xs ys ↔ ys = [] := Iff.rfl
+@[simp] theorem clear_credits (xs : List Nat) : clear.credits xs = 1 := rfl
+
+instance (capacity value : Nat) : UniformCredits (append capacity value) where
+  amount := 2
+  bound _ := Nat.le_refl _
+
+instance : UniformCredits clear where
+  amount := 1
+  bound _ := Nat.le_refl _
+
+end API
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.Buffer

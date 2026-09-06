@@ -88,3 +88,27 @@ set_option linter.hashCommand false in
 /-- info: 'AlgoLib.Experimental.RAM.Prototype.Composition.Demo.correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms Demo.correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Composition.Plan.sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Composition.Plan.sound
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Composition.Plan.call_implementation_independent' does not depend on any axioms -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Composition.Plan.call_implementation_independent
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Composition.Algorithm.loom_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Composition.Algorithm.loom_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Composition.runProcedure_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Composition.runProcedure_correct

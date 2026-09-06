@@ -22,26 +22,88 @@ structure adds its own operation interface, such as `Composition.Buffer`.
 identity, sequencing, and associativity laws. [Demo.lean](Demo.lean) selects implementations
 and supplies resident input/output views; it contains no repeated algorithm proof.
 
-## Read the client first
+## Read the mutable program first
 
-`Buffer.argument` prepares a typed argument, `Buffer.append` appends it, and
-`Buffer.clear` returns the empty mathematical list. Each consumes one logical credit.
-`push` composes argument preparation and append, changing the intermediate type from
-`List Nat` to `List Nat × Nat`, then back to `List Nat`.
+Start with [BufferAlgorithms.lean](BufferAlgorithms.lean). It uses the existing
+`ram method` / `prove_algorithm` entry points, now connected to owned procedure
+composition. This is executable source syntax:
 
-`recycle` calls push twice and clears the buffer. Its five-credit proof says that,
-provided two slots are available, its final list is empty. `recycle_both` composes
-two such clients on independently owned buffers; it needs ten credits. The client
-knows neither how clearing is implemented nor where either buffer is stored.
+```lean
+open Buffer.API
 
-`Program.both p q` is **sequential execution on separate components**, not parallel
-execution. Its implementation frames the second component while running the first,
-then frames the first while running the second. The swap is a reassociation of
-logical interface views and emits no machine copying.
+ram method recycle (capacity : Nat) (mut left : List Nat) (mut right : List Nat)
+  return (result : List Nat × List Nat)
+  require left.length + 2 ≤ capacity
+  require right.length + 2 ≤ capacity
+  ensures result = ([], [])
+  do
+    left.append(capacity, 7)
+    left.append(capacity, 8)
+    left.clear()
+    right.append(capacity, 9)
+    right.append(capacity, 10)
+    right.clear()
 
-`Buffer.drain` additionally demonstrates a loop and a user-supplied mathematical
-invariant. Its three-credit proof covers both empty and nonempty inputs. A guard
-must have a certified implementation just like any other executable operation.
+prove_algorithm recycle by
+  contract_vc
+  omega
+```
+
+`capacity` configures fixed code before execution. `left` and `right` are runtime
+inputs, and the returned pair contains their final mathematical values. Receiver
+calls resolve public procedure names in the open namespace. `left := someProcedure`
+is the general assignment form. The frontend automatically frames every other
+mutable resource, including heterogeneous products and three or more resources.
+There is no address arithmetic or explicit `.frame` in the source or its proof.
+
+Append's public allowance is two credits, including argument setup. Clear's is one.
+The straight-line allowance is therefore inferred as ten. `UniformCredits` is
+library metadata certifying a state-independent allowance; an arbitrary procedure
+summary can instead use an explicit logical budget. No caller specifies RAM time.
+
+The same file demonstrates a call inside a branch inside an annotated loop. Users
+supply a mathematical invariant mentioning `remaining` when needed. The frontend
+adds preservation facts for resources that the loop does not modify. Assertions
+and loop invariants generate obligations and are never unchecked hints.
+
+`BufferClient.lean` remains a small low-level algebra example and compatibility
+regression. New users should begin with `BufferAlgorithms.lean`.
+
+## A call is now a proof boundary
+
+[Contracts.lean](Contracts.lean) adds annotations indexed by the exact existing
+`Program`. `Plan.call proc` is indexed by `.call proc.body`: changing the body
+cannot silently reuse an unrelated certificate. The call VC is:
+
+```text
+proc.requires input
+and proc.credits input ≤ available
+and for every output satisfying proc.ensures input output,
+    the continuation holds with available - proc.credits input credits
+```
+
+It does not unfold the procedure body. `Plan.call_implementation_independent`
+proves equality of these obligations for any two realizations of the same public
+`Contract`, for every continuation. `Tests/ContractFrontend.lean` additionally
+verifies a mutable client parameterized by an arbitrary verified procedure.
+Its proof cannot inspect the procedure's unknown body.
+
+Allowances are upper bounds. `Plan.sound` returns an actual source run with
+`actual logical work + remaining ≤ initial budget`; this explicit weakening
+permits discarding unused credits. It remains sound even for non-monotone
+postconditions on the remaining credits. It does not pretend that a callee
+consumes exactly its advertised allowance.
+
+`prove_algorithm` reconstructs a reusable `Procedure`. `Algorithm.loom_correct`
+connects the same program to actual upstream Loom WP. `procedure_linking` and
+`runProcedure_correct` connect that procedure to the existing RAM compiler and
+fuel-free runner. The structural linker must still check **every executable body**,
+including unchosen branches. A verified abstract summary cannot authorize an
+unimplemented RAM operation.
+
+The parser/elaborator is untrusted: its output is an indexed plan and ordinary Lean
+proof terms. The supported-language theorem applies to that elaborated program,
+not an independently formalized semantics of raw parser text.
 
 ## Two implementations, one proof
 
@@ -80,12 +142,13 @@ open AlgoLib.Experimental.RAM.Prototype.Composition
 
 All four return `([], [])`, using respectively 48, 97, 85, and 134 RAM steps.
 `Demo.correct` supplies correctness and the inferred `Demo.time` bound. The implementation
-selection changes neither `Buffer.recycle_both` nor its proof. No fuel is supplied.
+selection changes neither the mutable `BufferAlgorithms.recycle` nor its proof. No fuel is supplied.
 These are resident-input RAM counts; executing Lean host encoders/decoders is not included.
 
 ## The laws, precisely
 
-- `VC.sound`: generated logical conditions prove a terminating source run and a
+- `Plan.sound`: contract-based annotations establish termination and an affine logical bound.
+- `VC.sound`: the lower-level compatibility conditions prove a terminating source run and a
   logical credit bound. Invariants are supplied, not discovered.
 - `Procedure.then`: typed procedure contracts compose using their public pre/post
   conditions and budgets, without reopening their implementations.
@@ -123,6 +186,23 @@ RAM compiler. Old backend certificates do **not** acquire locality automatically
 a migrated primitive must certify its footprint/non-interference obligations. The
 existing sorting and BFS runners remain supported; this change does not claim they
 have all been migrated to owned interfaces, or that the ordinary Velvet compiler is complete.
+
+## Frontend scope
+
+The shared `ram method` declaration handler dispatches array/scalar syntax to its
+existing adapter and resource-procedure syntax to the owned adapter. This change
+unifies the authoring entry point and supplies the strongest composition guarantees
+for receiver calls, procedure assignments, certified resource queries, branches,
+annotated loops and assertions. It does not claim arbitrary ordinary Velvet support.
+Direct array-element syntax and new scalar locals still use the existing array
+adapter; mixing those statements into an owned-resource method is rejected until
+an adapter provides their ownership contracts. This restriction is explicit rather
+than interpreting arbitrary Lean expressions as free executable operations.
+
+Procedure arguments describe fixed code. A runtime mutable input cannot be used to
+specialize that code. Runtime data must cross a certified typed operation boundary.
+The declared mutable resource names must be distinct; physical disjointness remains
+an implementation-package obligation checked by the linker.
 
 ## Supported ownership and execution boundary
 
@@ -174,3 +254,7 @@ ownership, source proof reuse, Loom WP, nested loop/branch support, missing prim
 rejection, overlapping ownership rejection, and unpaid logical work.
 The axiom guards inspect both generic laws and concrete implementation certificates.
 The dependency checker keeps logical interfaces and client proofs free of RAM imports.
+
+The frontend/contract regression suite additionally checks inferred budgets,
+parameterized opaque procedures, three-resource framing, nested calls, unchanged
+RAM instruction counts, unsupported-body rejection, and unused credit allowances.

@@ -107,4 +107,38 @@ theorem run_correct {A B : Type} {rate : Nat} {P : Representation A} {Q : Repres
     exact hb
   · exact h.2.2
 
+/-- Prepare a verified procedure for the existing fuel-free RAM runner. -/
+def Procedure.executable (proc : Procedure A B) [linked : Linked rate P proc.body Q]
+    (a : A) (valid : proc.requires a) (r : Footprint) (saved : Nat) : Method where
+  body := linked.supported.compile.code
+  requires s := P.holds a r s saved
+  ensures _ t := ∃ b left, Q.holds b r t left ∧ proc.ensures a b
+  budget _ := rate * proc.credits a + saved
+  verification s rep := by
+    obtain ⟨k, b, run, post, paid⟩ := proc.correct a valid
+    obtain ⟨steps, t, left, exec, hQ, _, cost⟩ := linked.supported.compile.sound run r s saved rep
+    exact ⟨steps, t, exec, ⟨b, left, hQ, post⟩, by nlinarith⟩
+
+/-- Execute a summary-verified method. Only the implementation package supplies memory views. -/
+def runProcedure (proc : Procedure A B) [Linked rate P proc.body Q] [decoder : Decoder Q]
+    (a : A) (valid : proc.requires a) (r : Footprint) (s : Store) (saved : Nat)
+    (initial : P.holds a r s saved) : Result B :=
+  let result := (proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved).run s initial
+  ⟨decoder.decode result.2, result.1⟩
+
+theorem runProcedure_correct (proc : Procedure A B) [Linked rate P proc.body Q]
+    [decoder : Decoder Q] (a : A) (valid : proc.requires a) (r : Footprint) (s : Store)
+    (saved : Nat) (initial : P.holds a r s saved) :
+    proc.ensures a (runProcedure (rate := rate) (P := P) (Q := Q)
+      proc a valid r s saved initial).value ∧
+    (runProcedure (rate := rate) (P := P) (Q := Q)
+      proc a valid r s saved initial).steps ≤ rate * proc.credits a + saved := by
+  have h := (proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved).correct s initial
+  obtain ⟨b, left, rep, post⟩ := h.2.1
+  constructor
+  · change proc.ensures a (decoder.decode _)
+    rw [decoder.correct _ _ _ _ rep]
+    exact post
+  · exact h.2.2
+
 end AlgoLib.Experimental.RAM.Prototype.Composition

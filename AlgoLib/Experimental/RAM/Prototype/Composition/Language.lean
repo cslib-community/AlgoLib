@@ -138,7 +138,7 @@ structure Procedure (A B : Type) where
   correct : ∀ a, requires a → ∃ k b, Run body a k b ∧ ensures a b ∧ k ≤ credits a
 
 /-- Package only mathematical VCs; the source execution proof is reconstructed. -/
-def Procedure.verify (body : Program A B) (pre : A → Prop) (post : A → B → Prop)
+@[reducible] def Procedure.verify (body : Program A B) (pre : A → Prop) (post : A → B → Prop)
     (credits : A → Nat)
     (proof : ∀ a, pre a → VC body (fun b _ => post a b) a (credits a)) : Procedure A B where
   body := body

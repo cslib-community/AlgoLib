@@ -100,3 +100,14 @@ The library establishes physical framing, implements the operations, relates log
 For runnable examples see [Programs/Examples.lean](Programs/Examples.lean). For the former layout and updated names see [migration](docs/MIGRATION.md). The [PDF tutorial](docs/verified-ram-student-tutorial.pdf) and slide deck document the earlier `2c78e53` layout; use the current source guides and [updated Lean companion](docs/StudentDemo.lean) for this layout.
 
 The exported PDF and slides predate the credit/backend split. For the current API, use [Credits and backends](docs/CREDITS-AND-BACKENDS.md) and the checked Lean examples.
+
+
+### Owned mutable procedures
+
+[Composition/BufferAlgorithms.lean](Prototype/Composition/BufferAlgorithms.lean)
+is the starting example for the owned `ram method` frontend. Receiver calls generate
+frames and use public procedure summaries, including in annotated loops. Straight-line
+logical allowances are inferred. [The composition guide](Prototype/Composition/README.md)
+explains the single program/annotation path, supported syntax, and unchanged proofs
+across implementation choices. [Demo.lean](Prototype/Composition/Demo.lean) executes
+that exact source program and proof through the existing RAM runner.
