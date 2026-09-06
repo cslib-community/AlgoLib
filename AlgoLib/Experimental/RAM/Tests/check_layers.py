@@ -49,7 +49,7 @@ for module, path in modules.items():
         ), (path, "reusable layer depends on an algorithm/demo")
     if path.relative_to(root).parts[:2] == ("Prototype", "Composition") and path.stem in (
         "Language", "Contracts", "Frontend", "Ownership", "Linking", "Loom", "Execution", "Compatibility",
-        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding"
+        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding", "Assembly"
     ):
         assert not any(i.startswith(prefix + "Prototype.Composition." + name)
                        for i in local for name in ("Buffer", "Demo")), (

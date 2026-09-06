@@ -1,5 +1,8 @@
 # One frontend, one program, one proof
 
+For automatic loop accounting and source-level proof goals, start with
+[the paper loop tutorial](PAPER-LOOPS.md).
+
 Start with [MixedAlgorithms.lean](MixedAlgorithms.lean) for a small example, then
 [Sorting.lean](Sorting.lean) for insertion sort with both loops visible. These files
 import no RAM implementation. They use the same `ram method` elaborator and produce
@@ -63,13 +66,13 @@ in both positions is rejected.
 3. **Write ordinary code.** Use assignments, arithmetic, indexing, conditionals,
    and calls. Every runtime expression becomes typed source syntax; an arbitrary
    Lean function cannot silently become a constant-cost machine operation.
-4. **Annotate loops.** Supply textbook invariants and a logical allowance using
-   `remaining`. `decreasing` adds a checked decrease obligation; `done_with` adds a
-   checked exit assertion. Initialization, preservation, exit, array safety, and
-   sufficient credits are generated. The frontend does not discover invariants.
+4. **Annotate loops.** Supply textbook invariants and `iterations_at_most` or
+   `amortized_potential`; the allowance is inferred. `done_with` adds a checked exit
+   assertion. The explicit `remaining`/`credits` interface is retained for custom
+   resource proofs. Invariants are supplied by the author, not discovered.
 5. **Prove the generated obligations.** `prove_algorithm name by ...` exports
-   `nameProcedure`. Use `contract_vc` to inspect the mathematical conditions, or
-   `contract_solve [your_lemmas]` to normalize plumbing and apply mathematical lemmas.
+   `nameProcedure`. Use `paper_vc` for named mathematical conditions or
+   `paper_solve [your_lemmas]` for automation. `#paper_goals name` previews open goals.
    This is the same procedure used for Loom reasoning and RAM compilation.
 6. **Use the supplied runner.** For insertion sort:
 
@@ -123,8 +126,8 @@ so a caller can index an array around a procedure that uses its own locals.
 - Control: scalar comparisons, certified resource queries, branches, nested annotated
   loops, assertions, and a method-final return.
 - Procedures: typed owned receivers, public functional/credit summaries, automatic
-  framing, and statically composed verified bodies. Inferred straight-line methods
-  also export a reusable uniform allowance.
+  framing, and statically composed verified bodies. Uniform and input-dependent
+  public allowances both participate in automatic cost inference.
 - Receiver calls support a trailing runtime `Nat` expression, with preceding
   arguments configuring fixed code. Library authors supply a verified `nameFrom`
   procedure on `(receiver, Nat)`; users write `receiver.name(config, expression)`.

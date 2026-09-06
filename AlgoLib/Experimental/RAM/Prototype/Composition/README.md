@@ -1,5 +1,8 @@
 # Modularity under composition
 
+For automatic loop accounting and source-level proof goals, start with
+[the paper loop tutorial](PAPER-LOOPS.md).
+
 An algorithm is verified using **typed abstract operations and logical credits**.
 An implementation supplies **local ownership contracts and private potential**.
 The linker reconstructs a certificate for the complete client, and the existing
@@ -58,8 +61,8 @@ There is no address arithmetic or explicit `.frame` in the source or its proof.
 
 Append's public allowance is two credits, including argument setup. Clear's is one.
 The straight-line allowance is therefore inferred as ten. `UniformCredits` is
-library metadata certifying a state-independent allowance; an arbitrary procedure
-summary can instead use an explicit logical budget. No caller specifies RAM time.
+library metadata certifying a state-independent allowance. Input-dependent public
+allowances also participate in inference. No caller specifies RAM time.
 
 The same file demonstrates a call inside a branch inside an annotated loop. Users
 supply a mathematical invariant mentioning `remaining` when needed. The frontend

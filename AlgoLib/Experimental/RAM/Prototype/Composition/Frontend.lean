@@ -21,7 +21,24 @@ namespace AlgoLib.Experimental.RAM.Prototype.Composition.Frontend
 open Lean Elab Command Term Meta Parser
 
 syntax (name := receiverCall) ident noWs "(" term,* ")" : doElem
+declare_syntax_cat loopCost
+syntax "iterations_at_most" Term.termBeforeDo : loopCost
+syntax "amortized_potential" Term.termBeforeDo : loopCost
+syntax (name := paperWhile) "while " term
+  ("invariant " (str)? term)* loopCost
+  ("done_with " term)? ("decreasing " term)? " do " doSeq : doElem
+
 syntax (name := pairCall) "(" ident "," ident ")" " := " term : doElem
+
+/-- Use a library's uniform allowance when available; dependent contracts need no adapter. -/
+syntax "contract% " term:max : term
+elab_rules : term
+  | `(contract% $proc:term) => do
+    let p ← elabTerm proc none
+    let type ← mkAppM ``UniformCredits #[p]
+    if let some _ ← synthInstance? type then
+      elabTerm (← `(Procedure.uniform $proc)) none
+    else pure p
 
 private structure Resource where
   name : Ident
@@ -35,6 +52,7 @@ private structure Fragment where
   plan : Term
   estimate : Option Term
   writes : Array Nat := #[]
+  transfer : Term → TermElabM Term := pure
 
 private def splitAt (rs : Array Resource) : Nat :=
   let inputs := (rs.filter (! ·.localSlot)).size
@@ -65,14 +83,14 @@ private def bindOld (rs : Array Resource) (s : Term) (t : Term) : TermElabM Term
   return result
 
 private def skip : TermElabM Fragment :=
-  return ⟨← `(Program.identity), ← `(Plan.identity), some (← `(0)), #[]⟩
+  return ⟨← `(Program.identity), ← `(Plan.identity), some (← `(0)), #[], pure⟩
 
 private def seq (p q : Fragment) : TermElabM Fragment := do
   let estimate ← match p.estimate, q.estimate with
-    | some x, some y => pure (some (← `($x + $y)))
+    | some x, some y => pure (some (← `($x + $(← p.transfer y))))
     | _, _ => pure none
   return ⟨← `(Program.seq $(p.program) $(q.program)), ← `(Plan.seq $(p.plan) $(q.plan)),
-    estimate, p.writes ++ q.writes⟩
+    estimate, p.writes ++ q.writes, fun t => do p.transfer (← q.transfer t)⟩
 
 /-- Focus a call on one typed component; the remaining components become automatic frames. -/
 private partial def focus (rs : Array Resource) (i : Nat) (p : Fragment) : TermElabM Fragment := do
@@ -89,7 +107,7 @@ private partial def focus (rs : Array Resource) (i : Nat) (p : Fragment) : TermE
   let framed : Fragment := { inner with
     program := ← `(Program.frame $(inner.program) $left)
     plan := ← `(Plan.frame $(inner.plan) $left) }
-  let swap : Fragment := ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[]⟩
+  let swap : Fragment := ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[], pure⟩
   seq swap (← seq framed swap)
 
 /-- Static ownership routing; emitted regroupings compile to skip. -/
@@ -117,11 +135,11 @@ private def framed (p : Fragment) (t : Term) : TermElabM Fragment :=
     plan := ← `(Plan.frame $(p.plan) $t) }
 
 private def swapped : TermElabM Fragment :=
-  return ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[]⟩
+  return ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[], pure⟩
 
 private def regroup (a b c : Term) (reverse := false) : TermElabM Fragment := do
   let op ← if reverse then `(unassociate $a $b $c) else `(associate $a $b $c)
-  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some (← `(0)), #[]⟩
+  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some (← `(0)), #[], pure⟩
 
 /-- Move one leaf to the front and produce its inverse route and remaining tree. -/
 private partial def extract (t : Tree) (i : Nat) : TermElabM (Fragment × Fragment × Tree) := do
@@ -249,14 +267,30 @@ private partial def expression (rs : Array Resource) (active : Array Name) (e : 
   | _ => throwErrorAt e "Supported expressions are Nat variables, constants, array indexing, \
       array size, and +, -, *. Use a verified procedure for other computations"
 
+/-- Symbolic substitution proposes cost bounds; generated VCs check every proposal. -/
+private def substitute (x : Name) (value : Term) (term : Term) : TermElabM Term := do
+  return ⟨← term.raw.replaceM fun node => do
+    if node.isIdent && node.getId == x then return some value.raw
+    else if node.isIdent && node.getId == x.str "size" then
+      return some (← `(($value).size)).raw
+    else return none⟩
+
+private def sourceSite (stx : Syntax) : TermElabM Term := do
+  let map ← getFileMap
+  let pos := map.toPosition (stx.getPos?.getD 0)
+  return quote s!"{← getFileName}:{pos.line}:{pos.column + 1}"
+
 private def operation (op : Term) (writes : Array Nat) (cost : Term) : TermElabM Fragment :=
-  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some cost, writes⟩
+  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some cost, writes, pure⟩
 
 private def assignment (rs : Array Resource) (active : Array Name) (i : Nat) (e : Term) :
     TermElabM Fragment := do
   let value ← expression rs active e
-  operation (← `(Composition.assign $(← path rs i) $value)) #[i]
+  let part ← operation (← `(Composition.assign $(← path rs i) $value)) #[i]
     (← `(Value.credits (S := $(← stateType rs)) $value + 1))
+  let plan ← `(Plan.invokeAt $(← sourceSite e)
+    (Composition.assign $(← path rs i) $value))
+  return { part with plan, transfer := fun t => substitute rs[i]!.name.getId e t }
 
 private def guardSlots (rs : Array Resource) (q : Term) : TermElabM (Nat × Nat) := do
   let key := "_guard" ++ toString (q.raw.getPos?.getD 0)
@@ -291,7 +325,7 @@ private def condition (rs : Array Resource) (active : Array Name) (q : Term) :
       let yes ← assignment rs active i (← `(0))
       let no ← assignment rs active i (← `(1))
       let flag : Fragment := ⟨← `(Program.branch $test $(yes.program) $(no.program)),
-        ← `(Plan.branch $test $(yes.plan) $(no.plan)), some (← `(3)), #[i]⟩
+        ← `(Plan.branch $test $(yes.plan) $(no.plan)), some (← `(3)), #[i], pure⟩
       before ← seq before (← seq flag (← assignment rs active j (← `(1))))
       let fact ← `(fun ($s : $(← stateType rs)) =>
         $(← project rs i (← `($s))) =
@@ -314,6 +348,13 @@ private partial def statements (rs : Array Resource) (body : TSyntax ``Parser.Te
     if stx.raw.getKind == ``Parser.Term.doReturn && (nested || i + 1 < all.size) then
       throwErrorAt stx "Return is supported only at method exit"
     let (part, next) ← statement active stx
+    let part ← do
+      let site ← sourceSite stx
+      -- Only the current primitive is labelled; its continuation keeps its own source.
+      let plan ← match part.plan with
+        | `(Plan.invoke $op) => `(Plan.invokeAt $site $op)
+        | _ => pure part.plan
+      pure { part with plan }
     result ← seq result part
     active := next
   return result
@@ -321,9 +362,10 @@ where
   call (active : Array Name) (target : Ident) (proc : Term) : TermElabM Fragment := do
     let i ← resource rs active target
     checkStatic rs proc.raw
-    let amount ← `(UniformCredits.amount (proc := $proc))
-    let proc ← if inferBudget then `(Procedure.uniform $proc) else pure proc
-    focus rs i ⟨← `(Program.call ($proc).body), ← `(Plan.call $proc), some amount, #[i]⟩
+    let proc ← if inferBudget then `(contract% ($proc)) else pure proc
+    let amount ← `(($proc).credits $(rs[i]!.name))
+    focus rs i ⟨← `(Program.call ($proc).body),
+      ← `(Plan.callAt $(← sourceSite target) $proc), some amount, #[i], pure⟩
   receiver (active : Array Name) (f : Ident) (args : Array Term) : TermElabM Fragment := do
     let .str target field := f.getId
       | throwErrorAt f "Use a receiver such as buffer.append(...)"
@@ -338,16 +380,77 @@ where
     let prepare ← assignment rs active j args.back!
     let config := args.pop
     let proc ← `($(mkIdent (Name.mkSimple (field ++ "From"))) $config*)
-    let amount ← `(UniformCredits.amount (proc := $proc))
-    let proc ← if inferBudget then `(Procedure.uniform $proc) else pure proc
-    let part : Fragment := ⟨← `(Program.call ($proc).body), ← `(Plan.call $proc),
-      some amount, #[i,j]⟩
+    let proc ← if inferBudget then `(contract% ($proc)) else pure proc
+    let amount ← `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
+    let part : Fragment := ⟨← `(Program.call ($proc).body),
+      ← `(Plan.callAt $(← sourceSite f) $proc),
+      some amount, #[i,j], pure⟩
     seq prepare (← focusPair rs i j part)
   declare (active : Array Name) (x : Ident) (e : Term) :
       TermElabM (Fragment × Array Name) := do
     let some i := rs.findIdx? (fun r => r.name.getId == x.getId)
       | throwErrorAt x "Missing local slot"
     return (← assignment rs active i e, active.push x.getId)
+  loop (active : Array Name) (q : Term) (label : Array (Option (TSyntax `str)))
+      (inv : Array Term) (cost done measure : Option Term)
+      (body : TSyntax ``Parser.Term.doSeq) : TermElabM Fragment := do
+    let (before, test, guardFact) ← condition rs active q
+    let mut body ← statements rs body inferBudget active true
+    let s := mkIdent (← mkFreshUserName `state)
+    let entry := mkIdent (← mkFreshUserName `entry)
+    let remaining := mkIdent `remaining
+    if let some measure := measure then
+      let predicate ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) measure))
+      let program ← `(Program.seq $(body.program) Program.identity)
+      let plan ← `(Plan.atEntry (fun $entry => Plan.seq $(body.plan)
+        (Plan.assert (fun $s => $predicate $s < $predicate $entry))))
+      body := {body with program, plan}
+    body ← seq body before
+    let site ← sourceSite q
+    let mut estimated : Option Term := none
+    let mut unit : Option Term := none
+    if let some bound := cost then
+      let some bodyCost := body.estimate
+        | throwErrorAt bound "Annotate every nested loop with iterations_at_most \
+          or amortized_potential"
+      -- For an increasing index, use the upper endpoint in the dependent body cost.
+      -- This is a candidate envelope, not an axiom: preservation VCs must prove it pays.
+      let envelope ← match bound with
+        | `($upper:term - $index:ident) => substitute index.getId upper bodyCost
+        | _ => pure bodyCost
+      unit := some envelope
+      estimated := some (← `($bound * ($envelope + 1) + 1))
+    let mut invTerm ← `(True)
+    for k in (List.range inv.size).reverse do
+      let fact := inv[k]!
+      if cost.isSome then
+        let title := label[k]!.map (·.getString) |>.getD "loop invariant"
+        let name ← `( $(quote (title ++ " initialized / preserved at ")) ++ $site )
+        invTerm ← `(Obligation $name $fact ∧ $invTerm)
+      else invTerm ← `($fact ∧ $invTerm)
+    invTerm ← bindViews rs (← `($s)) invTerm
+    invTerm ← `($guardFact $s ∧ $invTerm)
+    for i in [:rs.size] do
+      if active.contains rs[i]!.name.getId && !body.writes.contains i then
+        invTerm ← `($(← project rs i (← `($s))) = $(← project rs i (← `($entry))) ∧ $invTerm)
+    let loopInv ← `(fun ($s : $(← stateType rs)) ($remaining : Nat) => $invTerm)
+    let loop : Fragment := ⟨← `(Program.loop $test $(body.program)),
+      ← `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
+        Plan.loop $test $loopInv $(body.plan))), none, body.writes, pure⟩
+    let loop ← if let some bound := cost then do
+      let frozen ← bindViews rs (← `($entry)) unit.get!
+      let measure ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) bound))
+      let invariantFn ← `(fun ($s : $(← stateType rs)) => $invTerm)
+      pure { loop with
+        plan := ← `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
+          Plan.countedLoop $site $test $invariantFn $measure $frozen $(body.plan)))
+        estimate := estimated }
+      else pure loop
+    let mut part ← seq before loop
+    if let some done := done then
+      let fact ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) done))
+      part ← seq part ⟨← `(Program.identity), ← `(Plan.assert $fact), some (← `(0)), #[], pure⟩
+    return part
   statement (active : Array Name) (stx : TSyntax `doElem) :
       TermElabM (Fragment × Array Name) := withRef stx do
     match stx with
@@ -362,10 +465,11 @@ where
       unless rs[i]!.mutable && rs[j]!.mutable do
         throwErrorAt stx "Procedure outputs require mutable resources"
       checkStatic rs proc
-      let amount ← `(UniformCredits.amount (proc := $proc))
-      let proc ← if inferBudget then `(Procedure.uniform $proc) else pure proc
-      let part : Fragment := ⟨← `(Program.call ($proc).body), ← `(Plan.call $proc),
-        some amount, #[i,j]⟩
+      let proc ← if inferBudget then `(contract% ($proc)) else pure proc
+      let amount ← `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
+      let part : Fragment := ⟨← `(Program.call ($proc).body),
+        ← `(Plan.callAt $(← sourceSite stx) $proc),
+        some amount, #[i,j], pure⟩
       return (← focusPair rs i j part, active)
     | `(doElem| $target:ident := $value:term) =>
       let i ← resource rs active target
@@ -376,9 +480,11 @@ where
       let slot ← resource rs active a
       let index ← expression rs active i
       let value ← expression rs active e
-      return (← operation (← `(Composition.write $(← path rs slot) $index $value)) #[slot]
+      let part ← operation (← `(Composition.write $(← path rs slot) $index $value)) #[slot]
         (← `(Value.credits (S := $(← stateType rs)) $index +
-          Value.credits (S := $(← stateType rs)) $value + 3)), active)
+          Value.credits (S := $(← stateType rs)) $value + 3))
+      let updated ← `(($a).set! $i $e)
+      return ({ part with transfer := fun t => substitute a.getId updated t }, active)
     | `(doElem| $f:ident($args:term,*)) =>
       return (← receiver active f args, active)
     | `(doElem| if $q:term then $yes:doSeq else $no:doSeq) =>
@@ -389,48 +495,24 @@ where
         | some x, some y => pure (some (← `(1 + max $x $y)))
         | _, _ => pure none
       let part : Fragment := ⟨← `(Program.branch $test $(yes.program) $(no.program)),
-        ← `(Plan.branch $test $(yes.plan) $(no.plan)), estimate, yes.writes ++ no.writes⟩
+        ← `(Plan.branch $test $(yes.plan) $(no.plan)), estimate, yes.writes ++ no.writes,
+        fun t => do `(max $(← yes.transfer t) $(← no.transfer t))⟩
       return (← seq before part, active)
     | `(doElem| if $q:term then $yes:doSeq) =>
       statement active (← `(doElem| if $q then $yes else pure ()))
     | `(doElem| while $q:term
+        $[invariant $[$label:str]? $inv:term]*
+        $cost:loopCost $[done_with $done]? $[decreasing $measure]? do $body:doSeq) =>
+      return (← loop active q label inv (some ⟨cost.raw[1]⟩) done measure body, active)
+    | `(doElem| while $q:term
         $[invariant $[$label:str]? $inv:term
-        ]*
-        $[done_with $done]?
-        $[decreasing $measure]?
-        do $body:doSeq) =>
-      let (before, test, guardFact) ← condition rs active q
-      let mut body ← statements rs body inferBudget active true
-      let s := mkIdent (← mkFreshUserName `state)
-      let entry := mkIdent (← mkFreshUserName `entry)
-      let remaining := mkIdent `remaining
-      if let some measure := measure then
-        let predicate ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) measure))
-        let program ← `(Program.seq $(body.program) Program.identity)
-        let plan ← `(Plan.atEntry (fun $entry => Plan.seq $(body.plan)
-          (Plan.assert (fun $s => $predicate $s < $predicate $entry))))
-        body := {body with program, plan}
-      body ← seq body before
-      let mut invTerm ← `(True)
-      for fact in inv.reverse do invTerm ← `($fact ∧ $invTerm)
-      invTerm ← bindViews rs (← `($s)) invTerm
-      invTerm ← `($guardFact $s ∧ $invTerm)
-      for i in [:rs.size] do
-        if active.contains rs[i]!.name.getId && !body.writes.contains i then
-          invTerm ← `($(← project rs i (← `($s))) = $(← project rs i (← `($entry))) ∧ $invTerm)
-      let loopInv ← `(fun ($s : $(← stateType rs)) ($remaining : Nat) => $invTerm)
-      let loop : Fragment := ⟨← `(Program.loop $test $(body.program)),
-        ← `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
-          Plan.loop $test $loopInv $(body.plan))), none, body.writes⟩
-      let mut part ← seq before loop
-      if let some done := done then
-        let fact ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) done))
-        part ← seq part ⟨← `(Program.identity), ← `(Plan.assert $fact), some (← `(0)), #[]⟩
-      return (part, active)
+        ]* $[done_with $done]? $[decreasing $measure]? do $body:doSeq) =>
+      return (← loop active q label inv none done measure body, active)
     | `(doElem| assert $fact:term) =>
       let s := mkIdent (← mkFreshUserName `state)
       let predicate ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) fact))
-      return (⟨← `(Program.identity), ← `(Plan.assert $predicate), some (← `(0)), #[]⟩, active)
+      return (⟨← `(Program.identity), ← `(Plan.assert $predicate),
+        some (← `(0)), #[], pure⟩, active)
     | `(doElem| return) | `(doElem| return ()) | `(doElem| pure ()) => return (← skip, active)
     | `(doElem| $e:term) =>
       let (head, args) ← receiverApplication e
@@ -457,6 +539,9 @@ private partial def collect (rs : Array Resource) (body : Syntax) : TermElabM (A
     | `(doElem| if $q:term then $yes:doSeq) =>
       rs ← collect (← guards rs q) yes
     | `(doElem| while $q:term
+        $[invariant $[$_:str]? $_:term]* $_:loopCost
+        $[done_with $_]? $[decreasing $_]? do $body:doSeq)
+    | `(doElem| while $q:term
         $[invariant $[$_:str]? $_:term
         ]* $[done_with $_]? $[decreasing $_]? do $body:doSeq) =>
       rs ← collect (← guards rs q) body
@@ -482,6 +567,9 @@ private partial def collectArguments (known rs : Array Resource) (body : Syntax)
     | `(doElem| if $_:term then $yes:doSeq else $no:doSeq) =>
       rs ← collectArguments known (← collectArguments known rs yes) no
     | `(doElem| if $_:term then $yes:doSeq) => rs ← collectArguments known rs yes
+    | `(doElem| while $_:term
+        $[invariant $[$_:str]? $_:term]* $_:loopCost
+        $[done_with $_]? $[decreasing $_]? do $body:doSeq)
     | `(doElem| while $_:term
         $[invariant $[$_:str]? $_:term
         ]* $[done_with $_]? $[decreasing $_]? do $body:doSeq) =>
@@ -524,7 +612,7 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
       throwErrorAt r.name "Reserve distinct output, Old, and remaining-credit names"
   let input := mkIdent (← liftCoreM <| mkFreshUserName `input)
   let output := mkIdent (← liftCoreM <| mkFreshUserName `output)
-  let (fragment, state, pre, post, budget) ← Command.runTermElabM fun _ => do
+  let (fragment, state, pre, post, budget, uniformBudget) ← Command.runTermElabM fun _ => do
     let mut fragment ← statements rs body credits.isNone (inputs.map (·.name.getId))
     let mut p ← `(True)
     for fact in pre.reverse do p ← `($fact ∧ $p)
@@ -544,15 +632,21 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
       let scratch ← stateType (rs.extract inputs.size rs.size)
       let enter ← operation (← `(enterLocals $state $scratch)) #[]
         (← `(Locals.credits (L := $scratch)))
+      let initializeCost := fun t => do
+        let mut result := t
+        for r in rs.extract inputs.size rs.size do
+          result ← substitute r.name.getId (⟨Syntax.mkNumLit "0"⟩) result
+        return result
+      let enter : Fragment := { enter with transfer := initializeCost }
       let leave ← operation (← `(leaveLocals $state $scratch)) #[] (← `(0))
       fragment ← seq enter (← seq fragment leave)
     let budget ← match credits, fragment.estimate with
       | some c, _ => bindViews inputs (← `($input)) c
-      | none, some c => pure c
+      | none, some c => bindViews inputs (← `($input)) c
       | none, none => throwErrorAt body "Loops need a logical credits clause and a resource \
         invariant; RAM time is inferred"
     let plan ← bindOld inputs (← `($input)) fragment.plan
-    return ({ fragment with plan }, state, p, q, budget)
+    return ({ fragment with plan }, state, p, q, budget, fragment.estimate.getD budget)
   if rs.size > inputs.size then
     let scratchType ← Command.runTermElabM fun _ => stateType (rs.extract inputs.size rs.size)
     let scratchName := mkIdent (name.getId.appendAfter "Locals")
@@ -573,12 +667,14 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
   elabCommand (← `(command|
     @[reducible] def $certificate (proof : $obligations) $params* : Procedure $state $state :=
       ($name $args*).certify (proof $args*)))
-  if credits.isNone then
+  if credits.isNone && !(← Command.runTermElabM fun _ => do
+      let fragment ← statements rs body true (inputs.map (·.name.getId))
+      return fragment.estimate.any (fun c => mentions inputs c)) then
     let uniform := mkIdent (name.getId.appendAfter "UniformCredits")
     elabCommand (← `(command|
       instance $uniform:ident (proof : $obligations) $params* :
           UniformCredits ($certificate proof $args*) where
-        amount := $budget
+        amount := $uniformBudget
         bound _ := Nat.le_refl _))
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.Frontend

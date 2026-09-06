@@ -33,6 +33,13 @@ structure Contract (A B : Type) where
       Run body a k b ∧ contract.ensures a b ∧ k ≤ contract.credits a) : Procedure A B :=
   ⟨body, contract.requires, contract.ensures, contract.credits, proof⟩
 
+/-- A transparent proposition carrying the source-level name of an obligation.
+The kernel checks `fact`; diagnostics retain `label` until the user opens the goal. -/
+def Obligation (_label : String) (fact : Prop) : Prop := fact
+
+/-- Keep location metadata separate: constructing proof obligations does not compute strings. -/
+def ObligationAt (_label _site : String) (fact : Prop) : Prop := fact
+
 /-- Proof annotations indexed by the one supported executable language. -/
 inductive Plan : {A B : Type} → Program A B → Type 1 where
   | identity : Plan (.identity : Program A A)
@@ -46,6 +53,10 @@ inductive Plan : {A B : Type} → Program A B → Type 1 where
       Plan body → Plan (.loop test body)
   | atEntry {p : Program A B} (annotations : A → Plan p) : Plan p
   | assert (fact : A → Prop) : Plan (.identity : Program A A)
+  | countedLoop (site : String) (test : A → Bool) (invariant : A → Prop)
+      (measure : A → Nat) (bodyAllowance : Nat) : Plan body → Plan (.loop test body)
+  | invokeAt (site : String) (op : Operation A B) : Plan (.invoke op)
+  | callAt (site : String) (proc : Procedure A B) : Plan (.call proc.body)
 
 /-- The call case reads only requires/ensures/credits, never the procedure body. -/
 def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) → A → Nat → Prop
@@ -61,6 +72,25 @@ def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) →
       if test b then body.vc I b (d - 1) else Q b (d - 1)
   | .atEntry f, Q, a, c => (f a).vc Q a c
   | .assert fact, Q, a, c => fact a ∧ Q a c
+  | .countedLoop site test I measure unit body, Q, a, c =>
+      ObligationAt "loop allowance sufficient" site (measure a * (unit + 1) + 1 ≤ c) ∧
+      ObligationAt "loop invariant initialized" site (I a) ∧
+      ∀ b, I b → if test b then
+        ObligationAt "iteration bound positive" site (0 < measure b) ∧
+        body.vc (fun next _ =>
+          ObligationAt "loop invariant preserved" site (I next) ∧
+          ObligationAt "iteration bound decreases" site (measure next < measure b)) b unit
+      else Q b (c - (measure a * (unit + 1) + 1))
+  | .invokeAt site op, Q, a, c =>
+      ObligationAt "array index within bounds / operation precondition" site
+        (op.requires a) ∧
+      ObligationAt "statement allowance sufficient" site (op.charge a ≤ c) ∧
+      Q (op.effect a) (c - op.charge a)
+  | .callAt site proc, Q, a, c =>
+      ObligationAt "procedure precondition" site (proc.requires a) ∧
+      ObligationAt "procedure allowance sufficient" site (proc.credits a ≤ c) ∧
+      ∀ b, proc.ensures a b → Q b (c - proc.credits a)
+termination_by structural plan _ _ _ => plan
 
 /-- Replacing a procedure body preserves every caller continuation obligation. -/
 theorem Plan.call_implementation_independent (contract : Contract A B)
@@ -115,6 +145,43 @@ theorem Plan.sound {A B : Type} {p : Program A B} (plan : Plan p)
     exact go c a initial
   | atEntry f ih => exact ih a Q a c h
   | assert fact => exact ⟨0, a, c, Run.identity a, by omega, h.2⟩
+  | countedLoop site test I measure unit body ih =>
+    rename_i state bodyProgram
+    obtain ⟨paid, initial, step⟩ := h
+    let surplus := c - (measure a * (unit + 1) + 1)
+    have go : ∀ n b, measure b = n → I b →
+        ∃ k result, Run (.loop test bodyProgram) b k result ∧
+          k ≤ n * (unit + 1) + 1 ∧ Q result surplus := by
+      intro n
+      induction n using Nat.strongRecOn with
+      | ind n rec =>
+        intro b eq inv
+        have next := step b inv
+        cases ht : test b with
+        | false =>
+          exact ⟨1, b, Run.done ht, by omega, by simpa [ht, surplus] using next⟩
+        | true =>
+          simp only [ht, ↓reduceIte] at next
+          obtain ⟨j, mid, left, run, cost, invariant, decrease⟩ := ih _ b unit next.2
+          have smaller : measure mid < n := eq ▸ decrease
+          obtain ⟨k, result, rest, bound, post⟩ := rec (measure mid) smaller mid rfl invariant
+          have ranks : (measure mid + 1) * (unit + 1) ≤ n * (unit + 1) :=
+            Nat.mul_le_mul_right _ smaller
+          refine ⟨1 + j + k, result, Run.step ht run rest, ?_, post⟩
+          simp only [Nat.add_mul, Nat.one_mul] at ranks
+          omega
+    obtain ⟨k, result, run, bound, post⟩ := go (measure a) a rfl initial
+    refine ⟨k, result, surplus, run, ?_, post⟩
+    dsimp [surplus]
+    change measure a * (unit + 1) + 1 ≤ c at paid
+    omega
+  | invokeAt site op =>
+    exact ⟨_, _, c - op.charge a, Run.invoke op a h.1, by
+      have := h.2.1; change _ ≤ _ at this; omega, h.2.2⟩
+  | callAt site proc =>
+    obtain ⟨k, b, run, post, bound⟩ := proc.correct a h.1
+    exact ⟨k, b, c - proc.credits a, Run.call run, by
+      have := h.2.1; change _ ≤ _ at this; omega, h.2.2 b post⟩
 
 /-- A method contains one body, its indexed annotations and its mathematical interface. -/
 structure Algorithm (A B : Type) where

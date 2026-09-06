@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
-import AlgoLib.Experimental.RAM.Prototype.Composition.Encoding
+import AlgoLib.Experimental.RAM.Prototype.Composition.Assembly
 
 /-!
 # Ordinary lists through the unified frontend and verified RAM compiler
@@ -15,42 +15,34 @@ local type. It contains no algorithm-specific simulation or loop proof.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
 
-private abbrev scratch := local_storage% "sort" : insertionSortLocals
-private abbrev layout (n : Nat) : Storage.ArrayLayout := ⟨⟨"array.size"⟩, 0, n⟩
-private abbrev encoder (n : Nat) := (arrayEncoder (layout n)).hide scratch
-  (by simp [scratch, Encoder.sep, scalarEncoder])
-  (by simp [arrayEncoder, layout, Storage.ArrayLayout.footprint, scratch, Encoder.sep,
-    scalarEncoder, Finset.disjoint_left])
+-- This one command assembles the resident backend, executable, and joint theorem.
+compile_array_method insertionSort
 
-private abbrev representation (n : Nat) := (encoder n).representation
+/-- A normal Lean list goes in and a normal Lean list comes out; execution needs no fuel. -/
+def run (xs : List Nat) : Result (List Nat) := insertionSortRun xs
 
-private instance (n : Nat) : Linked 24 (representation n) insertionSortProcedure.body
-    (representation n) := by ram_link
-
-/-- No fuel, scratch values, addresses, or compiler knowledge in the caller interface. -/
-def run (xs : List Nat) : Result (List Nat) :=
-  let r := runEncoded (rate := 24) (Q := representation xs.length) insertionSortProcedure
-    (encoder xs.length) xs.toArray
-    (by trivial) (by simp [Encoder.hide, arrayEncoder, layout])
-  ⟨r.value.toList, r.steps⟩
-
-/-- Correctness and a derived quadratic bound for the very executable above. -/
+/-- The bound is generated from the program and its iteration annotations. -/
 theorem main (xs : List Nat) : SortedPermutation xs (run xs).value ∧
-    (run xs).steps ≤ 3840 * (xs.length + 1)^2 := by
-  have h := runEncoded_correct (rate := 24) (Q := representation xs.length) insertionSortProcedure
-    (encoder xs.length) xs.toArray
-    (by trivial) (by simp [Encoder.hide, arrayEncoder, layout])
-  constructor
-  · exact h.1.1
-  · have bound := h.2
-    change (run xs).steps ≤ _ at bound
-    simp [potential,
-      encoder, Encoder.hide, scratch, Encoder.sep, scalarEncoder, arrayEncoder] at bound
-    nlinarith
+    (run xs).steps ≤ insertionSortBound xs := by
+  have h := insertionSortCorrect xs (by trivial)
+  exact ⟨by simpa using h.1.1, h.2⟩
 
-private abbrev minimumEncoder (n : Nat) := (encoder n).sep (scalarEncoder ⟨"minimum"⟩)
-  (by simp [encoder, Encoder.hide, arrayEncoder, layout, Storage.ArrayLayout.footprint,
-    scratch, Encoder.sep, scalarEncoder, Finset.disjoint_left])
+/-- A readable polynomial form of the automatically generated bound. -/
+theorem bound_eq (xs : List Nat) :
+    insertionSortBound xs = 912 * xs.length ^ 2 + 384 * xs.length + 648 := by
+  simp [insertionSortBound, Value.credits, Locals.credits]
+  ring
+
+/-- The inferred bound establishes quadratic RAM time. -/
+theorem quadratic (xs : List Nat) : (run xs).steps ≤ 1944 * (xs.length + 1)^2 := by
+  have h := (main xs).2
+  rw [bound_eq] at h
+  nlinarith
+
+private abbrev minimumEncoder (n : Nat) := (insertionSortEncoder n).sep (scalarEncoder ⟨"minimum"⟩)
+  (by simp [insertionSortEncoder, Encoder.hide, arrayEncoder, insertionSortLayout,
+    Storage.ArrayLayout.footprint,
+    insertionSortScratch, Encoder.sep, scalarEncoder, Finset.disjoint_left])
 
 private instance (n : Nat) : Linked 24 (minimumEncoder n).representation
     minimumAfterSortProcedure.body (minimumEncoder n).representation := by ram_link
@@ -60,7 +52,7 @@ def minimum (xs : List Nat) (nonempty : 0 < xs.length) :=
   runEncoded (rate := 24) (Q := (minimumEncoder xs.length).representation)
     minimumAfterSortProcedure (minimumEncoder xs.length) (xs.toArray, 0)
     ⟨by simpa using nonempty, trivial⟩
-    (by simp [Encoder.sep, Encoder.hide, arrayEncoder, scalarEncoder, layout])
+    (by simp [Encoder.sep, Encoder.hide, arrayEncoder, scalarEncoder, insertionSortLayout])
 
 set_option linter.hashCommand false in
 #eval show IO Unit from do
@@ -76,7 +68,7 @@ set_option linter.hashCommand false in
       let result := run xs
       unless result.value == xs.mergeSort (· ≤ ·) do
         throw <| IO.userError s!"unified sorting: {xs}"
-      unless result.steps ≤ 3840*(n+1)^2 do
+      unless result.steps ≤ insertionSortBound xs do
         throw <| IO.userError "unified sorting cost"
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.Sorting

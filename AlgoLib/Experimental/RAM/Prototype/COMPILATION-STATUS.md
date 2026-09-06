@@ -200,3 +200,13 @@ arguments cross receiver calls through charged typed slots, and paired calls com
 two distinct owned variables with automatic framing. Historical graph
 and ordinary-Velvet translation adapters remain separate compatibility examples;
 this is not an unrestricted ordinary-Velvet compiler.
+
+## Paper loop proofs in the owned frontend
+
+`iterations_at_most` and `amortized_potential` generate checked loop obligations
+and infer logical allowances, including dependent nested bounds. `paper_vc` and
+`paper_solve` preserve source labels; `#paper_goals` previews mathematical goals.
+The default array backend assembles a list runner and joint correctness/cost theorem
+with `compile_array_method` (or `verify_array_method` for a combined proof command).
+See [the tutorial and exact scope](Composition/PAPER-LOOPS.md). This does not extend
+the ordinary-Velvet reifier or change the runtime-type boundary above.

@@ -1,5 +1,9 @@
 # Mutable programs, inline invariants, verified RAM execution
 
+For the current paper-style loop workflow, see the
+[paper loop tutorial](Composition/PAPER-LOOPS.md): inferred allowances, named VCs,
+and automatically assembled executable theorems.
+
 Start with **[the unified frontend tutorial](Composition/FRONTEND.md)** and
 [MixedAlgorithms.lean](Composition/MixedAlgorithms.lean). Arrays, ordinary scalar
 locals, and owned procedure calls now share one typed program and one contract VCG.
