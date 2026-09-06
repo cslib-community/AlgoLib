@@ -1,5 +1,9 @@
 # Verified RAM algorithms, by abstraction layer
 
+The [Loom-connected BFS tutorial](Prototype/GRAPH-TUTORIAL.md) demonstrates typed
+graph primitives, modular neighbor-scan and vertex-processing procedures, and a
+checked connectivity/linear-time theorem for their composed RAM program.
+
 Start with **[sorting](Programs/Sorting.lean)** or **[connectivity via BFS](Programs/Connectivity.lean)**. Each file contains one complete story: the target statement, an input/output method, the generated verification conditions, the invariant proof, the executable, and the main theorem. There is no separate algorithm to find in an executable or proof directory.
 
 For the isolated mutable Velvet/Loom integration, see **[Prototype](Prototype/README.md)**.

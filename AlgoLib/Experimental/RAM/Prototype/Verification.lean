@@ -26,9 +26,19 @@ open Authoring
 
 variable {State Input Output : Type} {M : Model State}
 
+/-- A modular procedure contract for an actual program body. Calls inline that body;
+only verification uses the summary. The cost is an upper bound, not an oracle charge. -/
+structure Routine (M : Model State) where
+  body : Program M
+  requires : State → Prop
+  ensures : State → State → Prop
+  work : State → Nat
+  verification : Correct body requires ensures work
+
 /-- Proof-only annotations, indexed by the single supported program representation. -/
 inductive Plan : Program M → Type where
   | skip : Plan .skip
+  | call (routine : Routine M) : Plan routine.body
   | action (a : Action M) : Plan (.action a)
   | seq {a b : Program M} : Plan a → Plan b → Plan (.seq a b)
   | branch (q : Guard M) {a b : Program M} : Plan a → Plan b → Plan (.branch q a b)
@@ -43,6 +53,8 @@ inductive Plan : Program M → Type where
 /-- Generate purely mathematical obligations by structural symbolic execution. -/
 def Plan.vc {p : Program M} : Plan p → (State → Nat → Prop) → State → Nat → Prop
   | .skip, Q, s, c => Q s c
+  | .call routine, Q, s, c => routine.requires s ∧ routine.work s ≤ c ∧
+      ∀ t k, routine.ensures s t → k ≤ routine.work s → Q t (c - k)
   | .action a, Q, s, c => a.requires s ∧ a.work s ≤ c ∧ Q (a.effect s) (c - a.work s)
   | .seq a b, Q, s, c => a.vc (b.vc Q) s c
   | .branch q a b, Q, s, c => 1 ≤ c ∧
@@ -61,6 +73,9 @@ theorem Plan.sound {p : Program M} (plan : Plan p) (Q : State → Nat → Prop)
     (s : State) (c : Nat) (h : plan.vc Q s c) : (denote p).wp (fun _ => Q) s c := by
   induction plan generalizing Q s c with
   | skip => exact (Computation.wp_pure () _ _ _).mpr h
+  | «call» routine =>
+    obtain ⟨k, t, run, post, cost⟩ := routine.verification s h.1
+    exact ⟨k, t, (), run_denote run, cost.trans h.2.1, h.2.2 t k post cost⟩
   | action a => exact ⟨_, _, (), ⟨h.1, rfl, rfl⟩, h.2⟩
   | seq a b iha ihb =>
     apply (Computation.wp_bind _ _ _ _ _).mpr
@@ -99,6 +114,25 @@ theorem Plan.sound {p : Program M} (plan : Plan p) (Q : State → Nat → Prop)
   | atEntry plan ih => exact ih s Q s c h
   | assert assertion => exact (Computation.wp_pure () _ _ _).mpr h.2
   | ensure assertion plan ih => exact Computation.wp_mono (fun _ _ _ ht => ht.2) (ih _ _ _ h)
+
+/-- One compositional program with annotations; both interpretations use `body`. -/
+structure Annotated (M : Model State) where
+  body : Program M
+  plan : Plan body
+
+/-- Generate and solve a procedure's VCs once. Callers use only its contract. -/
+def Annotated.verify (code : Annotated M) (requires : State → Prop)
+    (ensures : State → State → Prop) (work : State → Nat)
+    (proof : ∀ s, requires s → code.plan.vc (fun t _ => ensures s t) s (work s)) :
+    Routine M where
+  body := code.body
+  requires := requires
+  ensures := ensures
+  work := work
+  verification s hs := by
+    obtain ⟨k, t, u, run, cost, post⟩ := code.plan.sound _ _ _ (proof s hs)
+    cases u
+    exact ⟨k, t, denote_run _ run, post, cost⟩
 
 /-- Input/output and time obligations, with proof annotations separate from runtime input. -/
 def Obligations {api : Interface M Input Output} (method : Method api)

@@ -1,7 +1,13 @@
 # Mutable programs, inline invariants, verified RAM execution
 
-Start with [InsertionSort.lean](InsertionSort.lean). It exposes both insertion-sort
-loops and every array operation. There is no `InsertNext` action, hidden insertion
+For graph algorithms, start with the [BFS tutorial](GRAPH-TUTORIAL.md),
+[BFS.lean](BFS.lean), and its [graph procedures](Graph.lean). The generic
+`ram_do` frontend now supports typed graph/queue/cursor primitives and verified
+procedure composition with real inlined RAM bodies. `Prototype.Frontend` exports
+both `ram method` and `ram_do`; import `Prototype.Graph` for the graph operations.
+
+For mutable arrays, start with [InsertionSort.lean](InsertionSort.lean). It exposes
+both insertion-sort loops and every array operation. There is no `InsertNext` action, hidden insertion
 procedure, or student-written `Action.correct` proof.
 
 ```lean
@@ -157,8 +163,11 @@ ReaderT, StateT, ExceptT, nondeterminism, WP generation, and tactics are availab
 `FrameworkTests` checks composed transformers and Velvet’s own `method`, procedure
 contracts, `prove_correct`, `loom_solve`, and executable extraction.
 
-There are two entry points:
+There are three entry points:
 
+- `ram_do`: generic certified-interface code with procedure calls, branches,
+  assertions, and Velvet-style annotated loops. The graph adapter provides
+  adjacency, visited-set, FIFO, and cursor operations; see [the tutorial](GRAPH-TUTORIAL.md).
 - `method`: upstream Velvet, with its full syntax and supported Lean effects.
 - `ram method`: the verified RAM adapter, currently natural-number locals and one
   mutable `Array Nat`; literals, size, addition/subtraction/multiplication, indexing,
@@ -187,9 +196,11 @@ axiom checks remain in place; prototype checks cover its new bridges and theorem
 ```sh
 lake build AlgoLib.Experimental.RAM.Prototype.Tests \
   AlgoLib.Experimental.RAM.Prototype.FrameworkTests \
+  AlgoLib.Experimental.RAM.Prototype.GraphTests \
   AlgoLib.Experimental.RAM.Prototype.Axioms
 python3 AlgoLib/Experimental/RAM/Tests/check_layers.py
 ```
 
-The prototype stays isolated from the production `Programs` directory. Production
-BFS and its proofs have not been migrated to this new frontend in this change.
+The prototype stays isolated from the production `Programs` directory. Existing
+production BFS remains available. The new prototype BFS independently verifies its own
+composed program, reusing the graph primitive certificates and mathematical lemmas.

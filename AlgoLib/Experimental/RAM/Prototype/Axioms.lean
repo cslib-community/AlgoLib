@@ -3,6 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
+import AlgoLib.Experimental.RAM.Prototype.BFS
 import AlgoLib.Experimental.RAM.Prototype.InsertionSort
 import AlgoLib.Experimental.RAM.Prototype.FrameworkTests
 
@@ -121,3 +122,35 @@ set_option linter.hashCommand false in
  Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.FrameworkTests.callCounter_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Annotated.verify' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Annotated.verify
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Routine.loom_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Routine.loom_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Graph.scanVerification' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Graph.scanVerification
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Graph.processVerification' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Graph.processVerification
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.BFS.main' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.BFS.main
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.BFS.loom_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.BFS.loom_correct

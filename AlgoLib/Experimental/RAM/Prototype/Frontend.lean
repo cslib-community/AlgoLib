@@ -5,7 +5,7 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import Velvet.Syntax
 import AlgoLib.Experimental.RAM.Prototype.Mutable
-import AlgoLib.Experimental.RAM.Prototype.LoomObservation
+import AlgoLib.Experimental.RAM.Prototype.Procedures
 
 /-!
 # Velvet surface syntax with a checked RAM backend
@@ -16,7 +16,8 @@ indexed proof plan. Both the Loom interpretation and compiler consume that progr
 All register naming, array framing, guard materialization, annotation lifting and
 credit propagation are implementation details of this module and Mutable.
 
-The executable RAM types are natural-number locals and one mutable input array.
+This module also exports `ram_do` for certified data-structure interfaces and
+procedure composition. Mutable `ram method` uses natural-number locals and one input array.
 Upstream Velvet's full frontend remains available through `method`; unsupported RAM
 operations are rejected here rather than treated as uncharged Lean computations.
 `decreasing`, `done_with`, and assertions generate real obligations; they are not erased
