@@ -44,7 +44,7 @@ prove_algorithm countdown where
   case count.preserve.known => by apply known
   case count.terminate => by simp only [rank_eq]; omega
   case count.account => by first | omega | (simp only [rank_eq] at *; omega)
-  case count.exit => by omega
+  case count.exit => by first | omega | trivial
 
 /- Moving a loop and adding unrelated local initialization leaves its proof names intact. -/
 ram method movedCountdown (mut x : Nat) return (result : Nat)
@@ -63,7 +63,7 @@ prove_algorithm movedCountdown where
   case count.preserve.known => by apply known
   case count.terminate => by simp only [rank_eq]; omega
   case count.account => by first | omega | (simp only [rank_eq] at *; omega)
-  case count.exit => by omega
+  case count.exit => by first | omega | trivial
 
 /- Missing mathematical proofs, unknown names, overlapping blocks, and invalid evidence fail. -/
 set_option linter.unreachableTactic false in

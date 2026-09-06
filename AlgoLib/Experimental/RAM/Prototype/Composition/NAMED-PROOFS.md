@@ -1,5 +1,10 @@
 # Write the paper argument in separate proof blocks
 
+The current command interface uses a [generated Lean obligation API](OBLIGATION-API.md).
+Program specifications, mathematical proofs, and expensive backend certificates live in
+separate modules so proof edits can reuse generation and compilation work.
+
+
 Start with [insertion sort](Sorting.lean) or [BFS](BreadthFirst.lean).
 Both use the same owned frontend and checked compiler as before. The change is how
 you supply the mathematical argument: each block has a stable responsibility,

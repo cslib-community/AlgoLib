@@ -3,7 +3,7 @@
   "cases": [
     {
       "name": "sorting-proof",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting",
+      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingProofs",
       "seconds": 120
     },
     {
@@ -13,7 +13,7 @@
     },
     {
       "name": "bfs-proof",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst",
+      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirstProofs",
       "seconds": 120
     },
     {
@@ -25,6 +25,21 @@
       "name": "named-proof-interface",
       "module": "AlgoLib.Experimental.RAM.Tests.NamedProofs",
       "seconds": 60
+    },
+    {
+      "name": "sorting-specification",
+      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingSpec",
+      "seconds": 120
+    },
+    {
+      "name": "sorting-backend",
+      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingBackend",
+      "seconds": 180
+    },
+    {
+      "name": "generated-api-import",
+      "module": "AlgoLib.Experimental.RAM.Tests.ObligationAPI.Proofs",
+      "seconds": 30
     }
   ]
 }

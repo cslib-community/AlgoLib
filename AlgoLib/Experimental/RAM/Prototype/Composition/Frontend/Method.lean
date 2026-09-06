@@ -25,10 +25,10 @@ partial def collect (rs : Array Resource) (body : Syntax) : TermElabM (Array Res
     match stx with
     | `(doElem| let mut $x:ident := $_:term)
     | `(doElem| let mut $x:ident : Nat := $_:term) =>
-      rs := rs.push ⟨x, ← `(Nat), true, true⟩
+      rs := rs.push ⟨x, ← `(Nat), true, true, false⟩
     | `(doElem| let $x:ident := $_:term)
     | `(doElem| let $x:ident : Nat := $_:term) =>
-      rs := rs.push ⟨x, ← `(Nat), true, false⟩
+      rs := rs.push ⟨x, ← `(Nat), true, false, false⟩
     | `(doElem| if $q:term then $yes:doSeq else $no:doSeq) =>
       rs ← guards rs q
       rs ← collect (← collect rs yes) no
@@ -51,8 +51,8 @@ where
   guards (rs : Array Resource) (q : Term) : TermElabM (Array Resource) := do
     if q.raw.isIdent then return rs
     let key := "_guard" ++ toString (q.raw.getPos?.getD 0)
-    return rs ++ #[⟨mkIdent (Name.mkSimple (key ++ "a")), ← `(Nat), true, true⟩,
-      ⟨mkIdent (Name.mkSimple (key ++ "b")), ← `(Nat), true, true⟩]
+    return rs ++ #[⟨mkIdent (Name.mkSimple (key ++ "a")), ← `(Nat), true, true, true⟩,
+      ⟨mkIdent (Name.mkSimple (key ++ "b")), ← `(Nat), true, true, true⟩]
 
 partial def collectArguments (known rs : Array Resource) (body : Syntax) :
     TermElabM (Array Resource) := do
@@ -63,7 +63,7 @@ partial def collectArguments (known rs : Array Resource) (body : Syntax) :
     | `(doElem| $f:ident($args:term,*)) =>
       if args.getElems.any (fun a => mentions known a.raw) then
         let key := "_argument" ++ toString (f.raw.getPos?.getD 0)
-        rs := rs.push ⟨mkIdent (Name.mkSimple key), ← `(Nat), true, true⟩
+        rs := rs.push ⟨mkIdent (Name.mkSimple key), ← `(Nat), true, true, true⟩
     | `(doElem| if $_:term then $yes:doSeq else $no:doSeq) =>
       rs ← collectArguments known (← collectArguments known rs yes) no
     | `(doElem| if $_:term then $yes:doSeq) => rs ← collectArguments known rs yes
@@ -82,9 +82,19 @@ partial def collectArguments (known rs : Array Resource) (body : Syntax) :
       let (f, args) ← receiverApplication e
       if args.any (fun a => mentions known a.raw) then
         let key := "_argument" ++ toString (f.raw.getPos?.getD 0)
-        rs := rs.push ⟨mkIdent (Name.mkSimple key), ← `(Nat), true, true⟩
+        rs := rs.push ⟨mkIdent (Name.mkSimple key), ← `(Nat), true, true, true⟩
     | _ => pure ()
   return rs
+
+/-- A binding has an explicit source slot and an exact product route, not an inferred arity. -/
+partial def sourceShape (rs : Array Resource) (offset := 0) : TermElabM Term := do
+  if rs.size == 1 then
+    let r := rs[0]!
+    return ← `(SourceShape.leaf $(quote offset) $(quote r.name.getId.toString)
+      $(quote r.compilerGenerated))
+  let n := splitAt rs
+  return ← `(SourceShape.pair $(← sourceShape (rs.extract 0 n) offset)
+    $(← sourceShape (rs.extract n rs.size) (offset + n)))
 
 /-- Reject ambiguous identities rather than silently renumbering proof obligations. -/
 partial def validateProofNames (stx : Syntax) (scope : String := "")
@@ -124,7 +134,7 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
   let mut args : Array Term := #[]
   for b in binders do
     match b with
-    | `(leafny_binder| (mut $x:ident : $ty:term)) => rs := rs.push ⟨x, ty, false, true⟩
+    | `(leafny_binder| (mut $x:ident : $ty:term)) => rs := rs.push ⟨x, ty, false, true, false⟩
     | `(leafny_binder| ($x:ident : $ty:term)) =>
       params := params.push (← `(bracketedBinder| ($x : $ty)))
       args := args.push (← `($x))
@@ -185,11 +195,17 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
     elabCommand (← `(command| abbrev $scratchName : Type := $scratchType))
   let views := mkIdent (name.getId.appendAfter "ProofViews")
   let viewNames := rs.toList.map (fun r =>
-    if r.name.getId.toString.startsWith "_" then "__proof_guard" else r.name.getId.toString)
+    if r.compilerGenerated then "__proof_guard" else r.name.getId.toString)
   elabCommand (← `(command| def $views : List String := $(quote viewNames)))
   let inputViews := mkIdent (name.getId.appendAfter "ProofInputViews")
   elabCommand (← `(command| def $inputViews : List String :=
     $(quote (inputs.toList.map (·.name.getId.toString)))))
+  let shape := mkIdent (name.getId.appendAfter "ProofShape")
+  let inputShape := mkIdent (name.getId.appendAfter "ProofInputShape")
+  let fullShape ← Command.runTermElabM fun _ => sourceShape rs
+  let inputsShape ← Command.runTermElabM fun _ => sourceShape inputs
+  elabCommand (← `(command| def $shape : SourceShape := $fullShape))
+  elabCommand (← `(command| def $inputShape : SourceShape := $inputsShape))
   let obligations := mkIdent (name.getId.appendAfter "Obligations")
   let certificate := mkIdent (name.getId.appendAfter "Certificate")
   elabCommand (← `(command|

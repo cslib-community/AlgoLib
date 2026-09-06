@@ -77,7 +77,9 @@ pure_modules = {prefix + name for name in (
     "Prototype.Composition.Buffer", "Prototype.Composition.BufferClient",
     "Prototype.Composition.Compatibility", "Prototype.Composition.Contracts",
     "Prototype.Composition.Frontend", "Prototype.Composition.BufferAlgorithms",
-    "Prototype.ProofGoals", "Prototype.NamedProofs",
+    "Prototype.ProofGoals", "Prototype.NamedProofs", "Prototype.GeneratedObligations",
+    "Prototype.Composition.SortingProgram", "Prototype.Composition.SortingSpec", "Prototype.Composition.SortingProofs",
+    "Prototype.Composition.BreadthFirstProgram", "Prototype.Composition.BreadthFirstSpec", "Prototype.Composition.BreadthFirstProofs",
     "Prototype.Composition.Frontend.Syntax", "Prototype.Composition.Frontend.Resources",
     "Prototype.Composition.Frontend.Expressions", "Prototype.Composition.Frontend.Statements",
     "Prototype.Composition.Frontend.Method",
@@ -112,7 +114,7 @@ for name in ("BFSStorage", "BFSExecution"):
         assert private_name not in text, (path, "assembly opens private layout", private_name)
 
 # The teaching examples must retain source-level proof blocks, not broad VC goal searches.
-for name in ("Sorting", "BreadthFirst"):
+for name in ("Sorting", "BreadthFirst", "SortingProofs", "BreadthFirstProofs"):
     path = root / "Prototype" / "Composition" / f"{name}.lean"
     text = path.read_text()
     for legacy_tactic in ("all_goals", "paper_solve", "paper_vc", "contract_solve"):
@@ -133,4 +135,13 @@ def visit(module):
 
 for module in modules:
     visit(module)
+
+# A proof-only edit must not invalidate the costly sorting backend certificate.
+assert prefix + "Prototype.Composition.SortingProofs" not in dependencies(
+    prefix + "Prototype.Composition.SortingBackend"
+), "sorting backend imports algorithm proofs"
+assert prefix + "Prototype.Composition.SortingSpec" not in dependencies(
+    prefix + "Prototype.Composition.SortingBackend"
+), "sorting backend imports obligation generation"
+
 print(f"Checked {len(modules)} documented modules: boundaries and import DAG OK")

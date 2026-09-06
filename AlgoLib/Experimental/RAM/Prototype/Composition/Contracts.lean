@@ -43,6 +43,18 @@ def ObligationAt (_label _site : String) (fact : Prop) : Prop := fact
 /-- A stable invariant name, independent of its initialization/preservation phase. -/
 def InvariantFact (_name : String) (fact : Prop) : Prop := fact
 
+/-- A quantified source role. Value types remain ordinary Lean types. -/
+def SourceForall (_role : String) (body : A → Prop) : Prop := ∀ a, body a
+
+@[simp] theorem sourceForall_eq (role : String) (body : A → Prop) :
+    SourceForall role body = (∀ a, body a) := rfl
+
+/-- The frontend records exact product paths, preserving product-valued resources as leaves. -/
+inductive SourceShape where
+  | leaf (binding : Nat) (name : String) (internal : Bool)
+  | pair (left right : SourceShape)
+  deriving Inhabited
+
 /-- Proof annotations indexed by the one supported executable language. -/
 inductive Plan : {A B : Type} → Program A B → Type 1 where
   | identity : Plan (.identity : Program A A)
@@ -69,23 +81,23 @@ def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) →
   | .swap, Q, a, c => Q (a.2, a.1) c
   | .invoke op, Q, a, c => op.requires a ∧ op.charge a ≤ c ∧ Q (op.effect a) (c - op.charge a)
   | .call proc, Q, a, c => proc.requires a ∧ proc.credits a ≤ c ∧
-      ∀ b, proc.ensures a b → Q b (c - proc.credits a)
+      SourceForall "result" (fun b => proc.ensures a b → Q b (c - proc.credits a))
   | .seq p q, Q, a, c => p.vc (q.vc Q) a c
   | .frame p _, Q, a, c => p.vc (fun b d => Q (b, a.2) d) a.1 c
   | .branch test p q, Q, a, c => 1 ≤ c ∧ if test a then p.vc Q a (c - 1) else q.vc Q a (c - 1)
-  | .loop test I body, Q, a, c => I a c ∧ ∀ b d, I b d → 1 ≤ d ∧
-      if test b then body.vc I b (d - 1) else Q b (d - 1)
+  | .loop test I body, Q, a, c => I a c ∧ SourceForall "current" (fun b => ∀ d, I b d → 1 ≤ d ∧
+      if test b then body.vc I b (d - 1) else Q b (d - 1))
   | .atEntry f, Q, a, c => (f a).vc Q a c
   | .assert fact, Q, a, c => fact a ∧ Q a c
   | .countedLoop site test I measure unit body, Q, a, c =>
       ObligationAt "loop allowance sufficient" site (measure a * (unit + 1) + 1 ≤ c) ∧
       ObligationAt "loop invariant initialized" site (I a) ∧
-      ∀ b, I b → if test b then
+      SourceForall "current" (fun b => I b → if test b then
         ObligationAt "iteration bound positive" site (0 < measure b) ∧
         body.vc (fun next _ =>
           ObligationAt "loop invariant preserved" site (I next) ∧
           ObligationAt "iteration bound decreases" site (measure next < measure b)) b unit
-      else ObligationAt "loop exit" site (Q b (c - (measure a * (unit + 1) + 1)))
+      else ObligationAt "loop exit" site (Q b (c - (measure a * (unit + 1) + 1))))
   | .invokeAt site op, Q, a, c =>
       ObligationAt "array index within bounds / operation precondition" site
         (op.requires a) ∧
@@ -94,17 +106,17 @@ def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) →
   | .callAt site proc, Q, a, c =>
       ObligationAt "procedure precondition" site (proc.requires a) ∧
       ObligationAt "procedure allowance sufficient" site (proc.credits a ≤ c) ∧
-      ∀ b, proc.ensures a b → Q b (c - proc.credits a)
+      SourceForall "result" (fun b => proc.ensures a b → Q b (c - proc.credits a))
   | .workLoop site test I measure unit body, Q, a, c =>
       ObligationAt "loop allowance sufficient" site (unit * measure a + 1 ≤ c) ∧
       ObligationAt "loop invariant initialized" site (I a) ∧
-      ∀ b, I b → if test b then
+      SourceForall "current" (fun b => I b → if test b then
         body.vc (fun next left =>
           ObligationAt "loop invariant preserved" site (I next) ∧
           ObligationAt "remaining work decreases" site (measure next < measure b) ∧
           ObligationAt "iteration allowance sufficient" site (unit * measure next + 1 ≤ left))
           b (unit * measure b)
-      else ObligationAt "loop exit" site (Q b (c - (unit * measure a + 1)))
+      else ObligationAt "loop exit" site (Q b (c - (unit * measure a + 1))))
 termination_by structural plan _ _ _ => plan
 
 /-- Replacing a procedure body preserves every caller continuation obligation. -/
@@ -232,7 +244,8 @@ structure Algorithm (A B : Type) where
   credits : A → Nat
 
 def Algorithm.Obligations (m : Algorithm A B) : Prop :=
-  ∀ a, m.requires a → (m.annotations a).vc (fun b _ => m.ensures a b) a (m.credits a)
+  SourceForall "input" (fun a => m.requires a →
+    (m.annotations a).vc (fun b _ => m.ensures a b) a (m.credits a))
 
 /-- Reconstruct a reusable procedure from source-level obligations only. -/
 @[reducible] def Algorithm.certify (m : Algorithm A B)

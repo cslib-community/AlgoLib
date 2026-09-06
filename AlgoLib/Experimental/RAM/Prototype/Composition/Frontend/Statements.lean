@@ -107,7 +107,10 @@ where
     body ← seq body before
     let site ← sourceSite q
     let site ← if let some key := loopScope then
-      `( $(quote key) ++ "\n" ++ $site ) else pure site
+      do
+        let `($location:str) := site | throwErrorAt q "Expected source location"
+        pure (quote (key ++ "\n" ++ location.getString))
+      else pure site
     let mut estimated : Option Term := none
     let mut unit : Option Term := none
     if let some bound := cost then

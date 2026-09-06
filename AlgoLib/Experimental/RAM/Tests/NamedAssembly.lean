@@ -27,8 +27,8 @@ ram method scanInput (mut arr : Array Nat) return (result : Unit)
         i := i + 1
 
 verify_array_method scanInput where
-  case scan.terminate => by omega
-  case scan.account => by omega
+  case scan.terminate => by first | omega | trivial
+  case scan.account => by first | omega | trivial
 
 set_option linter.hashCommand false in
 #eval show IO Unit from do

@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
-import AlgoLib.Experimental.RAM.Prototype.Composition.Assembly
+import AlgoLib.Experimental.RAM.Prototype.Composition.SortingBackend
 
 /-!
 # Ordinary lists through the unified frontend and verified RAM compiler

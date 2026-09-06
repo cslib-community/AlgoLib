@@ -210,3 +210,16 @@ The default array backend assembles a list runner and joint correctness/cost the
 with `compile_array_method` (or `verify_array_method` for a combined proof command).
 See [the tutorial and exact scope](Composition/PAPER-LOOPS.md). This does not extend
 the ordinary-Velvet reifier or change the runtime-type boundary above.
+
+
+## Generated proof API and cached backend assembly
+
+The owned frontend now freezes named proposition declarations before mathematical
+simplification and emits a kernel-checked assembly theorem. `prove_obligation` checks
+separate declarations; `prove_algorithm ... where` is sugar over that API.
+See [the authoring workflow](Composition/OBLIGATION-API.md).
+
+`SortingProgram` / `SortingSpec` / `SortingProofs` and their `BreadthFirst` counterparts separate
+symbolic execution from algorithmic arguments. `SortingBackend` constructs instruction
+certificates without importing a sorting proof. This improves build reuse within the
+supported owned language; it does not expand the ordinary-Velvet compilation boundary.

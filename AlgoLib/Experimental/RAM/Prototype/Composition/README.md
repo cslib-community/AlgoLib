@@ -1,5 +1,10 @@
 # Modularity under composition
 
+The current command interface uses a [generated Lean obligation API](OBLIGATION-API.md).
+Program specifications, mathematical proofs, and expensive backend certificates live in
+separate modules so proof edits can reuse generation and compilation work.
+
+
 For algorithm authors, start with [separate named proof blocks](NAMED-PROOFS.md).
 Sorting and BFS use stable initialization, preservation, termination, and accounting
 responsibilities, with source-linked obligation previews.

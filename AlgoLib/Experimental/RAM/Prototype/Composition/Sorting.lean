@@ -3,74 +3,19 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.LogicalFrontend
-import AlgoLib.Experimental.RAM.Prototype.SortingFacts
+import AlgoLib.Experimental.RAM.Prototype.Composition.SortingProofs
 
 /-!
-# Insertion sort with mutable arrays and inline loop invariants
+# Verified sorting and a modular caller
 
-Read `insertionSort` as pseudocode. Both loops and every array read/write are visible.
-`Prefix` and `Hole` express the textbook argument. Remaining iteration bounds
-replace manual credit invariants and bookkeeping constants. `prove_algorithm` generates
-named safety, invariant, and iteration-bound obligations from this very body.
-The same body has the actual Loom interpretation
-and compiles to RAM. There is no `insertNext` action or algorithm-specific lowering.
-
-This file imports no RAM backend. SortingExecution.lean supplies the default list
-runner. This is the owned-language
-version; historical array-substitution regressions remain in the compatibility layer.
+The paper program lives in `SortingProgram`, its generated API in `SortingSpec`;
+edit algorithmic proofs in
+`SortingProofs`. `SortingBackend` depends only on the specification, so proof edits
+reuse its instruction certificates. `SortingExecution` connects proofs to that backend.
+This module adds a caller using the sorting procedure's public contract.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.Sorting
 open Frontend SortingFacts
-
-/-- Preserve multiplicities as well as ordering. -/
-def SortedPermutation (xs ys : List Nat) : Prop := ys.Pairwise (· ≤ ·) ∧ ys.Perm xs
-
-ram method insertionSort (mut arr : Array Nat) return (u : Unit)
-  require True
-  ensures SortedPermutation arrOld.toList arr.toList
-  do
-    let mut i := 0
-    while i < arr.size named outer
-      invariant "index" i ≤ arr.size
-      invariant "prefix" Prefix arr i
-      invariant "permutation" arr.toList.Perm arrOld.toList
-      invariant "size" arr.size = arrOld.size
-      iterations_at_most arr.size - i
-      do
-        let mut j := i
-        while 0 < j named inner
-          invariant "index" j ≤ i
-          invariant "bounds" i < arr.size
-          invariant "hole" Hole arr i j
-          invariant "permutation" arr.toList.Perm arrOld.toList
-          invariant "size" arr.size = arrOld.size
-          iterations_at_most j
-          do
-            let x := arr[j]!
-            let y := arr[j - 1]!
-            if x < y then
-              arr[j] := y
-              arr[j - 1] := x
-            j := j - 1
-        i := i + 1
-    return
-
--- During authoring: #named_goals insertionSort only outer.inner.preserve
-prove_algorithm insertionSort where
-  case outer.initialize.prefix => by simp [Prefix]
-  case outer.inner.initialize.hole => by grind only [enter]
-  case outer.inner.preserve.hole => by
-    first
-    | apply swap <;> first | assumption | omega
-    | apply keep <;> first | assumption | omega
-  case outer.inner.preserve.permutation => by
-    grind only [swap_preserves_permutation]
-  case outer.preserve.prefix => by grind only [exit]
-  case outer.terminate => by omega
-  case outer.account => by omega
-  case outer.inner.account => by omega
-  case outer.exit => by grind only [SortedPermutation, sorted]
 
 /- A caller can combine an array procedure with direct indexing and a scalar result.
 The callee is used through its public contract, including the permutation fact. -/

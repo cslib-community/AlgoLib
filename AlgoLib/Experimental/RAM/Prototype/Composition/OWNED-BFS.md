@@ -1,5 +1,10 @@
 # One BFS proof, two FIFO implementations
 
+The current command interface uses a [generated Lean obligation API](OBLIGATION-API.md).
+Program specifications, mathematical proofs, and expensive backend certificates live in
+separate modules so proof edits can reuse generation and compilation work.
+
+
 Start with [BreadthFirst.lean](BreadthFirst.lean). It contains the only BFS program
 and the only algorithm verification proof used by the two runners. Array writes,
 scalar locals, both loops, and queue calls are visible in that source. Queue

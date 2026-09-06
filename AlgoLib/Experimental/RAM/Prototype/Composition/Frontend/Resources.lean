@@ -21,6 +21,7 @@ structure Resource where
   type : Term
   localSlot : Bool := false
   mutable : Bool := true
+  compilerGenerated : Bool := false
   deriving Inhabited
 
 structure Fragment where

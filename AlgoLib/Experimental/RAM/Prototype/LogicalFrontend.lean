@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.NamedProofs
+import AlgoLib.Experimental.RAM.Prototype.GeneratedObligations
 
 /-!
 # Public mutable method frontend
@@ -59,15 +59,7 @@ elab_rules : command
 /-- Each block proves one stable responsibility; routine leaves are discharged automatically. -/
 syntax "prove_algorithm" ident "where" namedProofBlock* : command
 elab_rules : command
-  | `(command| prove_algorithm $name:ident where $blocks:namedProofBlock*) => do
-    let owned := mkIdent (name.getId.appendAfter "Obligations")
-    let checked := mkIdent (name.getId.appendAfter "Verification")
-    let certified := mkIdent (name.getId.appendAfter "Procedure")
-    let certificate := mkIdent (name.getId.appendAfter "Certificate")
-    elabCommand (← `(command|
-      theorem $checked : $owned := by
-        unfold $owned $name
-        named_proof_blocks $name $blocks*))
-    elabCommand (← `(command| @[reducible] def $certified := $certificate $checked))
+  | `(command| prove_algorithm $name:ident where $blocks:namedProofBlock*) =>
+    proveGenerated name blocks
 
 end AlgoLib.Experimental.RAM.Prototype.Frontend

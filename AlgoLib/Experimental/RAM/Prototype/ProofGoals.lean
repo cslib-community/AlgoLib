@@ -18,7 +18,8 @@ open Lean Elab Command Term Parser
 /-- Generate owned call obligations using only public summaries and mathematical views. -/
 macro "contract_vc" : tactic =>
   `(tactic| (dsimp only [Composition.Algorithm.Obligations, Composition.Plan.vc,
-    Composition.InvariantFact, Composition.Obligation, Composition.ObligationAt,
+    Composition.SourceForall, Composition.InvariantFact,
+    Composition.Obligation, Composition.ObligationAt,
     Composition.Procedure.uniform,
     Composition.UniformCredits.amount,
     Composition.testLeft, Composition.testRight,

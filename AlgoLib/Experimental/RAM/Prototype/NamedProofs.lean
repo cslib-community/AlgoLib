@@ -32,7 +32,7 @@ structure NamedTree where
   leaves : Array NamedGoal
 
 /-- Recover the source statement for diagnostics without using its position as identity. -/
-private def sourceRef (site : String) (fallback : Syntax) : CoreM Syntax := do
+def sourceRef (site : String) (fallback : Syntax) : CoreM Syntax := do
   let parts := site.splitOn ":"
   if site.contains (← getFileName) && parts.length ≥ 3 then
     if let some line := parts[parts.length - 2]!.toNat? then
@@ -85,13 +85,45 @@ private partial def readNames (value : Expr) : MetaM (List String) := do
     return (← stringValue value.getAppArgs[1]!) :: (← readNames value.getAppArgs[2]!)
   return []
 
-private def methodViews (name : Ident) (suffix := "ProofViews") : TermElabM (List String) := do
+def methodViews (name : Ident) (suffix := "ProofViews") : TermElabM (List String) := do
   let views := mkIdent (name.getId.appendAfter suffix)
   readNames (← elabTerm (← `($views)) none)
 
-private partial def splitNamed (goal : MVarId) (views inputViews : List String)
-    (key := "result") (site := "") : TacticM (Array NamedGoal) := goal.withContext do
+/-- Interpret only the explicit frontend shape; a mismatch is an elaboration error. -/
+private partial def exposeShape (goal : MVarId) (value : FVarId) (shape : Expr)
+    (suffix : String) : MetaM MVarId := goal.withContext do
+  let shape ← whnf shape
+  let args := shape.getAppArgs
+  if shape.isAppOfArity ``Composition.SourceShape.pair 2 then
+    unless (← whnf (← value.getType)).isAppOfArity ``Prod 2 do
+      throwError "Source metadata does not match the typed program state"
+    let children ← goal.cases value
+    let some child := children[0]? | throwError "Cannot expose typed source state"
+    let goal ← exposeShape child.mvarId child.fields[0]!.fvarId! args[0]! suffix
+    return ← exposeShape goal child.fields[1]!.fvarId! args[1]! suffix
+  if shape.isAppOfArity ``Composition.SourceShape.leaf 3 then
+    let hidden := (← whnf args[2]!).isConstOf ``Bool.true
+    let sourceName ← stringValue args[1]!
+    let stem := if hidden then "__proof_guard" else sourceName ++ suffix
+    return ← goal.rename value ((← getLCtx).getUnusedName (Name.mkSimple stem))
+  throwError "Invalid source binding metadata"
+
+partial def splitNamed (goal : MVarId) (views inputViews : List String)
+    (key := "result") (site := "") (retainTrue := false)
+    (shapes : Option (Expr × Expr) := none) : TacticM (Array NamedGoal) := goal.withContext do
   let ty ← instantiateMVars (← goal.getType)
+  if ty.isAppOfArity ``Composition.SourceForall 3 then
+    let role ← stringValue ty.getAppArgs[1]!
+    let quantified ← withTransparency .all (whnf ty)
+    let (value, child) ← (← goal.change quantified).intro1P
+    let child ← child.withContext do
+      if let some (fullShape, inputShape) := shapes then
+        if role == "input" then return ← exposeShape child value inputShape "Old"
+        if role == "current" then return ← exposeShape child value fullShape ""
+        if role == "result" then
+          return ← child.rename value ((← getLCtx).getUnusedName `result)
+      return child
+    return ← splitNamed child views inputViews key site retainTrue shapes
   if ty.isAppOfArity ``Composition.ObligationAt 3 then
     let args := ty.getAppArgs
     let label ← stringValue args[0]!
@@ -100,14 +132,15 @@ private partial def splitNamed (goal : MVarId) (views inputViews : List String)
     let scope := if parts.length > 1 then parts.head! else "method"
     let location := parts.getLast!
     return ← splitNamed (← goal.change args[2]!) views inputViews
-      (scope ++ "." ++ phase label) location
+      (scope ++ "." ++ phase label) location retainTrue shapes
   if ty.isAppOfArity ``Composition.InvariantFact 2 then
     let args := ty.getAppArgs
     return ← splitNamed (← goal.change args[1]!) views inputViews
-      (key ++ "." ++ (← stringValue args[0]!)) site
+      (key ++ "." ++ (← stringValue args[0]!)) site retainTrue shapes
   if ty.isAppOfArity ``Composition.Obligation 2 then
-    return ← splitNamed (← goal.change ty.getAppArgs[1]!) views inputViews key site
-  if ty.isConstOf ``True then
+    return ← splitNamed (← goal.change ty.getAppArgs[1]!)
+      views inputViews key site retainTrue shapes
+  if ty.isConstOf ``True && !retainTrue then
     goal.assign (mkConst ``True.intro)
     return #[]
   if ty.isForall then
@@ -115,6 +148,7 @@ private partial def splitNamed (goal : MVarId) (views inputViews : List String)
     let (value, child) ← goal.intro1P
     let child ← child.withContext do
       let ty ← value.getType
+      if shapes.isSome then return child
       let size ← productSize ty
       if size > 1 then
         exposeState child value (if size == views.length then views
@@ -122,23 +156,24 @@ private partial def splitNamed (goal : MVarId) (views inputViews : List String)
       else if binder == `a && inputViews.length == 1 then
         exposeState child value inputViews
       else pure child
-    return ← splitNamed child views inputViews key site
+    return ← splitNamed child views inputViews key site retainTrue shapes
   if ty.isAppOfArity ``And 2 then
     let children ← goal.apply (mkConst ``And.intro)
     return (← children.toArray.mapM
-      (fun child => splitNamed child views inputViews key site)).flatten
+      (fun child => splitNamed child views inputViews key site retainTrue shapes)).flatten
   if ty.isAppOf ``ite || ty.isAppOf ``dite then
     setGoals [goal]
     evalTactic (← `(tactic| split))
     return (← (← getGoals).toArray.mapM
-      (fun child => splitNamed child views inputViews key site)).flatten
+      (fun child => splitNamed child views inputViews key site retainTrue shapes)).flatten
   let reduced ← withTransparency .reducible (whnf ty)
-  if reduced != ty then return ← splitNamed (← goal.change reduced) views inputViews key site
+  if reduced != ty then
+    return ← splitNamed (← goal.change reduced) views inputViews key site retainTrue shapes
   goal.setTag (Name.mkSimple key)
   return #[⟨goal, key, site⟩]
 
 /-- Eliminate frontend guard copies in favor of the expressions in the paper program. -/
-private def hideGuards (goal : MVarId) : MetaM MVarId := goal.withContext do
+def hideGuards (goal : MVarId) : MetaM MVarId := goal.withContext do
   let names := (← getLCtx).foldl (init := []) fun names decl =>
     if decl.userName.toString.startsWith "__proof_guard" then decl.userName :: names else names
   let mut goal := goal
@@ -188,7 +223,7 @@ private def tryRoutine (leaf : NamedGoal) : TacticM Bool := do
 private def selects (stem key : String) := key == stem || key.startsWith (stem ++ ".")
 
 /-- Symbolic execution has its own budget; respect larger or unlimited caller settings. -/
-private def proofOptions (opts : Options) : Options :=
+def proofOptions (opts : Options) : Options :=
   let limit := opts.getNat `maxHeartbeats 200000
   if limit == 0 then opts else opts.set `maxHeartbeats (max 2000000 limit)
 
@@ -238,9 +273,10 @@ elab_rules : tactic
     setGoals []
 
 /-- Preview every stable key, automatic status, and open mathematical context. -/
-syntax "#named_goals " ident (" only " ident)? : command
+syntax "#legacy_named_goals " ident (" only " ident)? : command
 elab_rules : command
-  | `(command| #named_goals $name:ident $[only $focus:ident]?) => Command.runTermElabM fun _ =>
+  | `(command| #legacy_named_goals $name:ident $[only $focus:ident]?) =>
+      Command.runTermElabM fun _ =>
       withOptions proofOptions do
     let obligations := mkIdent (name.getId.appendAfter "Obligations")
     let type ← Term.elabType (← `($obligations))

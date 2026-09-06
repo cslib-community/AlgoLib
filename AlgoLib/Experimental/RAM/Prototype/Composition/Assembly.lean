@@ -66,45 +66,60 @@ theorem CertifiedExecutable.correct {proc : Procedure A B} (e : CertifiedExecuta
 
 open Lean Elab Command
 
-/-- Select the standard resident-array backend and emit a list interface plus its theorem. -/
+/-- Reconstruct layout and code certificates from the body alone, before any algorithm proof. -/
+def declareArrayBackend (name : Ident) : CommandElabM Unit := do
+  let locals := mkIdent (name.getId.appendAfter "Locals")
+  let stem := quote name.getId.toString
+  let scratch := mkIdent (name.getId.appendAfter "Scratch")
+  let layout := mkIdent (name.getId.appendAfter "Layout")
+  let encoder := mkIdent (name.getId.appendAfter "Encoder")
+  let linked := mkIdent (name.getId.appendAfter "Linked")
+  let fixed := mkIdent (name.getId.appendAfter "CodeIndependent")
+  let hasLocals := (← getEnv).contains ((← getCurrNamespace) ++ locals.getId) ||
+    (← getEnv).contains locals.getId
+  if hasLocals then
+    elabCommand (← `(command| abbrev $scratch := local_storage% $stem:str : $locals))
+  else
+    elabCommand (← `(command| abbrev $scratch := ()))
+  elabCommand (← `(command| abbrev $layout (n : Nat) : Storage.ArrayLayout :=
+    ⟨⟨$(quote (name.getId.toString ++ ".array.size"))⟩, 0, n⟩))
+  if hasLocals then
+    elabCommand (← `(command| abbrev $encoder (n : Nat) :=
+      (arrayEncoder ($layout n)).hide $scratch
+        (by simp [$scratch:term, Encoder.sep, scalarEncoder])
+        (by simp [arrayEncoder, $layout:term, Storage.ArrayLayout.footprint, $scratch:term,
+          Encoder.sep, scalarEncoder, Finset.disjoint_left])))
+  else
+    elabCommand (← `(command| abbrev $encoder (n : Nat) := arrayEncoder ($layout n)))
+  elabCommand (← `(command| instance $linked:ident (n : Nat) :
+    Linked 24 ($encoder n).representation ($name).body ($encoder n).representation := by
+      ram_link))
+  -- Comparing large reconstructed certificates is backend work, not a user proof setting.
+  withScope (fun scope =>
+      { scope with opts := scope.opts.set `maxHeartbeats (2000000 : Nat) }) do
+    elabCommand (← `(command| theorem $fixed (m n : Nat) :
+      ($linked m).supported.compile.code = ($linked n).supported.compile.code := rfl))
+
+/-- Place this command in a module importing the program specification, not its proofs. -/
+syntax "compile_array_backend " ident : command
+elab_rules : command
+  | `(command| compile_array_backend $name:ident) => declareArrayBackend name
+
+/-- Assemble the executable using an imported backend certificate when one is available. -/
 syntax "compile_array_method " ident : command
 elab_rules : command
   | `(command| compile_array_method $name:ident) => do
-    let proc := mkIdent (name.getId.appendAfter "Procedure")
-    let locals := mkIdent (name.getId.appendAfter "Locals")
-    let stem := quote name.getId.toString
-    let scratch := mkIdent (name.getId.appendAfter "Scratch")
-    let layout := mkIdent (name.getId.appendAfter "Layout")
-    let encoder := mkIdent (name.getId.appendAfter "Encoder")
     let linked := mkIdent (name.getId.appendAfter "Linked")
+    unless (← getEnv).contains ((← getCurrNamespace) ++ linked.getId) ||
+        (← getEnv).contains linked.getId do
+      declareArrayBackend name
+    let proc := mkIdent (name.getId.appendAfter "Procedure")
+    let encoder := mkIdent (name.getId.appendAfter "Encoder")
+    let layout := mkIdent (name.getId.appendAfter "Layout")
+    let scratch := mkIdent (name.getId.appendAfter "Scratch")
     let run := mkIdent (name.getId.appendAfter "Run")
     let bound := mkIdent (name.getId.appendAfter "Bound")
     let correct := mkIdent (name.getId.appendAfter "Correct")
-    let fixed := mkIdent (name.getId.appendAfter "CodeIndependent")
-    let hasLocals := (← getEnv).contains ((← getCurrNamespace) ++ locals.getId) ||
-      (← getEnv).contains locals.getId
-    if hasLocals then
-      elabCommand (← `(command| private abbrev $scratch := local_storage% $stem:str : $locals))
-    else
-      elabCommand (← `(command| private abbrev $scratch := ()))
-    elabCommand (← `(command| private abbrev $layout (n : Nat) : Storage.ArrayLayout :=
-      ⟨⟨$(quote (name.getId.toString ++ ".array.size"))⟩, 0, n⟩))
-    if hasLocals then
-      elabCommand (← `(command| private abbrev $encoder (n : Nat) :=
-        (arrayEncoder ($layout n)).hide $scratch
-          (by simp [$scratch:term, Encoder.sep, scalarEncoder])
-          (by simp [arrayEncoder, $layout:term, Storage.ArrayLayout.footprint, $scratch:term,
-            Encoder.sep, scalarEncoder, Finset.disjoint_left])))
-    else
-      elabCommand (← `(command| private abbrev $encoder (n : Nat) := arrayEncoder ($layout n)))
-    elabCommand (← `(command| private instance $linked:ident (n : Nat) :
-      Linked 24 ($encoder n).representation ($proc).body ($encoder n).representation := by
-        ram_link))
-    -- Comparing large reconstructed certificates is backend work, not a user proof setting.
-    withScope (fun scope =>
-        { scope with opts := scope.opts.set `maxHeartbeats (2000000 : Nat) }) do
-      elabCommand (← `(command| theorem $fixed (m n : Nat) :
-        ($linked m).supported.compile.code = ($linked n).supported.compile.code := rfl))
     elabCommand (← `(command| def $run (xs : List Nat)
         (valid : ($proc).requires xs.toArray := by trivial) : Result (List Nat) :=
       let r := runEncoded (rate := 24) (Q := ($encoder xs.length).representation)

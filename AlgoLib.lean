@@ -113,6 +113,8 @@ import AlgoLib.Experimental.RAM.Tests.MixedAxioms
 
 import AlgoLib.Experimental.RAM.Tests.NamedAssembly
 import AlgoLib.Experimental.RAM.Tests.NamedProofs
+import AlgoLib.Experimental.RAM.Tests.ObligationAPI.Regression
+import AlgoLib.Experimental.RAM.Tests.ObligationAPI.SourceContext
 import AlgoLib.Experimental.RAM.Tests.PaperLoops
 import AlgoLib.Experimental.RAM.Tests.PaperLoopAxioms
 

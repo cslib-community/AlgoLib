@@ -1,5 +1,10 @@
 # From a paper loop proof to an executable theorem
 
+The current command interface uses a [generated Lean obligation API](OBLIGATION-API.md).
+Program specifications, mathematical proofs, and expensive backend certificates live in
+separate modules so proof edits can reuse generation and compilation work.
+
+
 For the current proof-authoring workflow, see [named proof blocks](NAMED-PROOFS.md).
 It replaces broad goal-search scripts with separate mathematical responsibilities;
 the accounting construction described below is unchanged.
