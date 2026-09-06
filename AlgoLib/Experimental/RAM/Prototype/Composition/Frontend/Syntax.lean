@@ -29,6 +29,12 @@ syntax (name := paperWhile) "while " term
   ("invariant " (str)? term)* loopCost
   ("done_with " term)? ("decreasing " term)? " do " doSeq : doElem
 
+/-- Named loops keep proof identities stable when source locations change. -/
+syntax (name := namedWhile) "while " term " named " ident
+  ("invariant " (str)? term)* loopCost
+  ("done_with " term)? ("decreasing " term)? " do " doSeq : doElem
+syntax (name := namedStatements) "named " ident " do " doSeq : doElem
+
 syntax (name := pairCall) "(" ident "," ident ")" " := " term : doElem
 
 /-- Use a library's uniform allowance when available; dependent contracts need no adapter. -/

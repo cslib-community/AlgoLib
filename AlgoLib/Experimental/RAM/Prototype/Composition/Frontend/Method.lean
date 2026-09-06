@@ -34,6 +34,10 @@ partial def collect (rs : Array Resource) (body : Syntax) : TermElabM (Array Res
       rs ← collect (← collect rs yes) no
     | `(doElem| if $q:term then $yes:doSeq) =>
       rs ← collect (← guards rs q) yes
+    | `(doElem| named $_:ident do $body:doSeq) => rs ← collect rs body
+    | `(doElem| while $q:term named $_:ident
+        $[invariant $[$_:str]? $_:term]* $_:loopCost
+        $[done_with $_]? $[decreasing $_]? do $body:doSeq)
     | `(doElem| while $q:term
         $[invariant $[$_:str]? $_:term]* $_:loopCost
         $[done_with $_]? $[decreasing $_]? do $body:doSeq)
@@ -63,6 +67,10 @@ partial def collectArguments (known rs : Array Resource) (body : Syntax) :
     | `(doElem| if $_:term then $yes:doSeq else $no:doSeq) =>
       rs ← collectArguments known (← collectArguments known rs yes) no
     | `(doElem| if $_:term then $yes:doSeq) => rs ← collectArguments known rs yes
+    | `(doElem| named $_:ident do $body:doSeq) => rs ← collectArguments known rs body
+    | `(doElem| while $_:term named $_:ident
+        $[invariant $[$_:str]? $_:term]* $_:loopCost
+        $[done_with $_]? $[decreasing $_]? do $body:doSeq)
     | `(doElem| while $_:term
         $[invariant $[$_:str]? $_:term]* $_:loopCost
         $[done_with $_]? $[decreasing $_]? do $body:doSeq)
@@ -78,11 +86,39 @@ partial def collectArguments (known rs : Array Resource) (body : Syntax) :
     | _ => pure ()
   return rs
 
+/-- Reject ambiguous identities rather than silently renumbering proof obligations. -/
+partial def validateProofNames (stx : Syntax) (scope : String := "")
+    (seen : Array String := #[]) : TermElabM (Array String) := do
+  let add (name : Ident) : TermElabM (String × Array String) := do
+    let key := if scope.isEmpty then name.getId.toString else scope ++ "." ++ name.getId.toString
+    if seen.contains key then throwErrorAt name "Duplicate named proof scope '{key}'"
+    return (key, seen.push key)
+  match stx with
+  | `(doElem| while $_:term named $name:ident
+      $[invariant $[$label:str]? $inv:term]* $_:loopCost
+      $[done_with $_]? $[decreasing $_]? do $body:doSeq) =>
+    let (key, seen) ← add name
+    let mut labels : Array String := #[]
+    for i in [:inv.size] do
+      let some label := label[i]! | throwErrorAt inv[i]! "Name every invariant in a named loop"
+      let title := label.getString
+      unless !title.isEmpty && title.toList.all (fun c => c.isAlphanum || c == '_') &&
+          !(title.toList.head!).isDigit do
+        throwErrorAt label "Invariant names must be identifiers, such as frontier or sorted_prefix"
+      if labels.contains title then throwErrorAt label "Duplicate invariant name '{title}'"
+      labels := labels.push title
+    validateProofNames body key seen
+  | `(doElem| named $name:ident do $body:doSeq) =>
+    let (key, seen) ← add name
+    validateProofNames body key seen
+  | _ => stx.getArgs.foldlM (fun acc child => validateProofNames child scope acc) seen
+
 /-- Existing `ram method` dispatches resource parameters here. Immutable parameters
 specialize the method before execution and must not be confused with RAM inputs. -/
 def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
     (ret : Ident) (retTy : Term) (pre post : Array Term) (credits : Option Term)
     (body : TSyntax ``Parser.Term.doSeq) : CommandElabM Unit := do
+  discard <| Command.runTermElabM fun _ => validateProofNames body
   let mut rs : Array Resource := #[]
   let mut params : Array (TSyntax ``Parser.Term.bracketedBinder) := #[]
   let mut args : Array Term := #[]
@@ -147,6 +183,13 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
     let scratchType ← Command.runTermElabM fun _ => stateType (rs.extract inputs.size rs.size)
     let scratchName := mkIdent (name.getId.appendAfter "Locals")
     elabCommand (← `(command| abbrev $scratchName : Type := $scratchType))
+  let views := mkIdent (name.getId.appendAfter "ProofViews")
+  let viewNames := rs.toList.map (fun r =>
+    if r.name.getId.toString.startsWith "_" then "__proof_guard" else r.name.getId.toString)
+  elabCommand (← `(command| def $views : List String := $(quote viewNames)))
+  let inputViews := mkIdent (name.getId.appendAfter "ProofInputViews")
+  elabCommand (← `(command| def $inputViews : List String :=
+    $(quote (inputs.toList.map (·.name.getId.toString)))))
   let obligations := mkIdent (name.getId.appendAfter "Obligations")
   let certificate := mkIdent (name.getId.appendAfter "Certificate")
   elabCommand (← `(command|

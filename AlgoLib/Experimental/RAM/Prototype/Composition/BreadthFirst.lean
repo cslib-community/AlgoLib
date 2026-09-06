@@ -34,10 +34,10 @@ ram method bfs (β : Type) (a : Adjacency) (G : AlgoLib.Graph Nat β)
   ensures queue = []
   do
     let mut i := 0
-    while i < visited.size
-      invariant visited.size = a.n
-      invariant i ≤ visited.size
-      invariant ∀ v < i, visited[v]! = 0
+    while i < visited.size named clear
+      invariant "size" visited.size = a.n
+      invariant "index" i ≤ visited.size
+      invariant "zero" ∀ v < i, visited[v]! = 0
       iterations_at_most visited.size - i
       do
         visited[i] := 0
@@ -47,19 +47,19 @@ ram method bfs (β : Type) (a : Adjacency) (G : AlgoLib.Graph Nat β)
     (queue, source) := Queue.API.enqueue capacity
     let mut u := 0
     let mut v := 0
-    while queue.nonempty
-      invariant row = []
-      invariant visited.size = a.n
-      invariant "BFS frontier" Frontier a G source (marked visited) queue
+    while queue.nonempty named search
+      invariant "empty" row = []
+      invariant "size" visited.size = a.n
+      invariant "frontier" Frontier a G source (marked visited) queue
       amortized_work work a (marked visited) queue initially_at_most a.n + a.entries
       do
         (queue, u) := Queue.API.dequeue
         (row, u) := GraphCursor.API.neighbors a
-        while row.nonempty
-          invariant visited.size = a.n
-          invariant "FIFO contains discovered vertices" QueueOK visited queue
-          invariant ∀ w ∈ row, w < a.n
-          invariant "neighbor scan" scan row (marked visited) queue =
+        while row.nonempty named scan
+          invariant "size" visited.size = a.n
+          invariant "discovered" QueueOK visited queue
+          invariant "vertices" ∀ w ∈ row, w < a.n
+          invariant "scan" scan row (marked visited) queue =
             at_loop_entry(scan row (marked visited) queue)
           iterations_at_most row.length
           do
@@ -68,31 +68,64 @@ ram method bfs (β : Type) (a : Adjacency) (G : AlgoLib.Graph Nat β)
               visited[v] := 1
               (queue, v) := Queue.API.enqueue capacity
 
-set_option maxHeartbeats 2000000 in
--- Normalize the nested, parameterized VCs once; no compiler reasoning is required.
-prove_algorithm bfs by
-  intro β a G rep capacity
-  paper_vc
-  all_goals try simp_all [Queue.nonempty]
-  all_goals try omega
-  all_goals try solve
-    | apply zero_prefix <;> first | assumption | omega
-  all_goals try solve
-    | apply seed rep <;> first | assumption | omega | (intro v hv; apply_assumption; omega)
-  all_goals try have step := process_head rep (h := by assumption) (by assumption)
-  all_goals try omega
-  all_goals try solve
-    | exact a.valid _ step.1 _ (by assumption)
-  all_goals try solve_by_elim [List.mem_of_mem_tail]
-  all_goals try solve
-    | apply Nat.lt_of_lt_of_le (room_for_fresh _ _ _ (by assumption) ?_ (by assumption))
-        (by omega)
-      grind only [head_mem]
-  all_goals try have done := finish_bitmap rep _ _ (by assumption)
-  all_goals grind (gen := 4) (instances := 200) only [Array.size_setIfInBounds,
-    frontier_queue, queue_tail, queue_enqueue, room_for_fresh, scan_mark, scan_skip,
-    work_le_total, scan_work, frontier_head, head_mem, Adjacency.valid, List.mem_of_mem_tail,
-    scan.eq_1, List.length_pos_iff, mem_marked]
+-- During authoring: #named_goals bfs only search.scan.preserve
+prove_algorithm bfs where
+  case clear.preserve.zero => by
+    apply zero_prefix <;> first | assumption | omega
+  case search.initialize.frontier => by
+    apply seed rep <;> first | assumption | omega | (intro v hv; apply_assumption; omega)
+  case search.account.initial => by
+    grind only [work_le_total]
+  case search.requires => by
+    simp_all [Queue.nonempty] <;>
+      exact frontier_head (by assumption) (by assumption)
+  case search.account.call => by
+    simp_all [Queue.nonempty]
+    have step := process_head rep (h := by assumption) (by assumption)
+    omega
+  case search.scan.account.initial => by
+    simp_all [Queue.nonempty]
+    have step := process_head rep (h := by assumption) (by assumption)
+    omega
+  case search.scan.initialize.discovered => by
+    exact queue_tail _ _ (frontier_queue _ _ _ _ _ (by assumption))
+  case search.scan.initialize.vertices => by
+    simp_all [Queue.nonempty]
+    exact a.valid _ (frontier_head (by assumption) (by assumption)) _ (by assumption)
+  case search.scan.terminate => by
+    simp_all [Queue.nonempty, List.length_pos_iff]
+  case search.scan.requires => by
+    simp_all [Queue.nonempty] <;> (
+      apply Nat.lt_of_lt_of_le
+        (room_for_fresh _ _ _ (by assumption) ?_ (by assumption)) (by omega)
+      grind only [head_mem])
+  case search.scan.safety => by
+    simp_all [Queue.nonempty] <;> grind only [head_mem]
+  case search.scan.preserve.discovered => by
+    simp_all [Queue.nonempty]
+    apply queue_enqueue <;> first | assumption | grind only [head_mem]
+  case search.scan.preserve.vertices => by
+    solve_by_elim [List.mem_of_mem_tail]
+  case search.scan.preserve.scan => by
+    simp_all [Queue.nonempty]
+    grind only [scan_mark, scan_skip, head_mem]
+  case search.preserve.empty => by simp_all [Queue.nonempty]
+  case search.preserve.frontier => by
+    simp_all [Queue.nonempty, scan.eq_1]
+    have step := process_head rep (h := by assumption) (by assumption)
+    grind only []
+  case search.terminate.decrease => by
+    simp_all [Queue.nonempty, scan.eq_1]
+    have step := process_head rep (h := by assumption) (by assumption)
+    grind only [scan_work]
+  case search.account.iteration => by
+    simp_all [Queue.nonempty, scan.eq_1]
+    have step := process_head rep (h := by assumption) (by assumption)
+    grind only [scan_work]
+  case search.exit => by
+    simp_all [Queue.nonempty] <;> (
+      have done := finish_bitmap rep _ _ (by assumption)
+      grind only [])
 
 /-- The same algorithm certificate also establishes actual Loom weakest preconditions. -/
 theorem loom_correct (β : Type) (a : Adjacency) (G : Graph Nat β)

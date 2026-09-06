@@ -100,7 +100,7 @@ python3 AlgoLib/Experimental/RAM/Tests/check_elaboration.py --runs 3
 
 The script first builds dependencies outside the measured interval. It then
 invokes `lake env lean -j1 --profile --setup=SETUP FILE` to **re-elaborate** the sorting and BFS
-proof and assembly modules. `SETUP` is Lake's generated module setup, preserving
+proof and assembly modules, plus the named-proof interface regressions. `SETUP` is Lake's generated module setup, preserving
 the project's elaboration options. A cached `lake build` is not counted as an elaboration
 measurement. Each log contains Lean's elaboration/type-checking profile; `report.json`
 records wall times, budgets, toolchain, platform, revision, and working-tree status.

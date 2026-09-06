@@ -16,8 +16,24 @@ set_option relaxedAutoImplicit true
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.Frontend
 open Lean Elab Command Term Meta Parser
 
+/-- Attach lexical identities to unscoped primitive/call diagnostics, including loop guards. -/
+private def scopePlan (scope : String) (plan : Term) : TermElabM Term := do
+  return ⟨← plan.raw.replaceM fun node => do
+    let tag (site : Term) : TermElabM Term := do
+      if scope.isEmpty then return site
+      match site with
+      | `($s:str) =>
+        if s.getString.contains "\n" then return site
+        return quote (scope ++ "\n" ++ s.getString)
+      | _ => return site
+    match node with
+    | `(Plan.invokeAt $site $op) => return some (← `(Plan.invokeAt $(← tag site) $op)).raw
+    | `(Plan.callAt $site $proc) => return some (← `(Plan.callAt $(← tag site) $proc)).raw
+    | _ => return none⟩
+
 partial def statements (rs : Array Resource) (body : TSyntax ``Parser.Term.doSeq)
-    (inferBudget : Bool) (active : Array Name) (nested := false) : TermElabM Fragment := do
+    (inferBudget : Bool) (active : Array Name) (nested := false) (scope : String := "") :
+    TermElabM Fragment := do
   let mut active := active
   let mut result ← skip
   let all := items body.raw
@@ -33,6 +49,7 @@ partial def statements (rs : Array Resource) (body : TSyntax ``Parser.Term.doSeq
         | `(Plan.invoke $op) => `(Plan.invokeAt $site $op)
         | _ => pure part.plan
       pure { part with plan }
+    let part := { part with plan := ← scopePlan scope part.plan }
     result ← seq result part
     active := next
   return result
@@ -72,9 +89,12 @@ where
   loop (active : Array Name) (q : Term) (label : Array (Option (TSyntax `str)))
       (inv : Array Term) (cost done measure : Option Term)
       (body : TSyntax ``Parser.Term.doSeq) (amortized := false)
-      (initialBound : Option Term := none) : TermElabM Fragment := do
+      (initialBound : Option Term := none) (loopName : Option Ident := none) :
+      TermElabM Fragment := do
     let (before, test, guardFact) ← condition rs active q
-    let mut body ← statements rs body inferBudget active true
+    let loopScope := loopName.map (fun n =>
+      if scope.isEmpty then n.getId.toString else scope ++ "." ++ n.getId.toString)
+    let mut body ← statements rs body inferBudget active true (loopScope.getD scope)
     let s := mkIdent (← mkFreshUserName `state)
     let entry := mkIdent (← mkFreshUserName `entry)
     let remaining := mkIdent `remaining
@@ -86,6 +106,8 @@ where
       body := {body with program, plan}
     body ← seq body before
     let site ← sourceSite q
+    let site ← if let some key := loopScope then
+      `( $(quote key) ++ "\n" ++ $site ) else pure site
     let mut estimated : Option Term := none
     let mut unit : Option Term := none
     if let some bound := cost then
@@ -107,9 +129,12 @@ where
         | `(at_loop_entry($e:term)) => return some (← bindViews rs (← `($entry)) e).raw
         | _ => return none⟩
       if cost.isSome then
+        if loopName.isSome && label[k]!.isNone then
+          throwErrorAt inv[k]! "Give every invariant in a named loop a stable string name"
         let title := label[k]!.map (·.getString) |>.getD "loop invariant"
         let name ← `( $(quote (title ++ " initialized / preserved at ")) ++ $site )
-        invTerm ← `(Obligation $name $fact ∧ $invTerm)
+        invTerm ← if loopName.isSome then `(InvariantFact $(quote title) $fact ∧ $invTerm)
+          else `(Obligation $name $fact ∧ $invTerm)
       else invTerm ← `($fact ∧ $invTerm)
     invTerm ← bindViews rs (← `($s)) invTerm
     invTerm ← `($guardFact $s ∧ $invTerm)
@@ -137,7 +162,7 @@ where
       let fact ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) done))
       part ← seq part
         ⟨← `(Program.identity), ← `(Plan.assert $fact), some (← `(0)), #[], pure, some (← `(0))⟩
-    return part
+    return { part with plan := ← scopePlan (loopScope.getD scope) part.plan }
   statement (active : Array Name) (stx : TSyntax `doElem) :
       TermElabM (Fragment × Array Name) := withRef stx do
     match stx with
@@ -176,8 +201,8 @@ where
       return (← receiver active f args, active)
     | `(doElem| if $q:term then $yes:doSeq else $no:doSeq) =>
       let (before, test, _) ← condition rs active q
-      let yes ← statements rs yes inferBudget active true
-      let no ← statements rs no inferBudget active true
+      let yes ← statements rs yes inferBudget active true scope
+      let no ← statements rs no inferBudget active true scope
       let estimate ← match yes.estimate, no.estimate with
         | some x, some y => pure (some (← `(1 + max $x $y)))
         | _, _ => pure none
@@ -190,6 +215,16 @@ where
       return (← seq before part, active)
     | `(doElem| if $q:term then $yes:doSeq) =>
       statement active (← `(doElem| if $q then $yes else pure ()))
+    | `(doElem| named $name:ident do $body:doSeq) =>
+      let key := if scope.isEmpty then name.getId.toString else scope ++ "." ++ name.getId.toString
+      return (← statements rs body inferBudget active true key, active)
+    | `(doElem| while $q:term named $name:ident
+        $[invariant $[$label:str]? $inv:term]*
+        $cost:loopCost $[done_with $done]? $[decreasing $measure]? do $body:doSeq) =>
+      return (← loop active q label inv (some ⟨cost.raw[1]⟩) done measure body
+        (cost.raw.getKind == ``workPotential || cost.raw.getKind == ``boundedWork)
+        (if cost.raw.getKind == ``boundedWork then some ⟨cost.raw[3]⟩ else none)
+        (some name), active)
     | `(doElem| while $q:term
         $[invariant $[$label:str]? $inv:term]*
         $cost:loopCost $[done_with $done]? $[decreasing $measure]? do $body:doSeq) =>

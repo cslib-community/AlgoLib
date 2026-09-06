@@ -130,4 +130,13 @@ elab_rules : command
     elabCommand (← `(command| prove_algorithm $name by $proof))
     elabCommand (← `(command| compile_array_method $name))
 
+open AlgoLib.Experimental.RAM.Prototype.Frontend
+
+/-- Named proof blocks also support the single-command teaching interface. -/
+syntax "verify_array_method " ident " where " namedProofBlock* : command
+elab_rules : command
+  | `(command| verify_array_method $name:ident where $blocks:namedProofBlock*) => do
+    elabCommand (← `(command| prove_algorithm $name where $blocks*))
+    elabCommand (← `(command| compile_array_method $name))
+
 end AlgoLib.Experimental.RAM.Prototype.Composition

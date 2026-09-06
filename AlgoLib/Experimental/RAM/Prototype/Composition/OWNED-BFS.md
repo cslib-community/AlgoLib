@@ -5,6 +5,10 @@ and the only algorithm verification proof used by the two runners. Array writes,
 scalar locals, both loops, and queue calls are visible in that source. Queue
 representations, memory addresses, and compiler certificates are absent.
 
+The proof uses [separate named blocks](NAMED-PROOFS.md) for initialization, scan
+preservation, termination, queue preconditions, and work accounting. Use
+`#named_goals bfs only search.scan.preserve` while working on the inner loop.
+
 ## Run it
 
 ```lean

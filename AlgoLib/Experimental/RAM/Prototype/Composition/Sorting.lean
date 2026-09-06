@@ -31,20 +31,20 @@ ram method insertionSort (mut arr : Array Nat) return (u : Unit)
   ensures SortedPermutation arrOld.toList arr.toList
   do
     let mut i := 0
-    while i < arr.size
-      invariant i ≤ arr.size
-      invariant "sorted prefix" Prefix arr i
-      invariant arr.toList.Perm arrOld.toList
-      invariant arr.size = arrOld.size
+    while i < arr.size named outer
+      invariant "index" i ≤ arr.size
+      invariant "prefix" Prefix arr i
+      invariant "permutation" arr.toList.Perm arrOld.toList
+      invariant "size" arr.size = arrOld.size
       iterations_at_most arr.size - i
       do
         let mut j := i
-        while 0 < j
-          invariant j ≤ i
-          invariant i < arr.size
-          invariant "inner insertion invariant" Hole arr i j
-          invariant arr.toList.Perm arrOld.toList
-          invariant arr.size = arrOld.size
+        while 0 < j named inner
+          invariant "index" j ≤ i
+          invariant "bounds" i < arr.size
+          invariant "hole" Hole arr i j
+          invariant "permutation" arr.toList.Perm arrOld.toList
+          invariant "size" arr.size = arrOld.size
           iterations_at_most j
           do
             let x := arr[j]!
@@ -56,11 +56,21 @@ ram method insertionSort (mut arr : Array Nat) return (u : Unit)
         i := i + 1
     return
 
-set_option maxHeartbeats 400000 in
--- Supply mathematical lemmas; loop accounting and compiler obligations stay internal.
-prove_algorithm insertionSort by
-  paper_solve [SortedPermutation,
-    Prefix, Hole, enter, exit, keep, swap, swap_perm, sorted, List.Perm.trans]
+-- During authoring: #named_goals insertionSort only outer.inner.preserve
+prove_algorithm insertionSort where
+  case outer.initialize.prefix => by simp [Prefix]
+  case outer.inner.initialize.hole => by grind only [enter]
+  case outer.inner.preserve.hole => by
+    first
+    | apply swap <;> first | assumption | omega
+    | apply keep <;> first | assumption | omega
+  case outer.inner.preserve.permutation => by
+    grind only [swap_preserves_permutation]
+  case outer.preserve.prefix => by grind only [exit]
+  case outer.terminate => by omega
+  case outer.account => by omega
+  case outer.inner.account => by omega
+  case outer.exit => by grind only [SortedPermutation, sorted]
 
 /- A caller can combine an array procedure with direct indexing and a scalar result.
 The callee is used through its public contract, including the permutation fact. -/
@@ -77,7 +87,7 @@ ram method minimumAfterSort (mut arr : Array Nat) (mut smallest : Nat)
 theorem sorted_size {a b : Array Nat} (h : SortedPermutation a.toList b.toList) :
     b.size = a.size := by simpa using h.2.length_eq
 
-prove_algorithm minimumAfterSort by
-  contract_solve [SortedPermutation, sorted_size]
+prove_algorithm minimumAfterSort where
+  case method.safety => by grind only [sorted_size]
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.Sorting

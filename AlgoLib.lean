@@ -111,6 +111,8 @@ import AlgoLib.Experimental.RAM.Tests.MixedFrontend
 import AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution
 import AlgoLib.Experimental.RAM.Tests.MixedAxioms
 
+import AlgoLib.Experimental.RAM.Tests.NamedAssembly
+import AlgoLib.Experimental.RAM.Tests.NamedProofs
 import AlgoLib.Experimental.RAM.Tests.PaperLoops
 import AlgoLib.Experimental.RAM.Tests.PaperLoopAxioms
 

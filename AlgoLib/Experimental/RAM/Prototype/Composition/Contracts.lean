@@ -40,6 +40,9 @@ def Obligation (_label : String) (fact : Prop) : Prop := fact
 /-- Keep location metadata separate: constructing proof obligations does not compute strings. -/
 def ObligationAt (_label _site : String) (fact : Prop) : Prop := fact
 
+/-- A stable invariant name, independent of its initialization/preservation phase. -/
+def InvariantFact (_name : String) (fact : Prop) : Prop := fact
+
 /-- Proof annotations indexed by the one supported executable language. -/
 inductive Plan : {A B : Type} → Program A B → Type 1 where
   | identity : Plan (.identity : Program A A)
@@ -82,7 +85,7 @@ def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) →
         body.vc (fun next _ =>
           ObligationAt "loop invariant preserved" site (I next) ∧
           ObligationAt "iteration bound decreases" site (measure next < measure b)) b unit
-      else Q b (c - (measure a * (unit + 1) + 1))
+      else ObligationAt "loop exit" site (Q b (c - (measure a * (unit + 1) + 1)))
   | .invokeAt site op, Q, a, c =>
       ObligationAt "array index within bounds / operation precondition" site
         (op.requires a) ∧
@@ -101,7 +104,7 @@ def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) →
           ObligationAt "remaining work decreases" site (measure next < measure b) ∧
           ObligationAt "iteration allowance sufficient" site (unit * measure next + 1 ≤ left))
           b (unit * measure b)
-      else Q b (c - (unit * measure a + 1))
+      else ObligationAt "loop exit" site (Q b (c - (unit * measure a + 1)))
 termination_by structural plan _ _ _ => plan
 
 /-- Replacing a procedure body preserves every caller continuation obligation. -/

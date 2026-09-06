@@ -4,6 +4,10 @@ The complete [owned BFS tutorial](Composition/OWNED-BFS.md) shows one paper-styl
 program and proof running with a circular buffer and an amortized two-stack FIFO,
 with graph correctness and a linear bound on actual RAM instructions.
 
+For proof authoring, start with [separate named proof blocks](Composition/NAMED-PROOFS.md).
+Sorting and BFS discharge initialization, preservation, termination, and accounting
+in focused blocks with source-linked diagnostics.
+
 For the current paper-style loop workflow, see the
 [paper loop tutorial](Composition/PAPER-LOOPS.md): inferred allowances, named VCs,
 and automatically assembled executable theorems.

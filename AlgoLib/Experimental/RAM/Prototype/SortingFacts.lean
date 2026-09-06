@@ -65,6 +65,13 @@ theorem swap_perm (a : Array Nat) (j : Nat) (hj : 0 < j) (hb : j < a.size) :
   simpa [Array.perm_iff_toList_perm, Array.swap, Array.setIfInBounds, hb, hb', getElem!_pos] using
     (Array.swap_perm (xs := a) (i := j) (j := j - 1) hb hb')
 
+/-- Adjacent exchange preserves the input multiset, composed with an earlier permutation. -/
+theorem swap_preserves_permutation (a : Array Nat) (xs : List Nat) (j : Nat)
+    (hj : 0 < j) (hb : j < a.size) (perm : a.toList.Perm xs) :
+    ((a.toList.set j a[j - 1]!).set (j - 1) a[j]!).Perm xs := by
+  simpa only [Array.set!_eq_setIfInBounds, Array.toList_setIfInBounds] using
+    (swap_perm a j hj hb).trans perm
+
 /-- The index-based invariant gives the conventional list sorting specification. -/
 theorem sorted (a : Array Nat) (h : Prefix a a.size) : a.toList.Pairwise (· ≤ ·) := by
   rw [List.pairwise_iff_getElem]

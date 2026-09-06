@@ -1,5 +1,9 @@
 # Modularity under composition
 
+For algorithm authors, start with [separate named proof blocks](NAMED-PROOFS.md).
+Sorting and BFS use stable initialization, preservation, termination, and accounting
+responsibilities, with source-linked obligation previews.
+
 For a complete graph algorithm, start with [one BFS proof, two FIFO backends](OWNED-BFS.md).
 The same owned source program mixes mutable arrays, scalar locals, nested loops, and
 procedure calls, then runs with a circular buffer or an amortized two-stack queue.

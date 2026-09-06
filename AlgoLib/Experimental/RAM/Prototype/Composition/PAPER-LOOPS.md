@@ -1,5 +1,9 @@
 # From a paper loop proof to an executable theorem
 
+For the current proof-authoring workflow, see [named proof blocks](NAMED-PROOFS.md).
+It replaces broad goal-search scripts with separate mathematical responsibilities;
+the accounting construction described below is unchanged.
+
 Start with [Sorting.lean](Sorting.lean). The program shows both insertion loops,
 array accesses, and mathematical invariants. It has **no `credits` clause, no
 `remaining` invariant, and no bookkeeping constants**. Its caller also infers the
@@ -11,11 +15,11 @@ Write ordinary mathematical invariants beside the loop. Optional names identify
 these facts in the generated proof goals:
 
 ```lean
-while i < arr.size
-  invariant "sorted prefix" Prefix arr i
-  invariant arr.toList.Perm arrOld.toList
-  invariant arr.size = arrOld.size
-  invariant i ≤ arr.size
+while i < arr.size named outer
+  invariant "prefix" Prefix arr i
+  invariant "permutation" arr.toList.Perm arrOld.toList
+  invariant "size" arr.size = arrOld.size
+  invariant "index" i ≤ arr.size
   iterations_at_most arr.size - i
   do
     -- extend the prefix
@@ -79,29 +83,19 @@ separately use private amortization potentials behind their public call contract
 
 ## 4. Solve named mathematical conditions
 
-```lean
-prove_algorithm insertionSort by
-  paper_solve [SortedPermutation,
-    Prefix, Hole, enter, exit, keep, swap, swap_perm, sorted, List.Perm.trans]
-```
+The current examples use `prove_algorithm insertionSort where` and separate
+`case` blocks. For example, `outer.inner.initialize.hole` applies the mathematical
+`enter` lemma; `outer.inner.preserve.hole` applies `swap` or `keep`; and
+`outer.account` closes the inferred arithmetic allowance.
 
-`paper_solve` reconstructs proofs using the supplied mathematical lemmas and the
-existing arithmetic automation. It does not trust solver answers or add axioms.
+Use `#named_goals insertionSort only outer.inner.preserve` to focus the preview
+on the inner loop. Names are based on explicitly named loops and invariants;
+source locations are separate. See [the complete named-block tutorial](NAMED-PROOFS.md)
+for the checked syntax, failure behavior, and BFS example.
 
-For interaction, use `paper_vc` instead. It leaves ordinary Lean goals that can be
-solved with `intro`, `simp`, `omega`, `apply`, or your own lemmas. Named obligations
-include:
-
-- `sorted prefix initialized / preserved at <file>:<line>:<column>`;
-- `iteration bound positive` and `iteration bound decreases`;
-- `array index within bounds / operation precondition`;
-- `statement allowance sufficient` and `procedure precondition`.
-
-Use `#paper_goals methodName` to preview outstanding goals without creating a
-proof or an executable. For declarations in the current file, preview messages
-are attached to their source locations. Imported declarations retain their original
-location in the goal name. Intermediate programs, register paths, and compiler
-certificates are normalized internally.
+The older `prove_algorithm ... by`, `paper_vc`, `paper_solve`, and `#paper_goals`
+entry points remain available for compatibility. New algorithm proofs need not
+use positional goals or broad goal-search scripts.
 
 For example, annotating an active loop with `iterations_at_most 0` leaves an
 iteration-bound goal. Reading `arr[arr.size]!` leaves a bounds goal: the `!` does

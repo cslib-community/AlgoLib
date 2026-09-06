@@ -77,6 +77,7 @@ pure_modules = {prefix + name for name in (
     "Prototype.Composition.Buffer", "Prototype.Composition.BufferClient",
     "Prototype.Composition.Compatibility", "Prototype.Composition.Contracts",
     "Prototype.Composition.Frontend", "Prototype.Composition.BufferAlgorithms",
+    "Prototype.ProofGoals", "Prototype.NamedProofs",
     "Prototype.Composition.Frontend.Syntax", "Prototype.Composition.Frontend.Resources",
     "Prototype.Composition.Frontend.Expressions", "Prototype.Composition.Frontend.Statements",
     "Prototype.Composition.Frontend.Method",
@@ -109,6 +110,15 @@ for name in ("BFSStorage", "BFSExecution"):
                          "GraphCursorImplementation.footprint", "GraphCursorImplementation.cells",
                          "GraphCursorImplementation.no_register"):
         assert private_name not in text, (path, "assembly opens private layout", private_name)
+
+# The teaching examples must retain source-level proof blocks, not broad VC goal searches.
+for name in ("Sorting", "BreadthFirst"):
+    path = root / "Prototype" / "Composition" / f"{name}.lean"
+    text = path.read_text()
+    for legacy_tactic in ("all_goals", "paper_solve", "paper_vc", "contract_solve"):
+        assert not re.search(r"\b" + legacy_tactic + r"\b", text), (
+            path, "algorithm proof bypasses the named-block interface", legacy_tactic
+        )
 
 active, done = set(), set()
 def visit(module):
