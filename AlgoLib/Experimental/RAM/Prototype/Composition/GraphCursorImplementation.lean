@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.GraphCursor
-import AlgoLib.Experimental.RAM.Prototype.Composition.Encoding
+import AlgoLib.Experimental.RAM.Prototype.Composition.EncoderLayout
 import AlgoLib.Experimental.RAM.Backend.Memory.GraphInput
 
 /-!
@@ -231,5 +231,26 @@ theorem below_extent (a : Adjacency) (address : Nat) (h : Location.heap address 
 
 theorem no_register (a : Adjacency) (ty : Ty) (name : String) :
     Location.register ty name ∉ cells a := by simp [cells]
+
+/-- Public permission envelope for resident adjacency and its mutable cursor. -/
+def region (a : Adjacency) (cursor : Var .word) : MemoryRegion where
+  registers _ name := name = cursor.name
+  heap address := address < extent a
+
+theorem encoder_within (a : Adjacency) (cursor : Var .word) :
+    (encoder a cursor).Within (region a cursor) := by
+  intro location owned
+  cases location with
+  | register ty name =>
+    have eq : ty = .word ∧ name = cursor.name := by
+      simpa [encoder, footprint, no_register] using owned
+    exact eq.2
+  | heap address =>
+    apply below_extent a address
+    simpa [encoder, footprint] using owned
+
+theorem encoder_input (a : Adjacency) (cursor : Var .word) :
+    (encoder a cursor).InputContract (fun row => row = []) (fun _ => 0) :=
+  ⟨fun _ h => h, fun _ _ => rfl⟩
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.GraphCursorImplementation

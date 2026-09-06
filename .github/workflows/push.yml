@@ -2,7 +2,7 @@ name: Build Lean project
 
 on:
   push:
-    branches: [main]
+    branches: [main, experimental-RAM-model]
   pull_request:
   workflow_dispatch:
 
@@ -42,6 +42,17 @@ jobs:
       - name: Build and lint the project
         id: build-lean
         uses: leanprover/lean-action@f807b338d95de7813c5c50d018f1c23c9b93b4ec # v1.2.0
+
+      - name: Check RAM elaboration budgets
+        run: python3 AlgoLib/Experimental/RAM/Tests/check_elaboration.py --output "$RUNNER_TEMP/ram-elaboration"
+
+      - name: Preserve RAM elaboration profiles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ram-elaboration
+          path: ${{ runner.temp }}/ram-elaboration/
+          if-no-files-found: ignore
 
       - name: File dependencies
         if: github.ref == 'refs/heads/main'

@@ -1,0 +1,9 @@
+{
+  "description": "Warm-dependency, single-thread module re-elaboration budgets in seconds; not RAM execution costs.",
+  "cases": [
+    {"name": "sorting-proof", "module": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting", "seconds": 120},
+    {"name": "sorting-linking", "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution", "seconds": 180},
+    {"name": "bfs-proof", "module": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst", "seconds": 120},
+    {"name": "bfs-linking", "module": "AlgoLib.Experimental.RAM.Prototype.Composition.BFSExecution", "seconds": 90}
+  ]
+}

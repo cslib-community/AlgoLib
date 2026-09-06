@@ -212,3 +212,11 @@ code independence, and 3.7 seconds for the executable BFS tests. These are local
 incremental measurements, not clean-build or cross-machine performance promises.
 Code comparison reconstructs constructor equalities instead of repeatedly trying
 to equate the discarded ownership representations.
+
+## Stable assembly and private-layout regression
+
+BFS assembly now uses public encoder region and initialization contracts. The
+`.relocated` circular-queue configuration changes private registers and shifts
+its heap storage by 17 cells while reusing this same BFS program, proof, runner,
+and inferred bound. See [implementation contracts](IMPLEMENTATION-CONTRACTS.md)
+for the boundary, regression tests, frontend module map, and timing checks.

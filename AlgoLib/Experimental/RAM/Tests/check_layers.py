@@ -49,7 +49,7 @@ for module, path in modules.items():
         ), (path, "reusable layer depends on an algorithm/demo")
     if path.relative_to(root).parts[:2] == ("Prototype", "Composition") and path.stem in (
         "Language", "Contracts", "Frontend", "Ownership", "Linking", "Loom", "Execution", "Compatibility",
-        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding", "Assembly", "DataRefinement"
+        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding", "EncoderLayout", "Assembly", "DataRefinement"
     ):
         assert not any(i.startswith(prefix + "Prototype.Composition." + name)
                        for i in local for name in ("Buffer", "Demo")), (
@@ -77,6 +77,9 @@ pure_modules = {prefix + name for name in (
     "Prototype.Composition.Buffer", "Prototype.Composition.BufferClient",
     "Prototype.Composition.Compatibility", "Prototype.Composition.Contracts",
     "Prototype.Composition.Frontend", "Prototype.Composition.BufferAlgorithms",
+    "Prototype.Composition.Frontend.Syntax", "Prototype.Composition.Frontend.Resources",
+    "Prototype.Composition.Frontend.Expressions", "Prototype.Composition.Frontend.Statements",
+    "Prototype.Composition.Frontend.Method",
 )}
 for module in pure_modules:
     assert all(i in pure_modules for i in edges[module]), (
@@ -95,6 +98,17 @@ def dependencies(module, seen=None):
 assert prefix + "Prototype.LegacyArrayFrontend" not in dependencies(
     prefix + "Prototype.LogicalFrontend"
 ), "public frontend imports the legacy array adapter"
+
+# Assembly may use public permission/initialization contracts, never queue internals.
+# This deliberately checks source references as well as the import graph: implementation
+# modules remain transitive dependencies of any executable.
+for name in ("BFSStorage", "BFSExecution"):
+    path = root / "Prototype" / "Composition" / f"{name}.lean"
+    text = path.read_text()
+    for private_name in ("QueueRing.", "QueueStacksImplementation.", "BufferImplementation.",
+                         "GraphCursorImplementation.footprint", "GraphCursorImplementation.cells",
+                         "GraphCursorImplementation.no_register"):
+        assert private_name not in text, (path, "assembly opens private layout", private_name)
 
 active, done = set(), set()
 def visit(module):

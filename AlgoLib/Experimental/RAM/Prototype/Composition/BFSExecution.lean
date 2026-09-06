@@ -20,21 +20,39 @@ open Experimental.RAM.BFS BFSStorage Checked.Language
 
 private abbrev scratch := local_storage% "bfs.locals" : bfsLocals
 
-private def encoder (kind : FIFO) (a : Adjacency) (base capacity : Nat)
+/-- Assembly uses the resident permission envelope, never a queue's private fields. -/
+private theorem scratch_disjoint (kind : FIFO) (a : Adjacency) (base capacity : Nat)
+    (fits : GraphCursorImplementation.extent a ≤ base) :
+    Disjoint (resident kind a base capacity fits).footprint scratch.footprint := by
+  apply Finset.disjoint_left.mpr
+  intro location owned localOwned
+  have within := resident_within kind a base capacity fits location owned
+  clear owned
+  cases location with
+  | heap address => simp [scratch, Encoder.sep, scalarEncoder] at localOwned
+  | register ty name =>
+    simp only [scratch, Encoder.sep, scalarEncoder, Finset.mem_union,
+      Finset.mem_singleton, Location.register.injEq] at localOwned
+    repeat' first | cases_type Or | cases_type And
+    all_goals subst_vars
+    all_goals simp [MemoryRegion.contains, MemoryRegion.union, residentRegion, graphRegion,
+      stateRegion, bitmapRegion, sourceRegion, queueRegion, MemoryRegion.scalar,
+      MemoryRegion.array, GraphCursorImplementation.region] at within
+
+private theorem scratch_input : scratch.InputContract (fun _ => True) (fun _ => 0) := by
+  constructor <;> intro x h <;> simp [scratch, Encoder.sep, scalarEncoder]
+
+private abbrev encoder (kind : FIFO) (a : Adjacency) (base capacity : Nat)
     (fits : GraphCursorImplementation.extent a ≤ base) :=
   (resident kind a base capacity fits).hide scratch
-    (by simp [scratch, Encoder.sep, scalarEncoder]) (by
-      cases kind <;>
-        simp [resident, GraphCursorImplementation.encoder, GraphCursorImplementation.footprint,
-          state, bitmap, fifo, queueEncoder, source, QueueRing.encoder,
-          QueueRing.Layout.footprint, QueueRing.Layout.head, QueueRing.Layout.length,
-          QueueStacksImplementation.encoder, QueueStacksImplementation.concreteEncoder,
-          Encoder.sep, BufferImplementation.encoder, BufferImplementation.Layout.footprint,
-          BufferImplementation.Layout.lengthVar, BufferImplementation.Layout.argumentVar,
-          scalarEncoder, arrayEncoder, Storage.ArrayLayout.footprint, scratch,
-          Finset.disjoint_left]
-      all_goals intro location owned
-      all_goals cases location <;> simp_all [GraphCursorImplementation.no_register])
+    (scratch_input.accepts _ trivial) (scratch_disjoint kind a base capacity fits)
+
+private theorem encoder_input (kind : FIFO) (a : Adjacency) (base capacity : Nat)
+    (fits : GraphCursorImplementation.extent a ≤ base) :
+    (encoder kind a base capacity fits).InputContract
+      (fun x => x.1 = [] ∧ x.2.1.size ≤ capacity ∧ x.2.2.1 = []) (fun _ => 0) := by
+  simpa using (resident_input kind a base capacity fits).hide scratch_input trivial
+    (scratch_disjoint kind a base capacity fits)
 
 set_option maxHeartbeats 2000000 in
 -- Reconstruct the structural certificate for the complete nested-loop client.
@@ -44,7 +62,6 @@ set_option maxHeartbeats 2000000 in
     Linked 24 (encoder kind a base capacity fits).representation
       (bfsProcedure β a G rep capacity).body
       (encoder kind a base capacity fits).representation := by
-  unfold encoder resident state fifo
   ram_link
 
 set_option maxHeartbeats 2000000 in
@@ -69,10 +86,8 @@ def runIn (kind : FIFO) (a : Adjacency) (base capacity : Nat)
   let result := runEncoded (rate := 24) (bfsProcedure β a G rep capacity)
     (encoder kind a base capacity fits) input
     (by simpa [input] using space)
-    (by cases kind <;> simpa [input, encoder, resident, state, fifo, bitmap, source,
-          Encoder.hide, Encoder.sep, arrayEncoder, scalarEncoder,
-          GraphCursorImplementation.encoder, queueEncoder, QueueRing.encoder,
-          QueueStacksImplementation.encoder] using space)
+    ((encoder_input kind a base capacity fits).accepts input
+      ⟨rfl, by simpa [input] using space, rfl⟩)
   ⟨result.value.2.1, result.steps⟩
 
 /-- Computed from source annotations; no RAM constant is supplied by the BFS author. -/
@@ -91,13 +106,13 @@ theorem runIn_correct (kind : FIFO) (a : Adjacency) (base capacity : Nat)
   have h := runEncoded_correct (rate := 24) (bfsProcedure β a G rep capacity)
     (encoder kind a base capacity fits) ([], Array.replicate a.n 97, [], s.val)
     (by simpa using space)
-    (by cases kind <;> simpa [encoder, resident, state, fifo, bitmap, source,
-          Encoder.hide, Encoder.sep, arrayEncoder, scalarEncoder,
-          GraphCursorImplementation.encoder, queueEncoder, QueueRing.encoder,
-          QueueStacksImplementation.encoder] using space)
+    ((encoder_input kind a base capacity fits).accepts _
+      ⟨rfl, by simpa using space, rfl⟩)
   refine ⟨h.1.1, ?_⟩
   have saved : (encoder kind a base capacity fits).saved
-      ([], Array.replicate a.n 97, [], s.val) = 0 := by cases kind <;> rfl
+      ([], Array.replicate a.n 97, [], s.val) = 0 :=
+    (encoder_input kind a base capacity fits).saved_eq _
+      ⟨rfl, by simpa using space, rfl⟩
   simpa only [bound, saved, Nat.add_zero] using h.2
 
 /-- Normalizing the inferred expression exposes the linear polynomial. -/

@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Tests.OwnedBFS
+import AlgoLib.Experimental.RAM.Tests.EncoderLayout
 
 /-!
 # Trust audit for owned BFS and implementation substitution
@@ -61,3 +61,10 @@ set_option linter.hashCommand false in
  Quot.sound] -/
 #guard_msgs in
 #print axioms DataView.realize
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Tests.EncoderLayout.relocated_same_result' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Tests.EncoderLayout.relocated_same_result

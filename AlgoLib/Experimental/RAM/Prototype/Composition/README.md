@@ -4,6 +4,9 @@ For a complete graph algorithm, start with [one BFS proof, two FIFO backends](OW
 The same owned source program mixes mutable arrays, scalar locals, nested loops, and
 procedure calls, then runs with a circular buffer or an amortized two-stack queue.
 
+For implementation changes, see [stable encoder/layout contracts and frontend modules](IMPLEMENTATION-CONTRACTS.md).
+This includes the private-layout substitution test and elaboration timing checks.
+
 For automatic loop accounting and source-level proof goals, start with
 [the paper loop tutorial](PAPER-LOOPS.md).
 
