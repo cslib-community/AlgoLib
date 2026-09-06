@@ -1,5 +1,9 @@
 # Mutable programs, inline invariants, verified RAM execution
 
+The complete [owned BFS tutorial](Composition/OWNED-BFS.md) shows one paper-style
+program and proof running with a circular buffer and an amortized two-stack FIFO,
+with graph correctness and a linear bound on actual RAM instructions.
+
 For the current paper-style loop workflow, see the
 [paper loop tutorial](Composition/PAPER-LOOPS.md): inferred allowances, named VCs,
 and automatically assembled executable theorems.

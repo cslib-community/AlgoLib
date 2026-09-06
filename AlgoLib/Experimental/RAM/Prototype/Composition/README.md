@@ -1,5 +1,9 @@
 # Modularity under composition
 
+For a complete graph algorithm, start with [one BFS proof, two FIFO backends](OWNED-BFS.md).
+The same owned source program mixes mutable arrays, scalar locals, nested loops, and
+procedure calls, then runs with a circular buffer or an amortized two-stack queue.
+
 For automatic loop accounting and source-level proof goals, start with
 [the paper loop tutorial](PAPER-LOOPS.md).
 

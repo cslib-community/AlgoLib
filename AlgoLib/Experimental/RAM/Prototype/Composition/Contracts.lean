@@ -57,6 +57,8 @@ inductive Plan : {A B : Type} → Program A B → Type 1 where
       (measure : A → Nat) (bodyAllowance : Nat) : Plan body → Plan (.loop test body)
   | invokeAt (site : String) (op : Operation A B) : Plan (.invoke op)
   | callAt (site : String) (proc : Procedure A B) : Plan (.call proc.body)
+  | workLoop (site : String) (test : A → Bool) (invariant : A → Prop)
+      (measure : A → Nat) (unit : Nat) : Plan body → Plan (.loop test body)
 
 /-- The call case reads only requires/ensures/credits, never the procedure body. -/
 def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) → A → Nat → Prop
@@ -90,6 +92,16 @@ def Plan.vc {A B : Type} {p : Program A B} : Plan p → (B → Nat → Prop) →
       ObligationAt "procedure precondition" site (proc.requires a) ∧
       ObligationAt "procedure allowance sufficient" site (proc.credits a ≤ c) ∧
       ∀ b, proc.ensures a b → Q b (c - proc.credits a)
+  | .workLoop site test I measure unit body, Q, a, c =>
+      ObligationAt "loop allowance sufficient" site (unit * measure a + 1 ≤ c) ∧
+      ObligationAt "loop invariant initialized" site (I a) ∧
+      ∀ b, I b → if test b then
+        body.vc (fun next left =>
+          ObligationAt "loop invariant preserved" site (I next) ∧
+          ObligationAt "remaining work decreases" site (measure next < measure b) ∧
+          ObligationAt "iteration allowance sufficient" site (unit * measure next + 1 ≤ left))
+          b (unit * measure b)
+      else Q b (c - (unit * measure a + 1))
 termination_by structural plan _ _ _ => plan
 
 /-- Replacing a procedure body preserves every caller continuation obligation. -/
@@ -103,6 +115,31 @@ theorem Plan.sound {A B : Type} {p : Program A B} (plan : Plan p)
     (Q : B → Nat → Prop) (a : A) (c : Nat)
     (h : plan.vc Q a c) : ∃ k b left, Run p a k b ∧ k + left ≤ c ∧ Q b left := by
   induction plan generalizing c with
+  | workLoop site test I measure unit body ih =>
+    rename_i state bodyProgram
+    obtain ⟨paid, initial, step⟩ := h
+    change unit * measure a + 1 ≤ c at paid
+    let surplus := c - (unit * measure a + 1)
+    have go : ∀ n b, measure b = n → I b →
+        ∃ k result, Run (.loop test bodyProgram) b k result ∧
+          k ≤ unit * n + 1 ∧ Q result surplus := by
+      intro n
+      induction n using Nat.strongRecOn with
+      | ind n rec =>
+        intro b equal inv
+        have next := step b inv
+        cases ht : test b with
+        | false =>
+          exact ⟨1, b, Run.done ht, by omega, by simpa [ht, surplus] using next⟩
+        | true =>
+          simp only [ht, ↓reduceIte] at next
+          obtain ⟨j, mid, left, run, cost, invariant, smaller, allowance⟩ := ih _ b _ next
+          obtain ⟨k, result, rest, bound, post⟩ := rec (measure mid) (equal ▸ smaller)
+            mid rfl invariant
+          change unit * measure mid + 1 ≤ left at allowance
+          exact ⟨1 + j + k, result, Run.step ht run rest, by rw [← equal]; omega, post⟩
+    obtain ⟨k, b, run, bound, post⟩ := go (measure a) a rfl initial
+    exact ⟨k, b, surplus, run, by dsimp [surplus]; omega, post⟩
   | identity => exact ⟨0, a, c, Run.identity a, by omega, h⟩
   | swap => exact ⟨0, (a.2, a.1), c, ⟨rfl, rfl⟩, by omega, h⟩
   | invoke op => exact ⟨_, _, c - op.charge a, Run.invoke op a h.1, by have := h.2.1; omega, h.2.2⟩

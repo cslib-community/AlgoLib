@@ -38,7 +38,6 @@ prove_algorithm mixed by
   contract_vc
   intro a b ha hb
   simp_all [getElem!_pos]
-  omega
 
 ram method nested (mut a : Array Nat) (mut buffer : List Nat) (mut total : Nat)
     return (result : Unit)

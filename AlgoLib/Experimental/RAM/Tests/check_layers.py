@@ -49,7 +49,7 @@ for module, path in modules.items():
         ), (path, "reusable layer depends on an algorithm/demo")
     if path.relative_to(root).parts[:2] == ("Prototype", "Composition") and path.stem in (
         "Language", "Contracts", "Frontend", "Ownership", "Linking", "Loom", "Execution", "Compatibility",
-        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding", "Assembly"
+        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding", "Assembly", "DataRefinement"
     ):
         assert not any(i.startswith(prefix + "Prototype.Composition." + name)
                        for i in local for name in ("Buffer", "Demo")), (
@@ -66,7 +66,11 @@ pure_modules = {prefix + name for name in (
     "Prototype.LogicalInterpretation", "Prototype.LogicalVerification",
     "Prototype.LoomObservation", "Prototype.Procedures", "Prototype.LogicalFrontend", "Prototype.LegacyArrayFrontend",
     "Prototype.Composition.Expressions", "Prototype.Composition.MixedAlgorithms",
-    "Prototype.Composition.Sorting",
+    "Prototype.Composition.Sorting", "Prototype.Composition.BreadthFirst",
+    "Prototype.Composition.BFSFacts", "Prototype.Composition.GraphCursor",
+    "Prototype.Composition.Queue", "Prototype.Composition.QueueAlgorithms",
+    "Prototype.Composition.QueueStacks", "Prototype.Composition.Stack",
+    "Specification.Graph", "Specification.Traversal",
     "Prototype.SortingFacts", "Prototype.SortingAlgorithm", "Prototype.ZeroAlgorithm",
     "Tests.CreditLogic",
     "Prototype.Composition", "Prototype.Composition.Language", "Prototype.Composition.Loom",

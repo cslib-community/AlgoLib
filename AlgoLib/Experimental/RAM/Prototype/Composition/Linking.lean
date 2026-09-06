@@ -173,6 +173,23 @@ def Supported.compile : Supported rate P Q p → Refinement rate P Q p
   | .loop impl f => loopRef impl f.compile
   | .call f => callRef f.compile
 
+/-- Erase certificates before comparing code. This avoids reducing nested semantic
+proof packages merely to inspect their executable component. -/
+def Supported.code : Supported rate P Q p → Cmd
+  | .identity _ => .skip
+  | .swap _ _ => .skip
+  | .invoke impl => impl.code
+  | .seq f g => .seq f.code g.code
+  | .frame f _ => f.code
+  | .branch impl f g => .branch impl.condition f.code g.code
+  | .loop impl f => .loop impl.condition f.code
+  | .call f => f.code
+
+/-- Certificate erasure returns exactly the existing verified compilation's code. -/
+theorem Supported.compile_code (h : Supported rate P Q p) : h.compile.code = h.code := by
+  induction h <;> simp_all [Supported.compile, Supported.code, identityRef, swapRef,
+    invokeRef, seqRef, frameRef, branchRef, loopRef, callRef]
+
 /-- Interpretation preserves sequential composition at the generated-code level. -/
 theorem Supported.compile_seq (f : Supported rate P Q p) (g : Supported rate Q R q) :
     (Supported.seq f g).compile.code = .seq f.compile.code g.compile.code := rfl

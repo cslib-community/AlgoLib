@@ -113,3 +113,7 @@ import AlgoLib.Experimental.RAM.Tests.MixedAxioms
 
 import AlgoLib.Experimental.RAM.Tests.PaperLoops
 import AlgoLib.Experimental.RAM.Tests.PaperLoopAxioms
+
+import AlgoLib.Experimental.RAM.Tests.OwnedQueues
+import AlgoLib.Experimental.RAM.Tests.OwnedBFS
+import AlgoLib.Experimental.RAM.Tests.OwnedBFSAxioms

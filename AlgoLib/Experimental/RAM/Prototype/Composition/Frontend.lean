@@ -24,6 +24,10 @@ syntax (name := receiverCall) ident noWs "(" term,* ")" : doElem
 declare_syntax_cat loopCost
 syntax "iterations_at_most" Term.termBeforeDo : loopCost
 syntax "amortized_potential" Term.termBeforeDo : loopCost
+syntax (name := workPotential) "amortized_work" Term.termBeforeDo : loopCost
+syntax (name := boundedWork)
+  "amortized_work" Term.termBeforeDo "initially_at_most" Term.termBeforeDo : loopCost
+syntax "at_loop_entry" "(" term ")" : term
 syntax (name := paperWhile) "while " term
   ("invariant " (str)? term)* loopCost
   ("done_with " term)? ("decreasing " term)? " do " doSeq : doElem
@@ -53,6 +57,7 @@ private structure Fragment where
   estimate : Option Term
   writes : Array Nat := #[]
   transfer : Term → TermElabM Term := pure
+  work : Option Term
 
 private def splitAt (rs : Array Resource) : Nat :=
   let inputs := (rs.filter (! ·.localSlot)).size
@@ -83,14 +88,17 @@ private def bindOld (rs : Array Resource) (s : Term) (t : Term) : TermElabM Term
   return result
 
 private def skip : TermElabM Fragment :=
-  return ⟨← `(Program.identity), ← `(Plan.identity), some (← `(0)), #[], pure⟩
+  return ⟨← `(Program.identity), ← `(Plan.identity), some (← `(0)), #[], pure, some (← `(0))⟩
 
 private def seq (p q : Fragment) : TermElabM Fragment := do
   let estimate ← match p.estimate, q.estimate with
     | some x, some y => pure (some (← `($x + $(← p.transfer y))))
     | _, _ => pure none
+  let work ← match p.work, q.work with
+    | some x, some y => pure (some (← `($x + $(← p.transfer y))))
+    | _, _ => pure none
   return ⟨← `(Program.seq $(p.program) $(q.program)), ← `(Plan.seq $(p.plan) $(q.plan)),
-    estimate, p.writes ++ q.writes, fun t => do p.transfer (← q.transfer t)⟩
+    estimate, p.writes ++ q.writes, (fun t => do p.transfer (← q.transfer t)), work⟩
 
 /-- Focus a call on one typed component; the remaining components become automatic frames. -/
 private partial def focus (rs : Array Resource) (i : Nat) (p : Fragment) : TermElabM Fragment := do
@@ -107,7 +115,8 @@ private partial def focus (rs : Array Resource) (i : Nat) (p : Fragment) : TermE
   let framed : Fragment := { inner with
     program := ← `(Program.frame $(inner.program) $left)
     plan := ← `(Plan.frame $(inner.plan) $left) }
-  let swap : Fragment := ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[], pure⟩
+  let swap : Fragment :=
+    ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[], pure, some (← `(0))⟩
   seq swap (← seq framed swap)
 
 /-- Static ownership routing; emitted regroupings compile to skip. -/
@@ -135,11 +144,11 @@ private def framed (p : Fragment) (t : Term) : TermElabM Fragment :=
     plan := ← `(Plan.frame $(p.plan) $t) }
 
 private def swapped : TermElabM Fragment :=
-  return ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[], pure⟩
+  return ⟨← `(Program.swap), ← `(Plan.swap), some (← `(0)), #[], pure, some (← `(0))⟩
 
 private def regroup (a b c : Term) (reverse := false) : TermElabM Fragment := do
   let op ← if reverse then `(unassociate $a $b $c) else `(associate $a $b $c)
-  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some (← `(0)), #[], pure⟩
+  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some (← `(0)), #[], pure, some (← `(0))⟩
 
 /-- Move one leaf to the front and produce its inverse route and remaining tree. -/
 private partial def extract (t : Tree) (i : Nat) : TermElabM (Fragment × Fragment × Tree) := do
@@ -281,7 +290,7 @@ private def sourceSite (stx : Syntax) : TermElabM Term := do
   return quote s!"{← getFileName}:{pos.line}:{pos.column + 1}"
 
 private def operation (op : Term) (writes : Array Nat) (cost : Term) : TermElabM Fragment :=
-  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some cost, writes, pure⟩
+  return ⟨← `(Program.invoke $op), ← `(Plan.invoke $op), some cost, writes, pure, some cost⟩
 
 private def assignment (rs : Array Resource) (active : Array Name) (i : Nat) (e : Term) :
     TermElabM Fragment := do
@@ -325,7 +334,7 @@ private def condition (rs : Array Resource) (active : Array Name) (q : Term) :
       let yes ← assignment rs active i (← `(0))
       let no ← assignment rs active i (← `(1))
       let flag : Fragment := ⟨← `(Program.branch $test $(yes.program) $(no.program)),
-        ← `(Plan.branch $test $(yes.plan) $(no.plan)), some (← `(3)), #[i], pure⟩
+        ← `(Plan.branch $test $(yes.plan) $(no.plan)), some (← `(3)), #[i], pure, some (← `(3))⟩
       before ← seq before (← seq flag (← assignment rs active j (← `(1))))
       let fact ← `(fun ($s : $(← stateType rs)) =>
         $(← project rs i (← `($s))) =
@@ -365,7 +374,7 @@ where
     let proc ← if inferBudget then `(contract% ($proc)) else pure proc
     let amount ← `(($proc).credits $(rs[i]!.name))
     focus rs i ⟨← `(Program.call ($proc).body),
-      ← `(Plan.callAt $(← sourceSite target) $proc), some amount, #[i], pure⟩
+      ← `(Plan.callAt $(← sourceSite target) $proc), some amount, #[i], pure, some amount⟩
   receiver (active : Array Name) (f : Ident) (args : Array Term) : TermElabM Fragment := do
     let .str target field := f.getId
       | throwErrorAt f "Use a receiver such as buffer.append(...)"
@@ -384,7 +393,7 @@ where
     let amount ← `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
     let part : Fragment := ⟨← `(Program.call ($proc).body),
       ← `(Plan.callAt $(← sourceSite f) $proc),
-      some amount, #[i,j], pure⟩
+      some amount, #[i,j], pure, some amount⟩
     seq prepare (← focusPair rs i j part)
   declare (active : Array Name) (x : Ident) (e : Term) :
       TermElabM (Fragment × Array Name) := do
@@ -393,7 +402,8 @@ where
     return (← assignment rs active i e, active.push x.getId)
   loop (active : Array Name) (q : Term) (label : Array (Option (TSyntax `str)))
       (inv : Array Term) (cost done measure : Option Term)
-      (body : TSyntax ``Parser.Term.doSeq) : TermElabM Fragment := do
+      (body : TSyntax ``Parser.Term.doSeq) (amortized := false)
+      (initialBound : Option Term := none) : TermElabM Fragment := do
     let (before, test, guardFact) ← condition rs active q
     let mut body ← statements rs body inferBudget active true
     let s := mkIdent (← mkFreshUserName `state)
@@ -410,19 +420,23 @@ where
     let mut estimated : Option Term := none
     let mut unit : Option Term := none
     if let some bound := cost then
-      let some bodyCost := body.estimate
+      let some bodyCost := if amortized then body.work else body.estimate
         | throwErrorAt bound "Annotate every nested loop with iterations_at_most \
           or amortized_potential"
       -- For an increasing index, use the upper endpoint in the dependent body cost.
       -- This is a candidate envelope, not an axiom: preservation VCs must prove it pays.
-      let envelope ← match bound with
+      let envelope ← if amortized then pure bodyCost else match bound with
         | `($upper:term - $index:ident) => substitute index.getId upper bodyCost
         | _ => pure bodyCost
       unit := some envelope
-      estimated := some (← `($bound * ($envelope + 1) + 1))
+      let initial := initialBound.getD bound
+      estimated := some (← `($initial * ($envelope + 1) + 1))
     let mut invTerm ← `(True)
     for k in (List.range inv.size).reverse do
-      let fact := inv[k]!
+      let fact : Term := ⟨← inv[k]!.raw.replaceM fun node => do
+        match node with
+        | `(at_loop_entry($e:term)) => return some (← bindViews rs (← `($entry)) e).raw
+        | _ => return none⟩
       if cost.isSome then
         let title := label[k]!.map (·.getString) |>.getD "loop invariant"
         let name ← `( $(quote (title ++ " initialized / preserved at ")) ++ $site )
@@ -434,22 +448,26 @@ where
       if active.contains rs[i]!.name.getId && !body.writes.contains i then
         invTerm ← `($(← project rs i (← `($s))) = $(← project rs i (← `($entry))) ∧ $invTerm)
     let loopInv ← `(fun ($s : $(← stateType rs)) ($remaining : Nat) => $invTerm)
+    let work ← body.work.mapM fun amount => `(1 + $amount)
     let loop : Fragment := ⟨← `(Program.loop $test $(body.program)),
       ← `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
-        Plan.loop $test $loopInv $(body.plan))), none, body.writes, pure⟩
+        Plan.loop $test $loopInv $(body.plan))), none, body.writes, pure, work⟩
     let loop ← if let some bound := cost then do
       let frozen ← bindViews rs (← `($entry)) unit.get!
       let measure ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) bound))
       let invariantFn ← `(fun ($s : $(← stateType rs)) => $invTerm)
-      pure { loop with
-        plan := ← `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
+      let plan ← if amortized then
+          `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
+            Plan.workLoop $site $test $invariantFn $measure ($frozen + 1) $(body.plan)))
+        else `(Plan.atEntry (fun ($entry : $(← stateType rs)) =>
           Plan.countedLoop $site $test $invariantFn $measure $frozen $(body.plan)))
-        estimate := estimated }
+      pure { loop with plan, estimate := estimated }
       else pure loop
     let mut part ← seq before loop
     if let some done := done then
       let fact ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) done))
-      part ← seq part ⟨← `(Program.identity), ← `(Plan.assert $fact), some (← `(0)), #[], pure⟩
+      part ← seq part
+        ⟨← `(Program.identity), ← `(Plan.assert $fact), some (← `(0)), #[], pure, some (← `(0))⟩
     return part
   statement (active : Array Name) (stx : TSyntax `doElem) :
       TermElabM (Fragment × Array Name) := withRef stx do
@@ -469,7 +487,7 @@ where
       let amount ← `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
       let part : Fragment := ⟨← `(Program.call ($proc).body),
         ← `(Plan.callAt $(← sourceSite stx) $proc),
-        some amount, #[i,j], pure⟩
+        some amount, #[i,j], pure, some amount⟩
       return (← focusPair rs i j part, active)
     | `(doElem| $target:ident := $value:term) =>
       let i ← resource rs active target
@@ -494,16 +512,21 @@ where
       let estimate ← match yes.estimate, no.estimate with
         | some x, some y => pure (some (← `(1 + max $x $y)))
         | _, _ => pure none
+      let work ← match yes.work, no.work with
+        | some x, some y => pure (some (← `(1 + max $x $y)))
+        | _, _ => pure none
       let part : Fragment := ⟨← `(Program.branch $test $(yes.program) $(no.program)),
         ← `(Plan.branch $test $(yes.plan) $(no.plan)), estimate, yes.writes ++ no.writes,
-        fun t => do `(max $(← yes.transfer t) $(← no.transfer t))⟩
+        (fun t => do `(max $(← yes.transfer t) $(← no.transfer t))), work⟩
       return (← seq before part, active)
     | `(doElem| if $q:term then $yes:doSeq) =>
       statement active (← `(doElem| if $q then $yes else pure ()))
     | `(doElem| while $q:term
         $[invariant $[$label:str]? $inv:term]*
         $cost:loopCost $[done_with $done]? $[decreasing $measure]? do $body:doSeq) =>
-      return (← loop active q label inv (some ⟨cost.raw[1]⟩) done measure body, active)
+      return (← loop active q label inv (some ⟨cost.raw[1]⟩) done measure body
+        (cost.raw.getKind == ``workPotential || cost.raw.getKind == ``boundedWork)
+        (if cost.raw.getKind == ``boundedWork then some ⟨cost.raw[3]⟩ else none), active)
     | `(doElem| while $q:term
         $[invariant $[$label:str]? $inv:term
         ]* $[done_with $done]? $[decreasing $measure]? do $body:doSeq) =>
@@ -512,7 +535,7 @@ where
       let s := mkIdent (← mkFreshUserName `state)
       let predicate ← `(fun ($s : $(← stateType rs)) => $(← bindViews rs (← `($s)) fact))
       return (⟨← `(Program.identity), ← `(Plan.assert $predicate),
-        some (← `(0)), #[], pure⟩, active)
+        some (← `(0)), #[], pure, some (← `(0))⟩, active)
     | `(doElem| return) | `(doElem| return ()) | `(doElem| pure ()) => return (← skip, active)
     | `(doElem| $e:term) =>
       let (head, args) ← receiverApplication e

@@ -215,3 +215,11 @@ slack.
 
 These are executable and formal acceptance checks. They do not substitute for a
 usability study with students unfamiliar with Lean.
+
+## Count adjacency entries once: BFS
+
+[The owned BFS tutorial](OWNED-BFS.md) demonstrates dependent neighbor scans with
+`amortized_work ... initially_at_most ...` and `at_loop_entry(...)` snapshots.
+The framework infers primitive and call charges; the author proves that each
+completed outer iteration accounts for one vertex and its adjacency entries.
+The same source proof runs with two materially different verified FIFO backends.

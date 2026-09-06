@@ -47,6 +47,7 @@ elab_rules : command
 macro "contract_vc" : tactic =>
   `(tactic| (dsimp only [Composition.Algorithm.Obligations, Composition.Plan.vc,
     Composition.Obligation, Composition.ObligationAt, Composition.Procedure.uniform,
+    Composition.UniformCredits.amount,
     Composition.testLeft, Composition.testRight,
     Composition.assign, Composition.write, Composition.compare, Composition.Relation.eval,
     Composition.Value.eval, Composition.Value.Safe, Composition.Value.credits,
@@ -66,7 +67,8 @@ macro "contract_solve" "[" rules:Lean.Parser.Tactic.grindParam,* "]" : tactic =>
 /-- Keep source labels while eliminating program, path, and contract-plan machinery. -/
 macro "paper_normalize" : tactic =>
   `(tactic| (dsimp only [Composition.Algorithm.Obligations, Composition.Plan.vc,
-    Composition.Procedure.uniform, Composition.testLeft, Composition.testRight,
+    Composition.Procedure.uniform,
+    Composition.UniformCredits.amount, Composition.testLeft, Composition.testRight,
     Composition.assign, Composition.write, Composition.compare, Composition.Relation.eval,
     Composition.Value.eval, Composition.Value.Safe, Composition.Value.credits,
     Composition.Arithmetic.eval, Composition.Path.get, Composition.Path.set,
@@ -105,7 +107,11 @@ private partial def splitPaperGoal (goal : MVarId) : TacticM (List MVarId) :=
       evalTactic (← `(tactic| split))
       return (← (← getGoals).mapM splitPaperGoal).flatten
     else
-      return [goal]
+      let reduced ← withTransparency .reducible (whnf ty)
+      if reduced != ty then
+        splitPaperGoal (← goal.change reduced)
+      else
+        return [goal]
 
 /-- Open named mathematical goals. All generated compiler terms are normalized internally. -/
 elab "paper_vc" : tactic => do
