@@ -22,16 +22,6 @@ set_option relaxedAutoImplicit true
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.Demo
 open Checked.Language BufferImplementation
 
-instance bufferDecoder (l : Layout) (eager : Bool) : Decoder (representation l eager) where
-  decode s := (List.range (s.vars .word l.lengthVar.name)).map (fun i => s.heap (l.base + i))
-  correct xs r s saved h := by
-    obtain ⟨_, hv, _⟩ := h
-    simp only [hv.2.1]
-    apply List.ext_getElem
-    · simp
-    · intro i hi hj
-      simpa [getElem!_pos xs i hj] using hv.2.2.1 i hj
-
 abbrev left (capacity : Nat) : Layout := ⟨"left", 0, capacity⟩
 abbrev right (capacity : Nat) : Layout := ⟨"right", capacity, capacity⟩
 

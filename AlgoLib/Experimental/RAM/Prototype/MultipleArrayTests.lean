@@ -15,7 +15,7 @@ must establish both the intended write and preservation of the other array.
 namespace AlgoLib.Experimental.RAM.Prototype.MultipleArrayTests
 open Authoring Frontend
 
-ram method exchangeHeads (mut left : Array Nat) (mut right : Array Nat) return (u : Unit)
+legacy_ram method exchangeHeads (mut left : Array Nat) (mut right : Array Nat) return (u : Unit)
   require 0 < left.size
   require 0 < right.size
   ensures left = leftOld.set! 0 rightOld[0]!
@@ -48,7 +48,7 @@ example (s : MultipleArrays.State 2) (i v : Nat) :
   MultipleArrays.write_other s 0 1 i v (by decide)
 
 /- Loop framing keeps the second array available without an adjacency-style frame proof. -/
-ram method clearLeft (mut left : Array Nat) (mut right : Array Nat) return (u : Unit)
+legacy_ram method clearLeft (mut left : Array Nat) (mut right : Array Nat) return (u : Unit)
   ensures right = rightOld
   ensures left.size = leftOld.size
   credits 100 * left.size + 100
@@ -67,7 +67,7 @@ ram method clearLeft (mut left : Array Nat) (mut right : Array Nat) return (u : 
 prove_ram clearLeft by
   ram_solve [Array.size_setIfInBounds]
 
-ram method touchThree (mut a : Array Nat) (mut b : Array Nat) (mut c : Array Nat)
+legacy_ram method touchThree (mut a : Array Nat) (mut b : Array Nat) (mut c : Array Nat)
   return (u : Unit)
   require 0 < a.size ∧ 0 < b.size ∧ 0 < c.size
   ensures a = aOld.set! 0 bOld[0]!
@@ -108,7 +108,7 @@ example (c : Nat) : ¬ (Plan.action (MultipleArrays.read "x" (0 : Fin 2) (.liter
 set_option linter.hashCommand false in
 /-- error: RAM inputs must be declared mutable arrays -/
 #guard_msgs in
-ram method rejectFunction (mut a : Array Nat) (f : Nat → Nat) return (u : Unit)
+legacy_ram method rejectFunction (mut a : Array Nat) (f : Nat → Nat) return (u : Unit)
   credits 100
   do
     return
@@ -116,7 +116,7 @@ ram method rejectFunction (mut a : Array Nat) (f : Nat → Nat) return (u : Unit
 set_option linter.hashCommand false in
 /-- error: Unsupported RAM expression: Nat.succ 0 -/
 #guard_msgs in
-ram method rejectUncompiledCall (mut a : Array Nat) (mut b : Array Nat) return (u : Unit)
+legacy_ram method rejectUncompiledCall (mut a : Array Nat) (mut b : Array Nat) return (u : Unit)
   credits 100
   do
     let x := Nat.succ 0
@@ -125,7 +125,7 @@ ram method rejectUncompiledCall (mut a : Array Nat) (mut b : Array Nat) return (
 set_option linter.hashCommand false in
 /-- error: Reserve output, old-array, and remaining-credit names -/
 #guard_msgs in
-ram method rejectGhostCollision (mut a : Array Nat) (mut b : Array Nat) return (aOld : Unit)
+legacy_ram method rejectGhostCollision (mut a : Array Nat) (mut b : Array Nat) return (aOld : Unit)
   credits 100
   do
     return

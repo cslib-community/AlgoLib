@@ -34,7 +34,7 @@ set_option linter.hashCommand false in
     unless r.steps ≤ 960 * xs.length * xs.length do
       throw <| IO.userError s!"mutable larger budget: {xs}"
 
-ram method fill (mut arr : Array Nat) return (u : Unit)
+legacy_ram method fill (mut arr : Array Nat) return (u : Unit)
   require True
   ensures arr.size = arrOld.size
   ensures ∀ i, i < arr.size → arr[i]! = 0
@@ -99,7 +99,7 @@ example : True := by
 set_option linter.hashCommand false in
 /-- error: Unsupported RAM expression: Nat.succ 0 -/
 #guard_msgs in
-ram method rejectHostCall (mut arr : Array Nat) return (u : Unit)
+legacy_ram method rejectHostCall (mut arr : Array Nat) return (u : Unit)
   credits 100
   do
     let x := Nat.succ 0
@@ -109,7 +109,7 @@ ram method rejectHostCall (mut arr : Array Nat) return (u : Unit)
 set_option linter.hashCommand false in
 /-- error: Unknown RAM local 'remaining'; ghost terms cannot occur in executable code -/
 #guard_msgs in
-ram method rejectGhostRead (mut arr : Array Nat) return (u : Unit)
+legacy_ram method rejectGhostRead (mut arr : Array Nat) return (u : Unit)
   credits 100
   do
     let x := remaining
@@ -119,7 +119,7 @@ ram method rejectGhostRead (mut arr : Array Nat) return (u : Unit)
 set_option linter.hashCommand false in
 /-- error: RAM return is supported only at method exit -/
 #guard_msgs in
-ram method rejectEarlyReturn (mut arr : Array Nat) return (u : Unit)
+legacy_ram method rejectEarlyReturn (mut arr : Array Nat) return (u : Unit)
   credits 100
   do
     if 0 = 0 then
@@ -130,7 +130,7 @@ ram method rejectEarlyReturn (mut arr : Array Nat) return (u : Unit)
 set_option linter.hashCommand false in
 /-- error: This name belongs to the array interface or proof context; choose a fresh local -/
 #guard_msgs in
-ram method rejectArrayShadow (mut arr : Array Nat) return (u : Unit)
+legacy_ram method rejectArrayShadow (mut arr : Array Nat) return (u : Unit)
   credits 100
   do
     let mut arr := 0
@@ -140,7 +140,7 @@ ram method rejectArrayShadow (mut arr : Array Nat) return (u : Unit)
 set_option linter.hashCommand false in
 /-- error: RAM time is inferred from logical credits; remove the time clause -/
 #guard_msgs in
-ram method rejectTimeOverride (mut arr : Array Nat) return (u : Unit)
+legacy_ram method rejectTimeOverride (mut arr : Array Nat) return (u : Unit)
   credits 0
   time 0
   do

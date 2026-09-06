@@ -1,13 +1,21 @@
 # Mutable programs, inline invariants, verified RAM execution
 
-For the current modularity boundary, start with **[Composition](Composition/README.md)**:
-typed abstract operations, owned interfaces, private potential, and automatic client linking.
-The buffer demo changes both physical clearing behavior and its payment strategy while
-reusing the same client proof. The compatibility bridge preserves existing logical VCs.
+Start with **[the unified frontend tutorial](Composition/FRONTEND.md)** and
+[MixedAlgorithms.lean](Composition/MixedAlgorithms.lean). Arrays, ordinary scalar
+locals, and owned procedure calls now share one typed program and one contract VCG.
+[Sorting.lean](Composition/Sorting.lean) contains both insertion-sort loops;
+[SortingExecution.lean](Composition/SortingExecution.lean) runs that exact program
+on ordinary Lean lists and proves its correctness and quadratic RAM bound.
 
+[Composition](Composition/README.md) explains ownership, private potential, and
+automatic client linking. The same mixed client proof runs with lazy and eager
+buffers. Source proofs import no RAM backend, and generated locals do not appear
+in public input/output types.
 
-Start with [Pure algorithms and interchangeable array backends](../docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
-
+The older examples below remain compatibility regressions for their existing
+compiler and array-substitution proofs. They use the explicit `legacy_ram` adapter;
+the public `ram method` frontend never dispatches to it. The historical source/proof
+workflow is described in [Generality and substitution](../docs/GENERALITY-AND-SUBSTITUTION.md).
 
 For the ordinary-Velvet semantic bridge, nondeterministic execution, recursive
 example, and precise remaining compiler work, see
@@ -18,9 +26,9 @@ For graph algorithms, start with the [BFS tutorial](GRAPH-TUTORIAL.md),
 [BFS.lean](BFS.lean), and its [graph procedures](Graph.lean). The generic
 `ram_do` frontend now supports typed graph/queue/cursor primitives and verified
 procedure composition with real inlined RAM bodies. `Prototype.Frontend` exports
-both `ram method` and `ram_do`; import `Prototype.Graph` for the graph operations.
+both `legacy_ram method` and `ram_do`; import `Prototype.Graph` for the graph operations.
 
-For mutable arrays, start with [SortingAlgorithm.lean](SortingAlgorithm.lean). It exposes
+The historical array-substitution program is [SortingAlgorithm.lean](SortingAlgorithm.lean). It exposes
 both insertion-sort loops and every array operation. There is no `InsertNext` action, hidden insertion
 procedure, or student-written implementation proof.
 
@@ -43,7 +51,7 @@ array implementation and all its guards and scalar bookkeeping. `run` takes no f
 
 ## Write the algorithm
 
-The command is `ram method`, followed by Velvet-style input/output clauses and a
+The command is `legacy_ram method`, followed by Velvet-style input/output clauses and a
 `do` body. For this adapter, the mutable inputs and outputs are one or more `Array Nat` values;
 `return (u : Unit)` means the result is the updated array, with no additional scalar
 return. `arrOld` denotes the input array in specifications.
@@ -51,7 +59,7 @@ return. `arrOld` denotes the input array in specifications.
 The complete checked program includes these lines:
 
 ```lean
-ram method insertionSort (mut arr : Array Nat) return (u : Unit)
+legacy_ram method insertionSort (mut arr : Array Nat) return (u : Unit)
   require True
   ensures SortedPermutation arrOld.toList arr.toList
   credits potential arr.size 0 + 20
@@ -178,13 +186,17 @@ ReaderT, StateT, ExceptT, nondeterminism, WP generation, and tactics are availab
 `FrameworkTests` checks composed transformers and Velvet’s own `method`, procedure
 contracts, `prove_correct`, `loom_solve`, and executable extraction.
 
-There are three entry points:
+There is one current owned frontend alongside the historical integration entry points:
+
+- `ram method`: the unified owned frontend described in [FRONTEND.md](Composition/FRONTEND.md).
+  Direct arrays, scalar locals, computed arguments, paired calls, and annotated loops
+  share one program and contract VCG.
 
 - `ram_do`: generic certified-interface code with procedure calls, branches,
   assertions, and Velvet-style annotated loops. The graph adapter provides
   adjacency, visited-set, FIFO, and cursor operations; see [the tutorial](GRAPH-TUTORIAL.md).
 - `method`: upstream Velvet, with its full syntax and supported Lean effects.
-- `ram method`: the verified RAM adapter, currently natural-number locals and one
+- `legacy_ram method`: the verified RAM adapter, currently natural-number locals and one
   or more mutable `Array Nat` parameters; literals, size, addition/subtraction/multiplication, indexing,
   updates, comparisons, branches, nested annotated `while` loops, assertions,
   `done_with`, and final unit return. Nat subtraction is truncated at zero.

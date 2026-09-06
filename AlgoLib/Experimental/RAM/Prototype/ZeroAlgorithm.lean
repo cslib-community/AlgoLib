@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.LogicalFrontend
+import AlgoLib.Experimental.RAM.Prototype.LegacyArrayFrontend
 import AlgoLib.Experimental.RAM.Authoring.ArrayFacts
 
 /-!
@@ -28,7 +28,7 @@ theorem zero_prefix (a : Array Nat) (i : Nat) (hi : i < a.size)
   · rfl
   · exact hprefix j (by omega)
 
-ram method zeroArray (mut arr : Array Nat) return (u : Unit)
+legacy_ram method zeroArray (mut arr : Array Nat) return (u : Unit)
   ensures arr.size = arrOld.size
   ensures ∀ j, j < arr.size → arr[j]! = 0
   credits 100 * arr.size + 110
@@ -45,7 +45,7 @@ ram method zeroArray (mut arr : Array Nat) return (u : Unit)
         i := i + 1
     return
 
-prove_algorithm zeroArray by
+prove_legacy_algorithm zeroArray by
   ram_solve [zero_prefix]
 
 end AlgoLib.Experimental.RAM.Prototype.ZeroAlgorithm

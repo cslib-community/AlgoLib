@@ -107,3 +107,6 @@ import AlgoLib.Experimental.RAM.Prototype.Composition
 import AlgoLib.Experimental.RAM.Tests.Composition
 import AlgoLib.Experimental.RAM.Tests.CompositionAxioms
 import AlgoLib.Experimental.RAM.Tests.ContractFrontend
+import AlgoLib.Experimental.RAM.Tests.MixedFrontend
+import AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution
+import AlgoLib.Experimental.RAM.Tests.MixedAxioms

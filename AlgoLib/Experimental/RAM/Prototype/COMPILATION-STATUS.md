@@ -166,7 +166,15 @@ that compatibility path.
 
 ## Supported deterministic frontend
 
-The `ram method` frontend now emits a backend-independent `Specification`; `prove_algorithm` verifies it without RAM imports. `Supported.compile` and `loom_to_supported_ram` give the structural compilation guarantee for this deterministic DSL. Contiguous and indirect arrays reuse the same sorting/zeroing proofs. See [the precise scope](../docs/GENERALITY-AND-SUBSTITUTION.md). This does not complete the ordinary-Velvet compiler described above.
+The public `ram method` frontend emits `Composition.Algorithm`: one owned `Program`
+and an indexed contract `Plan`. Scalars, multiple arrays, nested loops and procedure
+calls mix in the same body. `prove_algorithm` checks source obligations; Loom and
+the existing verified RAM compiler consume the same body. See the
+[unified frontend guide](Composition/FRONTEND.md).
+
+The earlier `Specification` array frontend remains explicitly named `legacy_ram`
+for contiguous/indirect substitution regressions. This does not complete the
+ordinary-Velvet compiler described above.
 
 ## Owned composition and private potential
 
@@ -186,5 +194,9 @@ allowances, including calls inside branches and loops. The compiler still checks
 the actual body. Straight-line public allowances and unrelated-resource frames are
 generated automatically. See [the source example](Composition/BufferAlgorithms.lean)
 and [the precise supported scope](Composition/README.md#frontend-scope).
-This closes the contract-call gap for this supported frontend path; it does not
-complete the ordinary Velvet compiler or migrate every array/graph adapter.
+The array/scalar adapter split is now removed from the public frontend. Direct
+indexing also works around array procedures with private locals. Computed Nat
+arguments cross receiver calls through charged typed slots, and paired calls combine
+two distinct owned variables with automatic framing. Historical graph
+and ordinary-Velvet translation adapters remain separate compatibility examples;
+this is not an unrestricted ordinary-Velvet compiler.

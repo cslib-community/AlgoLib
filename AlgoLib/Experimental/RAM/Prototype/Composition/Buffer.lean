@@ -46,6 +46,12 @@ abbrev push (capacity value : Nat) : Program (List Nat) (List Nat) :=
 /-- Abstract query; a selected implementation must certify its test code. -/
 def nonempty (xs : List Nat) : Bool := !xs.isEmpty
 
+/-- A runtime argument is a typed scalar component, preserved by the call. -/
+def appendBorrowed (capacity : Nat) : Operation (List Nat × Nat) (List Nat × Nat) where
+  requires input := input.1.length < capacity
+  effect input := (input.1 ++ [input.2], input.2)
+  charge _ := 2
+
 /- Public receiver-call API. Only these summaries are needed in client proofs. -/
 namespace API
 
@@ -73,6 +79,23 @@ instance (capacity value : Nat) : UniformCredits (append capacity value) where
 instance : UniformCredits clear where
   amount := 1
   bound _ := Nat.le_refl _
+
+/-- Runtime overload selected for `buffer.append(capacity, expression)`. -/
+@[reducible] def appendFrom (capacity : Nat) : Procedure (List Nat × Nat) (List Nat × Nat) :=
+  Procedure.verify (.invoke (appendBorrowed capacity)) (fun input => input.1.length < capacity)
+    (fun input output => output = (input.1 ++ [input.2], input.2)) (fun _ => 2)
+    (by simp [VC, appendBorrowed])
+
+instance (capacity : Nat) : UniformCredits (appendFrom capacity) where
+  amount := 2
+  bound _ := Nat.le_refl _
+
+/-- Static and runtime argument forms expose the same append behavior. -/
+theorem appendFrom_agrees (capacity value : Nat) (xs ys : List Nat) :
+    (appendFrom capacity).ensures (xs, value) (ys, value) ↔
+      (append capacity value).ensures xs ys := by
+  change (ys, value) = (xs ++ [value], value) ↔ ys = xs ++ [value]
+  simp
 
 end API
 

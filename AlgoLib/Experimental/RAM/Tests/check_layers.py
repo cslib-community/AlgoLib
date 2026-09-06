@@ -48,7 +48,8 @@ for module, path in modules.items():
             for i in local for blocked in ("Programs", "Legacy")
         ), (path, "reusable layer depends on an algorithm/demo")
     if path.relative_to(root).parts[:2] == ("Prototype", "Composition") and path.stem in (
-        "Language", "Contracts", "Frontend", "Ownership", "Linking", "Loom", "Execution", "Compatibility"
+        "Language", "Contracts", "Frontend", "Ownership", "Linking", "Loom", "Execution", "Compatibility",
+        "Expressions", "ExpressionImplementation", "Storage", "LocalImplementation", "Encoding"
     ):
         assert not any(i.startswith(prefix + "Prototype.Composition." + name)
                        for i in local for name in ("Buffer", "Demo")), (
@@ -63,7 +64,9 @@ pure_modules = {prefix + name for name in (
     "Authoring.Semantics", "Authoring.Syntax", "Authoring.Contracts",
     "Authoring.Mutable", "Authoring.MultipleArrays", "Authoring.ArrayFacts", "Prototype.Observation",
     "Prototype.LogicalInterpretation", "Prototype.LogicalVerification",
-    "Prototype.LoomObservation", "Prototype.Procedures", "Prototype.LogicalFrontend",
+    "Prototype.LoomObservation", "Prototype.Procedures", "Prototype.LogicalFrontend", "Prototype.LegacyArrayFrontend",
+    "Prototype.Composition.Expressions", "Prototype.Composition.MixedAlgorithms",
+    "Prototype.Composition.Sorting",
     "Prototype.SortingFacts", "Prototype.SortingAlgorithm", "Prototype.ZeroAlgorithm",
     "Tests.CreditLogic",
     "Prototype.Composition", "Prototype.Composition.Language", "Prototype.Composition.Loom",
@@ -75,6 +78,19 @@ for module in pure_modules:
     assert all(i in pure_modules for i in edges[module]), (
         modules[module], "logical language/proof layer imports a backend-dependent module"
     )
+
+# The public frontend must never silently regain the historical array dispatcher.
+def dependencies(module, seen=None):
+    seen = set() if seen is None else seen
+    for dependency in edges[module]:
+        if dependency not in seen:
+            seen.add(dependency)
+            dependencies(dependency, seen)
+    return seen
+
+assert prefix + "Prototype.LegacyArrayFrontend" not in dependencies(
+    prefix + "Prototype.LogicalFrontend"
+), "public frontend imports the legacy array adapter"
 
 active, done = set(), set()
 def visit(module):

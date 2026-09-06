@@ -189,18 +189,22 @@ have all been migrated to owned interfaces, or that the ordinary Velvet compiler
 
 ## Frontend scope
 
-The shared `ram method` declaration handler dispatches array/scalar syntax to its
-existing adapter and resource-procedure syntax to the owned adapter. This change
-unifies the authoring entry point and supplies the strongest composition guarantees
-for receiver calls, procedure assignments, certified resource queries, branches,
-annotated loops and assertions. It does not claim arbitrary ordinary Velvet support.
-Direct array-element syntax and new scalar locals still use the existing array
-adapter; mixing those statements into an owned-resource method is rejected until
-an adapter provides their ownership contracts. This restriction is explicit rather
-than interpreting arbitrary Lean expressions as free executable operations.
+Every public `ram method` now uses one owned-program elaborator. Direct array
+indexing, scalar expressions and locals, receiver calls, branches, assertions, and
+nested annotated loops can be mixed in one body. Calls use public contracts;
+expressions reconstruct ownership-aware semantic and cost certificates. Private
+locals are initialized with charged machine code and hidden from input/output types.
 
-Procedure arguments describe fixed code. A runtime mutable input cannot be used to
-specialize that code. Runtime data must cross a certified typed operation boundary.
+Start with [the unified frontend tutorial](FRONTEND.md), [mixed algorithms](MixedAlgorithms.lean),
+and [insertion sort](Sorting.lean). The old array adapter is isolated in
+`LegacyArrayFrontend.lean` behind `legacy_ram`, solely for compatibility regressions.
+There is no parameter-type dispatch to it. This does not claim arbitrary ordinary
+Velvet support.
+
+Procedure expressions describe fixed code. A runtime mutable input cannot specialize
+that code. Receiver calls now route a trailing runtime Nat expression through the
+library's certified typed argument procedure. Paired calls can also pass two distinct
+owned variables; the frontend reconstructs their routing and frames all other values.
 The declared mutable resource names must be distinct; physical disjointness remains
 an implementation-package obligation checked by the linker.
 

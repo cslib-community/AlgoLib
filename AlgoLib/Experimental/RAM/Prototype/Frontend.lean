@@ -3,18 +3,17 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.LogicalFrontend
+import AlgoLib.Experimental.RAM.Prototype.LegacyArrayFrontend
 import AlgoLib.Experimental.RAM.Prototype.Mutable
 import AlgoLib.Experimental.RAM.Prototype.MultipleArrays
 import AlgoLib.Experimental.RAM.Prototype.Verification
 
 /-!
-# Optional default RAM backend for the pure mutable frontend
+# Compatibility backend for historical array methods
 
-`ram method` and `prove_algorithm` live in LogicalFrontend with no RAM imports.
-`prove_ram` is a convenience: prove that same logical algorithm, then attach the
-standard array backend. Alternative backends use `Interface.realize` on the exact
-same specification and proof. Acceptance reconstructs Supported evidence.
+`prove_ram` attaches the old array backend to an explicitly declared `legacy_ram`
+method. It is retained for existing compiler/substitution regressions. New methods
+use Composition's unified frontend and Composition.Encoding for backend attachment.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Frontend
 open Lean Elab Command Term Meta Parser Authoring
@@ -22,7 +21,7 @@ open Lean Elab Command Term Meta Parser Authoring
 syntax "prove_ram" ident "by" tacticSeq : command
 elab_rules : command
   | `(command| prove_ram $name:ident by $proof:tacticSeq) => do
-    elabCommand (← `(command| prove_algorithm $name by $proof))
+    elabCommand (← `(command| prove_legacy_algorithm $name by $proof))
     let checked := mkIdent (name.getId.appendAfter "Correct")
     let verified := mkIdent (name.getId.appendAfter "Verified")
     let api ← Command.runTermElabM fun _ => do

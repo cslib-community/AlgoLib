@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.Buffer
-import AlgoLib.Experimental.RAM.Prototype.Composition.Linking
+import AlgoLib.Experimental.RAM.Prototype.Composition.Encoding
 
 /-!
 # Two bounded-buffer implementations with different private payment strategies
@@ -211,5 +211,58 @@ instance nonemptyImplementation (l : Layout) (eager : Bool) :
     simp only [nonempty, Condition.eval, Expr.eval, Comparison.eval, h.2.1.2.1, Buffer.nonempty]
     cases xs <;> simp
   cost := by simp [nonempty, Condition.cost, Expr.cost]
+
+/-- Read a borrowed scalar into the private argument register, then reuse append's proof. -/
+@[reducible] def appendBorrowedImplementation (l : Layout) (eager : Bool) [q : ScalarStorage Q] :
+    Primitive 24 ((representation l eager).sep Q) (Buffer.appendBorrowed l.capacity)
+      ((representation l eager).sep Q) where
+  code := .seq (.assign l.argumentVar (.var q.register)) (appendImplementation l eager).code
+  correct input space r s saved rep := by
+    obtain ⟨r₁, r₂, c₁, c₂, hd, rfl, rfl, hp, hq⟩ := rep
+    obtain ⟨rfl, hv, rfl⟩ := hp
+    let t := s.set l.argumentVar input.2
+    have prepare : Eval (.assign l.argumentVar (.var q.register)) s 2 t := by
+      simpa [t, Expr.eval, q.read _ _ _ _ hq] using
+        Eval.assign l.argumentVar (.var q.register) s
+    have argument : (inputRepresentation l eager).holds input l.footprint t
+        (potential eager input.1.length) := by
+      refine ⟨⟨rfl, ?_, rfl⟩, ?_⟩
+      · simpa [t, Valid, Store.set, names_differ l] using hv
+      · simp [t, Store.set]
+    obtain ⟨steps, u, left, exec, post, writes, cost⟩ :=
+      (appendImplementation l eager).correct input space _ t _ argument
+    have changed := (Writes.set s l.argumentVar input.2 (argument_owned l)).trans writes
+    refine ⟨2 + steps, u, left + c₂, .seq prepare exec,
+      ⟨l.footprint, r₂, left, c₂, hd, rfl, rfl, post, Q.frame hq hd changed⟩,
+      changed.mono Finset.subset_union_left, ?_⟩
+    simp only [Buffer.appendBorrowed, Buffer.append] at *
+    omega
+
+instance (name : String) (base capacity : Nat) (eager : Bool) [ScalarStorage Q] :
+    Primitive 24 ((representation ⟨name, base, capacity⟩ eager).sep Q)
+      (Buffer.appendBorrowed capacity) ((representation ⟨name, base, capacity⟩ eager).sep Q) :=
+  appendBorrowedImplementation ⟨name, base, capacity⟩ eager
+
+/-- Resident list encoding, shared by every client and both implementations. -/
+def encoder (l : Layout) (eager : Bool) : Encoder (representation l eager) where
+  footprint := l.footprint
+  requires xs := xs.length ≤ l.capacity
+  saved xs := potential eager xs.length
+  store xs := { vars := fun _ _ => xs.length, heap := fun i => xs[i-l.base]! }
+  correct xs h := by
+    refine ⟨rfl, ⟨h, rfl, ?_, ?_⟩, rfl⟩
+    · intro i _; simp
+    · intro _ i hi _; simp [show ¬ i < xs.length by omega]
+
+instance bufferDecoder (l : Layout) (eager : Bool) : Decoder (representation l eager) where
+  decode s := (List.range (s.vars .word l.lengthVar.name)).map (fun i => s.heap (l.base + i))
+  correct xs r s saved h := by
+    obtain ⟨_, hv, _⟩ := h
+    simp only [hv.2.1]
+    apply List.ext_getElem
+    · simp
+    · intro i hi hj
+      simpa [getElem!_pos xs i hj] using hv.2.2.1 i hj
+
 
 end AlgoLib.Experimental.RAM.Prototype.Composition.BufferImplementation
