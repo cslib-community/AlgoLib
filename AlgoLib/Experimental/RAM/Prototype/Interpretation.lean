@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Observation
-import AlgoLib.Experimental.RAM.Authoring.Semantics
+import AlgoLib.Experimental.RAM.Backend.Realization
 
 /-!
 # One program, two connected interpretations
@@ -24,11 +24,11 @@ open Authoring
 variable {State : Type} {M : Model State}
 
 /-- Mathematical interpretation of a certified library call. -/
-def action (a : Action M) : Computation State Unit := fun s k t _ =>
+def action (a : Action State) : Computation State Unit := fun s k t _ =>
   a.requires s ∧ k = a.work s ∧ t = a.effect s
 
 /-- Independently specified source interpretation; loops mean finite iterations. -/
-def denote : Program M → Computation State Unit
+def denote : Program State → Computation State Unit
   | .skip => Computation.pure ()
   | .action a => action a
   | .seq a b => Computation.bind (denote a) (fun _ => denote b)
@@ -37,9 +37,11 @@ def denote : Program M → Computation State Unit
   | .loop q b => Computation.Loop q.test (denote b)
 
 /-- The compiler receives exactly the syntax inspected by `denote`. -/
-def compile (p : Program M) : Checked.Code := p.source.compile
+def compile (M : Model State) (p : Program State)
+    (c : Compilation M p := by ram_compile) : Checked.Code :=
+  (p.source M c).compile
 
-theorem denote_run (p : Program M) {s t : State} {k : Nat}
+theorem denote_run (p : Program State) {s t : State} {k : Nat}
     (h : denote p s k t ()) : Run p s k t := by
   induction p generalizing s t k with
   | skip => obtain ⟨rfl, rfl, _⟩ := h; exact .skip _
@@ -60,7 +62,7 @@ theorem denote_run (p : Program M) {s t : State} {k : Nat}
     | done hq => exact .whileFalse hq
     | step hq hb _ ih => exact .whileTrue hq (ihb hb) ih
 
-theorem run_denote {p : Program M} {s t : State} {k : Nat}
+theorem run_denote {p : Program State} {s t : State} {k : Nat}
     (h : Run p s k t) : denote p s k t () := by
   induction h with
   | skip => exact ⟨rfl, rfl, rfl⟩
@@ -71,11 +73,11 @@ theorem run_denote {p : Program M} {s t : State} {k : Nat}
   | whileFalse hq => exact .done hq
   | whileTrue hq _ _ ihb ihl => exact .step hq ihb ihl
 
-theorem denote_iff_run (p : Program M) (s t : State) (k : Nat) :
+theorem denote_iff_run (p : Program State) (s t : State) (k : Nat) :
     denote p s k t () ↔ Run p s k t := ⟨denote_run p, run_denote⟩
 
 /-- Supported source programs have a unique terminating result and logical cost. -/
-theorem run_unique {p : Program M} {s t t' : State} {k k' : Nat}
+theorem run_unique {p : Program State} {s t t' : State} {k k' : Nat}
     (h : Run p s k t) (h' : Run p s k' t') : k = k' ∧ t = t' := by
   induction h generalizing k' t' with
   | skip => cases h'; exact ⟨rfl, rfl⟩
@@ -107,15 +109,15 @@ theorem run_unique {p : Program M} {s t t' : State} {k k' : Nat}
       exact ⟨rfl, rfl⟩
 
 /-- Existential observation cannot pick a favorable execution of this language. -/
-theorem denote_deterministic {p : Program M} {s t t' : State} {k k' : Nat}
+theorem denote_deterministic {p : Program State} {s t t' : State} {k k' : Nat}
     (h : denote p s k t ()) (h' : denote p s k' t' ()) : k = k' ∧ t = t' :=
   run_unique (denote_run p h) (denote_run p h')
 
 /-- A symbolic execution certifies the same compiled program, with bounded RAM work. -/
-theorem compilation_sound {p : Program M} {s t : State} {k : Nat}
+theorem compilation_sound {p : Program State} [Compilation M p] {s t : State} {k : Nat}
     (h : denote p s k t ()) (r : Checked.State)
     (hr : M.Represents s (Checked.Language.observe r)) :
-    ∃ j u, Checked.Exec (compile p) r j u ∧
+    ∃ j u, Checked.Exec (compile M p) r j u ∧
       M.Represents t (Checked.Language.observe u) ∧ j ≤ M.overhead * k := by
   obtain ⟨j, v, hv, ht, hj⟩ := (denote_run p h).refines _ hr
   obtain ⟨u, hu, he⟩ := hv.compile r rfl

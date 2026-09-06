@@ -121,6 +121,11 @@ def Value.eval (s : State count) : Value count → Nat
   | .sub x y => x.eval s - y.eval s
   | .mul x y => x.eval s * y.eval s
 
+/-- Logical expression charge, independent of any target instruction language. -/
+def Value.credits : Value count → Nat
+  | .literal _ | .local _ | .size _ => 1
+  | .add x y | .sub x y | .mul x y => x.credits + y.credits + 1
+
 def Value.compile : Value count → Expr .word
   | .literal n => .lit n
   | .local x => .var (localVar x)
@@ -128,6 +133,10 @@ def Value.compile : Value count → Expr .word
   | .add x y => .bin .add x.compile y.compile
   | .sub x y => .bin .sub x.compile y.compile
   | .mul x y => .bin .mul x.compile y.compile
+
+/-- This backend implements the independently defined expression charge. -/
+@[simp] theorem Value.compile_credits (e : Value count) : e.compile.cost = e.credits := by
+  induction e <;> simp_all [Value.compile, Value.credits, Expr.cost]
 
 theorem Value.correct (e : Value count) {a : State count} {s : Store} (h : Represents a s) :
     e.compile.eval s = e.eval a := by
@@ -142,39 +151,56 @@ theorem address_correct (b : Fin count) (i : Value count) {a : State count} {s :
     (h : Represents a s) : (address b i).eval s = count * i.eval a + b.val := by
   simp [address, Expr.eval, Op.eval, Op.machine, Checked.BinOp.eval, i.correct h, Nat.add_comm]
 
-def assign (x : String) (e : Value count) : Action (model count) where
+def assign (x : String) (e : Value count) : Action (State count) where
   requires _ := True
   effect s := s.set x (e.eval s)
-  work _ := e.compile.cost + 1
+  work _ := e.credits + 1
+
+instance assignImplementation (x : String) (e : Value count) :
+    ActionImplementation (model count) (assign x e) where
   implementation := .assign (localVar x) e.compile
   correct a s hs _ := by
+    dsimp only [assign] at *
     refine ⟨_, _, .assign _ _ _, ?_, by simp [model]⟩
     simpa [e.correct hs] using represents_set hs x (e.eval a)
 
-def read (x : String) (b : Fin count) (i : Value count) : Action (model count) where
+def read (x : String) (b : Fin count) (i : Value count) : Action (State count) where
   requires s := i.eval s < (s.arrays b).size
   effect s := s.set x (s.arrays b)[i.eval s]!
-  work _ := (address b i).cost + 2
+  work _ := i.credits + 6
+
+instance readImplementation (x : String) (b : Fin count) (i : Value count) :
+    ActionImplementation (model count) (read x b i) where
   implementation := .assign (localVar x) (.load (address b i))
   correct a s hs hi := by
-    refine ⟨_, _, .assign _ _ _, ?_, by simp [Expr.cost, model]⟩
+    dsimp only [read] at *
+    refine ⟨_, _, .assign _ _ _, ?_, by simp [Expr.cost, model, address] <;> omega⟩
     simpa [Expr.eval, address_correct b i hs, hs.2.2 b _ hi] using
       represents_set hs x (a.arrays b)[i.eval a]!
 
-def write (b : Fin count) (i v : Value count) : Action (model count) where
+def write (b : Fin count) (i v : Value count) : Action (State count) where
   requires s := i.eval s < (s.arrays b).size
   effect s := s.write b (i.eval s) (v.eval s)
-  work _ := (address b i).cost + v.compile.cost + 1
+  work _ := i.credits + v.credits + 5
+
+instance writeImplementation (b : Fin count) (i v : Value count) :
+    ActionImplementation (model count) (write b i v) where
   implementation := .write (address b i) v.compile
   correct a s hs _ := by
-    refine ⟨_, _, .write _ _ _, ?_, by simp [model]⟩
+    dsimp only [write] at *
+    refine ⟨_, _, .write _ _ _, ?_, by simp [model, Expr.cost, address]; omega⟩
     simpa [address_correct b i hs, v.correct hs] using
       represents_write hs b (i.eval a) (v.eval a)
 
-def compare (op : Comparison) (x y : String) : Guard (model count) where
+def compare (op : Comparison) (x y : String) : Guard (State count) where
   test s := op.eval (s.locals x) (s.locals y)
+
+instance compareImplementation (op : Comparison) (x y : String) :
+    GuardImplementation (model count) (compare op x y) where
   implementation := ⟨.word, op, .var (localVar x), .var (localVar y)⟩
-  correct _ _ h := by simp [Condition.eval, Expr.eval, h.1]
+  correct _ _ h := by
+    dsimp only [compare] at *
+    simp [Condition.eval, Expr.eval, h.1]
   cost := by simp [Condition.cost, Expr.cost, model]
 
 private def findArray (count : Nat) (name : String) : Option (Fin count) :=

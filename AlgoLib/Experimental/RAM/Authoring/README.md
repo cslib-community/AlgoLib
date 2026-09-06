@@ -13,7 +13,6 @@ Use ordinary mathematical properties. Sorting needs both sortedness and permutat
 - `requires`: facts the caller must supply. Certified graph/source input already carries graph validity.
 - `ensures`: the relationship between input and returned value.
 - `credits`: an upper bound on abstract algorithm work, including loop guards.
-- `time`: the advertised bound on compiled RAM steps, including preparation.
 - `do { ... }`: the actual code compiled and executed, composed from certified operations.
 
 A return name describes the adapter's output observation. It is not an arbitrary host-side return expression. Sorting's output is the represented array; BFS's is the visited-set membership view. Displaying a view as a list is a separate host operation.
@@ -49,20 +48,19 @@ Invariants are supplied and refined by the author. They are not guessed. A wrong
 
 `method_vc [methodName]` opens `methodName.VCs`. For each valid input it asks for:
 
-1. Symbolic correctness of the displayed body from the prepared logical state, within the declared credits, for the declared output property.
-2. Enough total time to pay preparation plus the certified implementation cost of those credits.
+Symbolic correctness of the displayed body from the prepared logical state, within the declared credits, for the declared output property. RAM time is inferred automatically from the selected backend; there is no second payment obligation.
 
 A completed body/loop contract can be reused through `Correct.output_vc`. Its remaining obligations are initial validity, sufficient credits, and interpretation of the logical result. Public library equations expose these as list/set facts, without revealing the adapter implementation. The algorithm files show the complete proofs.
 
-`VerifiedMethod` requires these obligations before it exposes `run`. Its generic `correct` theorem produces both `ensures input result.value` and `result.steps ≤ time input`. The examples specialize that theorem into their advertised `main` statements.
+`method.certify proof` checks these obligations and reconstructs backend certificates before exposing `run`. Its generic `correct` theorem produces both `ensures input result.value` and `result.steps ≤ time input`. The examples specialize that theorem into their advertised `main` statements.
 
 ## Files in this layer
 
 | File | Construction and relation to the next component |
 |---|---|
-| [Semantics.lean](Semantics.lean) | Mathematical `Program`/`Run`, certified `Action`/`Procedure`, VC soundness, loop rules, and logical-to-source refinement |
+| [Semantics.lean](Semantics.lean) | Mathematical `Program`/`Run`, pure `Action`/`Procedure` contracts, VC soundness, and loop rules; no RAM dependency |
 | [Syntax.lean](Syntax.lean) | Compositional body syntax, logical symbolic execution, and time-credit arithmetic |
 | [Interface.lean](Interface.lean) | Library preparation/observation interface and generic certified execution binding |
 | [Methods.lean](Methods.lean) | Input/output declarations, generated method obligations, fixed-body certificates, and the user-facing theorem |
 
-The generic layer contains backend connections once. Program proofs use those connections through these rules, not through normalization, register correspondence, instruction lifting, or cost-transport lemmas.
+The executable interface connects to [Backend/Realization.lean](../Backend/Realization.lean), which separately implements the pure contracts. See [Credits and backends](../docs/CREDITS-AND-BACKENDS.md). Program proofs use those connections through these rules, not through normalization, register correspondence, instruction lifting, or cost-transport lemmas.

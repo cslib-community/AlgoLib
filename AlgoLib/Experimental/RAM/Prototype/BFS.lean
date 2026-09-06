@@ -40,7 +40,7 @@ def potential (a : Adjacency) (s : Search.State) : Nat :=
 
 /-- The complete outer program. Its callee exposes the nested adjacency loop in Graph.lean. -/
 def code {β : Type} (a : Adjacency) (G : AlgoLib.Graph Nat β) (source : Nat) :
-    Annotated (Search.model a) :=
+    Annotated Search.State :=
   ram_do (_entry, s, remaining) do
     while (Graph.queueNotEmpty a)
       invariant frontierInvariant a G source s
@@ -101,7 +101,7 @@ theorem verification {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β}
 
 /-- BFS is itself reusable as a procedure with a reachability and cost contract. -/
 def procedure {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β}
-    (rep : Represents a G) (source : Nat) : Routine (Search.model a) :=
+    (rep : Represents a G) (source : Nat) : Routine Search.State :=
   (code a G source).verify
     (frontierInvariant a G source)
     (fun _ t => ∀ v, v ∈ t.seen ↔ Reachable G source v)
@@ -135,7 +135,6 @@ def breadthFirstSearch {β : Type} (a : Adjacency) (G : AlgoLib.Graph Nat β) :
   requires _ := True
   «ensures» i out := Returns G i.source out
   «credits» _ := 3 * a.n + 2 * a.entries + 1
-  «time» i := 370 * (a.n + i.representation.edges.card)
 
 /-- The source affects input data and annotations, never program generation. -/
 theorem body_independent {β : Type} (a : Adjacency) (G : AlgoLib.Graph Nat β) (s t : Nat) :
@@ -144,25 +143,20 @@ theorem body_independent {β : Type} (a : Adjacency) (G : AlgoLib.Graph Nat β) 
 /-- Even the graph data do not specialize machine code: adjacency is read from RAM. -/
 theorem compiled_code_independent {β γ : Type} (a b : Adjacency)
     (G : AlgoLib.Graph Nat β) (H : AlgoLib.Graph Nat γ) (s t : Nat) :
-    compile (code a G s).body = compile (code b H t).body := rfl
+    compile (Search.model a) (code a G s).body = compile (Search.model b) (code b H t).body := rfl
 
 /-- Generated interface conditions: logical reachability and automatic RAM cost transport. -/
 theorem methodVerification {β : Type} (a : Adjacency) (G : AlgoLib.Graph Nat β) :
     Obligations (breadthFirstSearch a G)
       (fun i => Plan.call (procedure i.representation i.source)) := by
   intro i _
-  constructor
-  · change (procedure i.representation i.source).requires _ ∧ _
-    refine ⟨initially i, ?_, ?_⟩
-    · simp [procedure, Annotated.verify, breadthFirstSearch, Search.interface, initial_credits]
-    · intro t k post cost out view v
-      change ∀ v, out.contains v = true ↔ v < a.n ∧ v ∈ t.seen at view
-      rw [view v, post v]
-      exact ⟨And.right, fun h => ⟨(i.representation.vertices v).mp h.right_mem, h⟩⟩
-  · have := i.representation.incidenceBound
-    have := i.source_valid
-    dsimp only [breadthFirstSearch]
-    method_time
+  change (procedure i.representation i.source).requires _ ∧ _
+  refine ⟨initially i, ?_, ?_⟩
+  · simp [procedure, Annotated.verify, breadthFirstSearch, Search.interface, initial_credits]
+  · intro t k post cost out view v
+    change ∀ v, out.contains v = true ↔ v < a.n ∧ v ∈ t.seen at view
+    rw [view v, post v]
+    exact ⟨And.right, fun h => ⟨(i.representation.vertices v).mp h.right_mem, h⟩⟩
 
 /-- A certificate for the same inlined procedure composition as `code`. -/
 def certified {β : Type} (a : Adjacency) (G : AlgoLib.Graph Nat β) :
@@ -181,7 +175,7 @@ theorem run_correct {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β}
 /-- Linear RAM time, including initialization, for the very same executable. -/
 theorem linear {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β} (i : Input a G) :
     (run i).steps ≤ 370 * (a.n + i.representation.edges.card) :=
-  ((certified a G).correct i (by trivial)).2
+  Search.linear_of_credits i ((certified a G).correct i (by trivial)).2
 
 /-- BFS solves connectivity by checking whether its returned set is the whole vertex set. -/
 theorem connected_iff {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β}

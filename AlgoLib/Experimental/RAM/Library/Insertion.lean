@@ -43,4 +43,12 @@ attribute [paper_simps] List.orderedInsert_length
 /-- Certified implementation overhead, used by automatic method payment. -/
 @[method_simps] theorem implementation_work : model.overhead = 50 := rfl
 
+/-- Normalize the backend's inferred bound for the standard insertion credit budget. -/
+theorem quadratic_of_credits (xs : List Nat) {steps : Nat}
+    (h : steps ≤ interface.preparationCost xs +
+      model.overhead * (xs.length * (xs.length + 2) + 1)) :
+    steps ≤ 50 * xs.length ^ 2 + 100 * xs.length + 55 := by
+  simp only [preparation_work, implementation_work] at h
+  nlinarith
+
 end AlgoLib.Experimental.RAM.Authoring.Insertion

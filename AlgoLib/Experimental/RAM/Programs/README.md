@@ -12,3 +12,5 @@ Each algorithm file follows the same order. `Claim` states the destination befor
 In Lean, a theorem using a particular executable must come after its definition. `Claim` lets you read the full target statement first; the theorem `main` later proves exactly that claim. This avoids an unproved forward declaration.
 
 Open the file next to the [authoring guide](../Authoring/README.md). Put the editor cursor after `paper_steps` to inspect the logical obligations. Supply a mathematical lemma if one is missing; changing a compiler proof should never be a step in this workflow.
+
+Logical credits and RAM costs are now separate: methods declare `credits`, and the selected backend infers `time`. See [the credit/backend guide](../docs/CREDITS-AND-BACKENDS.md) for certificate composition and proof reuse.

@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Authoring.Semantics
+import AlgoLib.Experimental.RAM.Backend.Realization
 import AlgoLib.Experimental.RAM.Backend.Language.Refinement
 import AlgoLib.Experimental.RAM.Backend.Certificates.BFS
 
@@ -50,12 +50,15 @@ def visitEffect (g : State) : State :=
 def finishEffect (g : State) : State := { g with processed := insert g.current g.processed }
 
 /-- FIFO removal and opening its adjacency iterator; graph and visited set frame automatically. -/
-def dequeue (a : Adjacency) : Action (model a) where
+def dequeue (a : Adjacency) : Action State where
   requires g := g.queue ≠ [] ∧ g.queue.headD 0 < a.n
   effect := openEffect a
   work _ := 1
+
+instance dequeueImplementation (a : Adjacency) : ActionImplementation (model a) (dequeue a) where
   implementation := Refinement.lift popBody
   correct g s hs hg := by
+    dsimp only [dequeue] at *
     obtain ⟨ready, heap, view, ht, _⟩ := hs
     rcases hqueue : g.queue with _ | ⟨v, vs⟩
     · exact (hg.1 hqueue).elim
@@ -81,12 +84,15 @@ def dequeue (a : Adjacency) : Action (model a) where
       exact heap v hv
 
 /-- Mark-before-enqueue at the current iterator entry. The whole graph frame is automatic. -/
-def visit (a : Adjacency) : Action (model a) where
+def visit (a : Adjacency) : Action State where
   requires g := g.row ≠ [] ∧ g.row.headD 0 < a.n
   effect := visitEffect
   work _ := 1
+
+instance visitImplementation (a : Adjacency) : ActionImplementation (model a) (visit a) where
   implementation := Refinement.lift scanBody
   correct g s hs hg := by
+    dsimp only [visit] at *
     obtain ⟨ready, heap, view, ht, chain⟩ := hs
     rcases hrow : g.row with _ | ⟨v, vs⟩
     · exact (hg.1 hrow).elim
@@ -104,26 +110,36 @@ def visit (a : Adjacency) : Action (model a) where
       exact hc.2.2.frame hf
 
 /-- Recording a processed vertex is ghost bookkeeping and emits no instructions. -/
-def finish (a : Adjacency) : Action (model a) where
+def finish (_a : Adjacency) : Action State where
   requires g := g.row = []
   effect := finishEffect
   work _ := 0
+
+instance finishImplementation (a : Adjacency) : ActionImplementation (model a) (finish a) where
   implementation := .skip
   correct _ s hs _ := ⟨0, s, .skip s, hs, by simp⟩
 
-def queueNonempty (a : Adjacency) : Guard (model a) where
+def queueNonempty (_a : Adjacency) : Guard State where
   test g := !g.queue.isEmpty
+
+instance queueNonemptyImplementation (a : Adjacency) :
+    GuardImplementation (model a) (queueNonempty a) where
   implementation := Refinement.condition bfsTest
   correct g s hs := by
+    dsimp only [queueNonempty] at *
     rw [Refinement.condition_eval]
     simp only [bfsTest, Test.eval, Operand.eval, hs.2.2.2.1, Nat.lt_add_right_iff_pos]
     cases g.queue <;> simp
   cost := by simp [model]
 
-def rowNonempty (a : Adjacency) : Guard (model a) where
+def rowNonempty (_a : Adjacency) : Guard State where
   test g := !g.row.isEmpty
+
+instance rowNonemptyImplementation (a : Adjacency) :
+    GuardImplementation (model a) (rowNonempty a) where
   implementation := Refinement.condition scanTest
   correct g s hs := by
+    dsimp only [rowNonempty] at *
     rw [Refinement.condition_eval]
     have hc := hs.2.2.2.2
     cases hrow : g.row with

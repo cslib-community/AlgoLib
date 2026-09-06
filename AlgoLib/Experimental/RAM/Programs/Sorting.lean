@@ -40,7 +40,6 @@ def insertionSort : Method Insertion.interface :=
     requires True;
     ensures SortedPermutation xs ys;
     credits (xs.length * (xs.length + 2) + 1);
-    time (50 * xs.length ^ 2 + 100 * xs.length + 55);
   do {
     while (more) {
       call insertNext;
@@ -48,7 +47,7 @@ def insertionSort : Method Insertion.interface :=
   }
 
 /-- A name for the declared body, useful when stating its loop contract. -/
-def program : Program model := insertionSort.body
+def program : Program State := insertionSort.body
 
 /-- The unprocessed values plus the sorted values permute the original input. -/
 def invariant (input : List Nat) (s : State) : Prop :=
@@ -97,26 +96,27 @@ The adapter's logical observation is used only to name the returned array. -/
 theorem verification : insertionSort.VCs := by
   method_vc [insertionSort]
   intro xs _
-  constructor
-  · apply (correct xs).output_vc
-    · exact initially xs
-    · simp only [method_simps, potential, initial, List.length_reverse, List.length_nil,
-        Nat.add_zero, Nat.le_refl]
-    · intro t ht out view
-      have eq : out = t.sorted := by
-        simpa only [method_simps, ht.1, List.reverse_nil, List.nil_append] using view
-      rw [eq]
-      exact ht.2
-  · method_time
+  apply (correct xs).output_vc
+  · exact initially xs
+  · simp only [method_simps, potential, initial, List.length_reverse, List.length_nil,
+      Nat.add_zero, Nat.le_refl]
+  · intro t ht out view
+    have eq : out = t.sorted := by
+      simpa only [method_simps, ht.1, List.reverse_nil, List.nil_append] using view
+    rw [eq]
+    exact ht.2
 
 /-- Packaging a checked method invokes the shared verified execution stack. -/
-def certified : VerifiedMethod Insertion.interface := ⟨insertionSort, verification⟩
+def certified : VerifiedMethod Insertion.interface := insertionSort.certify verification
 
 /-- Ordinary input, explicit output, actual RAM steps, and no fuel. -/
 def run (xs : List Nat) : Result (List Nat) := certified.run xs (by trivial)
 
 /-- Main theorem: the displayed method sorts every input within a quadratic bound. -/
-theorem main : Claim run := fun xs => certified.correct xs (by trivial)
+theorem main : Claim run := by
+  intro xs
+  obtain ⟨correct, cost⟩ := certified.correct xs (by trivial)
+  exact ⟨correct, Insertion.quadratic_of_credits xs cost⟩
 
 /-- Convenient functional projection of the main theorem. -/
 theorem run_correct (xs : List Nat) :

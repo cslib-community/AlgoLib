@@ -7,11 +7,12 @@ import AlgoLib.Experimental.RAM.Authoring.Interface
 import AlgoLib.Experimental.RAM.Authoring.Syntax
 
 /-!
-# Procedures with explicit input, output, and time contracts
+# Procedures with explicit input, output, and logical credit contracts
 
 Algorithm authors declare one fixed `body`, logical `requires`/`ensures`, an
-abstract credit allowance, and a bound on compiled steps. `Method.VCs` generates
-functional and payment obligations. A `VerifiedMethod` packages their proof;
+abstract credit allowance. `Method.VCs` generates functional and logical credit
+obligations. The selected backend derives the compiled-step bound.
+A `VerifiedMethod` packages their proof;
 its `run` executes the certified body through the existing input/output adapter.
 
 The body is deliberately independent of the input value: the header cannot
@@ -22,7 +23,7 @@ namespace AlgoLib.Experimental.RAM.Authoring
 
 /-- Completeness for the independent mathematical semantics. Used internally to
 turn a previously checked loop contract into the generated method obligation. -/
-theorem Run.vc {State : Type} {M : Model State} (p : Program M) :
+theorem Run.vc {State : Type} (p : Program State) :
     ∀ {s t : State} {k : Nat}, Run p s k t →
       ∀ (Q : State → Nat → Prop) (c : Nat), k ≤ c → Q t (c-k) → VC p Q s c := by
   induction p with
@@ -71,7 +72,7 @@ theorem Run.vc {State : Type} {M : Model State} (p : Program M) :
 /-- Reuse a logical loop/body contract. Only its initial condition, output
 meaning, and sufficient credits remain; no machine state is exposed. -/
 theorem Correct.output_vc {State Input Output : Type} {M : Model State}
-    {api : Interface M Input Output} {p : Program M} {P : State → Prop}
+    {api : Interface M Input Output} {p : Program State} {P : State → Prop}
     {Q : State → State → Prop} {work : State → Nat}
     (proof : Correct p P Q work) (input : Input) (post : Output → Prop) (credits : Nat)
     (initially : P (api.initial input)) (enough : work (api.initial input) ≤ credits)
@@ -83,26 +84,35 @@ theorem Correct.output_vc {State Input Output : Type} {M : Model State}
 /-- A displayed procedure contract and one fixed high-level program body. -/
 structure Method {State Input Output : Type} {M : Model State}
     (api : Interface M Input Output) where
-  body : Program M
+  body : Program State
   requires : Input → Prop
   ensures : Input → Output → Prop
   credits : Input → Nat
-  time : Input → Nat
 
-/-- Generated obligations: symbolic correctness within the declared credits,
-then payment of the actual compiled-time bound. -/
+/-- Generated obligations: symbolic correctness within the declared logical credits. -/
 def Method.VCs {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (method : Method api) : Prop :=
   ∀ i, method.requires i →
     VC method.body (fun t _ => ∀ out, api.Observes t out → method.ensures i out)
-      (api.initial i) (method.credits i) ∧
-    api.preparationCost i + M.overhead * method.credits i ≤ method.time i
+      (api.initial i) (method.credits i)
+
+/-- The backend derives a RAM upper bound from logical credits and input preparation. -/
+def Method.time {State Input Output : Type} {M : Model State}
+    {api : Interface M Input Output} (method : Method api) (i : Input) : Nat :=
+  api.preparationCost i + M.overhead * method.credits i
 
 /-- A method cannot run until its generated verification conditions are proved. -/
 structure VerifiedMethod {State Input Output : Type} {M : Model State}
     (api : Interface M Input Output) where
   method : Method api
   verification : method.VCs
+  compilation : Compilation M method.body
+
+/-- Supply only the logical proof. Backend certificates are assembled automatically. -/
+def Method.certify {State Input Output : Type} {M : Model State}
+    {api : Interface M Input Output} (method : Method api) (proof : method.VCs)
+    (compilation : Compilation M method.body := by ram_compile) : VerifiedMethod api :=
+  ⟨method, proof, compilation⟩
 
 private theorem VerifiedMethod.body_correct {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (p : VerifiedMethod api) (i : Input)
@@ -113,22 +123,24 @@ private theorem VerifiedMethod.body_correct {State Input Output : Type} {M : Mod
   apply VC.correct
   intro s hs
   subst s
-  exact (p.verification i valid).1
+  exact p.verification i valid
 
 /-- Fuel-free execution of the body displayed in the method declaration. -/
 def VerifiedMethod.run {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (p : VerifiedMethod api) (i : Input)
     (valid : p.method.requires i) : Result Output :=
+  letI := p.compilation
   api.run (p.body_correct i valid) i rfl
 
-/-- The public result: the declared output property and the declared RAM bound
+/-- The public result: the declared output property and the inferred RAM bound
 hold for the same run. Initialization is included in the bound. -/
 theorem VerifiedMethod.correct {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (p : VerifiedMethod api) (i : Input)
     (valid : p.method.requires i) :
     p.method.ensures i (p.run i valid).value ∧ (p.run i valid).steps ≤ p.method.time i := by
+  letI := p.compilation
   obtain ⟨⟨t, ht, ho⟩, hk⟩ := api.correct (p.body_correct i valid) i rfl
-  exact ⟨ht _ ho, hk.trans (p.verification i valid).2⟩
+  exact ⟨ht _ ho, hk⟩
 
 /-- Declaring an input/output contract never turns its input into a code generator.
 The input and output binders scope only over contracts and budgets. -/
@@ -136,19 +148,18 @@ macro "ram_method" "(" input:ident " : " inputType:term ")"
     "returns" "(" output:ident " : " outputType:term ")"
     "using" api:term ";"
     &"requires" pre:term ";" &"ensures" post:term ";"
-    &"credits" credits:term ";" &"time" time:term ";"
+    &"credits" credits:term ";"
     "do" "{" body:mathStmt* "}" : term =>
   `(({ body := paper { $body* }
        requires := fun ($input : $inputType) => $pre
        ensures := fun ($input : $inputType) ($output : $outputType) => $post
-       credits := fun ($input : $inputType) => $credits
-       time := fun ($input : $inputType) => $time } : Method $api))
+       credits := fun ($input : $inputType) => $credits } : Method $api))
 
 /-- Library adapters register logical observation and accounting equations here.
 Algorithm authors never unfold the adapter's implementation. -/
 register_simp_attr method_simps
 
-/-- Open the input/output and time obligations of the declared method.
+/-- Open the input/output and logical credit obligations of the declared method.
 The remaining goals concern logical state and credit accounting only. -/
 macro "method_vc" " [" ds:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
   `(tactic| simp only [Method.VCs, $ds,*])

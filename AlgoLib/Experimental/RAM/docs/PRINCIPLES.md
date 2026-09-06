@@ -8,7 +8,7 @@ The primary interface is `Programs` for complete algorithms and `Authoring` for 
 
 ## Automation must produce checked proofs
 
-`ram_method` binds a displayed, input-independent body to input/output contracts and declared budgets. `method_vc` opens its generated obligations; `method_time` pays routine adapter overhead using public library equations. `VerifiedMethod.correct` provides the output and time theorem for its actual run.
+`ram_method` binds a displayed, input-independent body to input/output contracts and logical credit budgets. `method_vc` opens only logical obligations; separate backend certificates derive RAM bounds automatically. `VerifiedMethod.correct` provides the output and time theorem for its actual run.
 
 `paper_steps` substitutes logical operation contracts and composes verification conditions. It uses a curated `paper_simps` theorem set; it does not unfold physical implementations. `paper_credits` handles routine natural-number polynomial arithmetic and subtraction. `LoopProof` leaves named preservation, payment, and exit obligations for the author.
 
@@ -51,3 +51,7 @@ For graphs, `m` counts labelled edges, including parallel edges, and an undirect
 The public examples run the actual compiler/runner and are checked against independent sorting and reachability references. Negative tests reject zero budgets at true guards, unpaid calls, and invalid frames. Kernel axiom checks audit the end-to-end theorems.
 
 This revision hides implementation obligations for the demonstrated authoring libraries. It still requires Lean syntax and mathematical proof skills. It does not claim Dafny-level automation, a rich IDE, or classroom usability established by student testing. The next usability work should expand certified operation libraries and test the workflow with users, rather than expose more compiler internals.
+
+## Separate logical credits from implementations
+
+`Action State`, `Program State`, and their credit proofs have no RAM dependency. Separate realizations implement their contracts. Methods declare only credits; their RAM time is inferred. See [Credits and backends](CREDITS-AND-BACKENDS.md).

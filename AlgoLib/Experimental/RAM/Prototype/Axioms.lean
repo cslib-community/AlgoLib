@@ -54,7 +54,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Prototype.denote_deterministic
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.compilation_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.compilation_sound' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.compilation_sound
 
@@ -137,7 +137,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Prototype.Routine.loom_correct
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.Graph.scanVerification' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Graph.scanVerification' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.Graph.scanVerification
 
@@ -220,7 +220,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Prototype.MultipleArrays.represents_initial
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.method_execution' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.method_execution' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.method_execution
 

@@ -63,7 +63,7 @@ set_option linter.hashCommand false in
 /-- Scalar writes cannot be hidden as uncharged Lean computations. -/
 example (s : Mutable.State) :
     ¬ (Plan.action (Mutable.assign "x" (.literal 1))).vc (fun _ _ => True) s 0 := by
-  simp [Plan.vc, Mutable.assign, Mutable.Value.compile, Checked.Language.Expr.cost]
+  simp [Plan.vc, Mutable.assign, Mutable.Value.credits]
 
 /-- Total Lean array indexing does not make out-of-bounds RAM reads safe. -/
 example (c : Nat) : ¬ (Plan.action (Mutable.read "x" (.literal 0))).vc
@@ -77,7 +77,7 @@ example (c : Nat) : ¬ (Plan.action (Mutable.write (.literal 1) (.literal 7))).v
 
 /-- An assertion is an obligation, never an axiom introduced by the parser. -/
 example (s : Mutable.State) (c : Nat) :
-    ¬ (Plan.assert (M := Mutable.model) (fun _ => False)).vc (fun _ _ => True) s c := by
+    ¬ (Plan.assert (State := Mutable.State) (fun _ => False)).vc (fun _ _ => True) s c := by
   simp [Plan.vc]
 
 /-- A supplied constant variant cannot justify a taken loop iteration. -/
@@ -92,7 +92,7 @@ example (c : Nat) :
 example : True := by
   fail_if_success
     have wrong : Plan (.action (Mutable.assign "x" (.literal 1))) :=
-      (Plan.skip : Plan (.skip : Program Mutable.model))
+      (Plan.skip : Plan (.skip : Program Mutable.State))
   trivial
 
 /- A host-language function call is outside the supported RAM expression grammar. -/
@@ -134,6 +134,16 @@ ram method rejectArrayShadow (mut arr : Array Nat) return (u : Unit)
   credits 100
   do
     let mut arr := 0
+    return
+
+/- A caller cannot replace the inferred RAM bound with an arbitrary number. -/
+set_option linter.hashCommand false in
+/-- error: RAM time is inferred from logical credits; remove the time clause -/
+#guard_msgs in
+ram method rejectTimeOverride (mut arr : Array Nat) return (u : Unit)
+  credits 0
+  time 0
+  do
     return
 
 end AlgoLib.Experimental.RAM.Prototype.Tests

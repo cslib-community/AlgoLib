@@ -90,7 +90,12 @@ theorem main (xs : List Nat) : SortedPermutation xs (run xs).value ∧
   change (SortedPermutation xs _ ∧ True) ∧ _ at h
   refine ⟨h.1.1, ?_⟩
   have bound := h.2
-  change (run xs).steps ≤ 3 * (potential xs.toArray.size 0 + 20) at bound
+  have time_eq : certified.method.time xs.toArray =
+      3 * (potential xs.toArray.size 0 + 20) := by
+    simp only [certified, insertionSortVerified, certify, Method.time, insertionSort,
+      Mutable.interface, Mutable.model,
+      Nat.zero_add]
+  rw [time_eq] at bound
   calc
     _ ≤ 3 * (potential xs.toArray.size 0 + 20) := bound
     _ = 300 * xs.length ^ 2 + 300 * xs.length + 360 := by
@@ -117,7 +122,7 @@ theorem loom_correct (xs : Array Nat) :
     _root_.wp (denote insertionSort.body)
       (fun _ t _ => SortedPermutation xs.toList t.array.toList)
       (Mutable.initial xs) (insertionSort.credits xs) := by
-  have h := (insertionSortVerification xs (by trivial)).1
+  have h := (insertionSortVerification xs (by trivial))
   have observed := (insertionSortAnnotations xs).loom_sound _ _ _ h
   rw [loom_wp_eq] at observed ⊢
   exact Computation.wp_mono (fun _ t _ ht => (ht t.array rfl).1) observed

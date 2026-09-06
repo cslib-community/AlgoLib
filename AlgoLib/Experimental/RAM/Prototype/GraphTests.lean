@@ -19,12 +19,12 @@ namespace AlgoLib.Experimental.RAM.Prototype.GraphTests
 open Authoring Experimental.RAM.BFS
 
 /-- Expected model types also support procedures with no primitive to infer from. -/
-def emptyCode {State : Type} (M : Model State) : Annotated M :=
+def emptyCode (State : Type) : Annotated State :=
   ram_do (_entry, _s, _remaining) do
     pure ()
 
-example {State : Type} (M : Model State) (s : State) (c : Nat) :
-    (emptyCode M).plan.vc (fun t r => t = s ∧ r = c) s c := ⟨rfl, rfl⟩
+example (State : Type) (s : State) (c : Nat) :
+    (emptyCode State).plan.vc (fun t r => t = s ∧ r = c) s c := ⟨rfl, rfl⟩
 
 /-- A small ordinary input: edges are (label, source, target). -/
 def path : EdgeInput where
@@ -61,13 +61,13 @@ example (a : Adjacency) : (Graph.processCode a).body =
       (.seq (Graph.scanCode a).body (.seq (.action (Graph.finishVertex a)) .skip)) := rfl
 
 /-- A call's proof plan cannot supply an unpaid computation. -/
-theorem unpaid_call {State : Type} {M : Model State} (p : Routine M) (s : State)
+theorem unpaid_call {State : Type} (p : Routine State) (s : State)
     (positive : 0 < p.work s) : ¬ (Plan.call p).vc (fun _ _ => True) s 0 := by
   simp only [Plan.vc]
   omega
 
 /-- Callers must establish the precondition, even if they ignore the output. -/
-theorem invalid_call {State : Type} {M : Model State} (p : Routine M) (s : State)
+theorem invalid_call {State : Type} (p : Routine State) (s : State)
     (invalid : ¬ p.requires s) (credits : Nat) :
     ¬ (Plan.call p).vc (fun _ _ => True) s credits := by
   simp only [Plan.vc]

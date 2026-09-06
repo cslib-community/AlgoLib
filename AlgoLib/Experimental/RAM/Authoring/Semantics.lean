@@ -3,17 +3,18 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Backend.Language.VC
 import Mathlib.Tactic
 
 /-!
 # Authoring semantics and proof rules
 
-Defines the logical states and independent costed execution used by algorithm proofs. Actions
-carry implementation certificates; programs compose those contracts.
+Defines the logical states and independent costed execution used by algorithm proofs.
+Actions contain only preconditions, mathematical effects, and logical credit charges.
+This module imports no RAM machine or compiler. Programs and their proofs can be
+realized by different backends without changing the algorithm.
 
-Read Program, Run, VC, and LoopProof for the proof API. Run.refines and Correct.method are the
-shared backend bridge; clients do not invoke them directly.
+Read Program, Run, VC, and LoopProof for the proof API. Backend/Realization supplies
+separate implementation certificates and compositional compilation.
 
 ## Further details
 
@@ -24,40 +25,30 @@ has a mathematical effect and a cost contract. Its implementation proof belongs
 to the library. Every control-flow construct compiles compositionally.
 -/
 namespace AlgoLib.Experimental.RAM.Authoring
-open Checked Checked.Language
 
-structure Model (State : Type) where
-  Represents : State → Store → Prop
-  overhead : Nat
-
-/-- An operation cannot hide arbitrary computation behind a cost annotation:
-its library author must certify the actual typed implementation. -/
-structure Action {State : Type} (M : Model State) where
+/-- A backend-independent functional contract and logical credit charge. -/
+structure Action (State : Type) where
   requires : State → Prop
   effect : State → State
+  /-- Logical credit allowance, independent of any instruction count. -/
   work : State → Nat
-  implementation : Cmd
-  correct : ∀ a s, M.Represents a s → requires a →
-    ∃ k t, Eval implementation s k t ∧ M.Represents (effect a) t ∧ k ≤ M.overhead * work a
 
-structure Guard {State : Type} (M : Model State) where
+/-- Tests consume one logical credit; a backend must implement and pay for them. -/
+structure Guard (State : Type) where
   test : State → Bool
-  implementation : Condition
-  correct : ∀ a s, M.Represents a s → implementation.eval s = test a
-  cost : implementation.cost ≤ M.overhead
 
-inductive Program {State : Type} (M : Model State) where
+inductive Program (State : Type) where
   | skip
-  | action (a : Action M)
-  | seq (a b : Program M)
-  | branch (q : Guard M) (a b : Program M)
-  | loop (q : Guard M) (body : Program M)
+  | action (a : Action State)
+  | seq (a b : Program State)
+  | branch (q : Guard State) (a b : Program State)
+  | loop (q : Guard State) (body : Program State)
 
 /-- Independent mathematical semantics. Ghost state is not executed by Lean
 at runtime; only the certified implementation is compiled and run. -/
-inductive Run {State : Type} {M : Model State} : Program M → State → Nat → State → Prop where
+inductive Run {State : Type} : Program State → State → Nat → State → Prop where
   | skip (s) : Run .skip s 0 s
-  | action (a : Action M) (s) : a.requires s → Run (.action a) s (a.work s) (a.effect s)
+  | action (a : Action State) (s) : a.requires s → Run (.action a) s (a.work s) (a.effect s)
   | seq {a b s u t i j} : Run a s i u → Run b u j t → Run (.seq a b) s (i+j) t
   | ifTrue {q a b s t k} : q.test s = true → Run a s k t → Run (.branch q a b) s (1+k) t
   | ifFalse {q a b s t k} : q.test s = false → Run b s k t → Run (.branch q a b) s (1+k) t
@@ -65,44 +56,13 @@ inductive Run {State : Type} {M : Model State} : Program M → State → Nat →
   | whileTrue {q b s u t i j} : q.test s = true → Run b s i u →
       Run (.loop q b) u j t → Run (.loop q b) s (1+i+j) t
 
-def Program.source {State : Type} {M : Model State} : Program M → Cmd
-  | .skip => .skip
-  | .action a => a.implementation
-  | .seq a b => .seq a.source b.source
-  | .branch q a b => .branch q.implementation a.source b.source
-  | .loop q b => .loop q.implementation b.source
-
-/-- The only compiler-facing proof rule. Clients never apply it manually. -/
-theorem Run.refines {State : Type} {M : Model State} {p : Program M} {a b : State} {k : Nat}
-    (h : Run p a k b) (s : Store) (hs : M.Represents a s) :
-    ∃ j t, Eval p.source s j t ∧ M.Represents b t ∧ j ≤ M.overhead * k := by
-  induction h generalizing s with
-  | skip a => exact ⟨0, s, .skip s, hs, by omega⟩
-  | action a x hx => exact a.correct x s hs hx
-  | seq ha hb iha ihb =>
-    obtain ⟨i, u, hu, hr, hi⟩ := iha s hs
-    obtain ⟨j, t, ht, hr', hj⟩ := ihb u hr
-    exact ⟨_, t, .seq hu ht, hr', by nlinarith⟩
-  | @ifTrue q a b x y k hq hx ih =>
-    obtain ⟨i, t, ht, hr, hi⟩ := ih s hs
-    exact ⟨_, t, .ifTrue ((q.correct _ _ hs).trans hq) ht, hr, by have := q.cost; nlinarith⟩
-  | @ifFalse q a b x y k hq hx ih =>
-    obtain ⟨i, t, ht, hr, hi⟩ := ih s hs
-    exact ⟨_, t, .ifFalse ((q.correct _ _ hs).trans hq) ht, hr, by have := q.cost; nlinarith⟩
-  | @whileFalse q b a hq =>
-    exact ⟨_, s, .whileFalse ((q.correct _ _ hs).trans hq), hs, by simpa using q.cost⟩
-  | @whileTrue q b a u t i j hq hb hl ihb ihl =>
-    obtain ⟨i', u', hu, hr, hi⟩ := ihb s hs
-    obtain ⟨j', t', ht, hr', hj⟩ := ihl u' hr
-    exact ⟨_, t', .whileTrue ((q.correct _ _ hs).trans hq) hu ht, hr', by have := q.cost; nlinarith⟩
-
-def Correct {State : Type} {M : Model State} (p : Program M)
+def Correct {State : Type} (p : Program State)
     (P : State → Prop) (Q : State → State → Prop) (budget : State → Nat) : Prop :=
   ∀ a, P a → ∃ k b, Run p a k b ∧ Q a b ∧ k ≤ budget a
 
 /-- Symbolic execution substitutes only mathematical effects. A loop asks for
 an invariant over mathematical state and remaining credits. -/
-def VC {State : Type} {M : Model State} : Program M → (State → Nat → Prop) → State → Nat → Prop
+def VC {State : Type} : Program State → (State → Nat → Prop) → State → Nat → Prop
   | .skip, Q, s, c => Q s c
   | .action a, Q, s, c => a.requires s ∧ a.work s ≤ c ∧ Q (a.effect s) (c - a.work s)
   | .seq a b, Q, s, c => VC a (VC b Q) s c
@@ -111,7 +71,7 @@ def VC {State : Type} {M : Model State} : Program M → (State → Nat → Prop)
   | .loop q b, Q, s, c => ∃ I : State → Nat → Prop, I s c ∧
       ∀ t d, I t d → 1 ≤ d ∧ if q.test t then VC b I t (d-1) else Q t (d-1)
 
-theorem VC.sound {State : Type} {M : Model State} (p : Program M)
+theorem VC.sound {State : Type} (p : Program State)
     (Q : State → Nat → Prop) (s : State) (c : Nat) (h : VC p Q s c) :
     ∃ k t, Run p s k t ∧ k ≤ c ∧ Q t (c-k) := by
   induction p generalizing Q s c with
@@ -147,7 +107,7 @@ theorem VC.sound {State : Type} {M : Model State} (p : Program M)
             by simpa [Nat.sub_sub, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using hQ⟩
     exact go c s hinit
 
-theorem VC.correct {State : Type} {M : Model State} {p : Program M}
+theorem VC.correct {State : Type} {p : Program State}
     {P : State → Prop} {Q : State → State → Prop} {budget : State → Nat}
     (h : ∀ a, P a → VC p (fun b _ => Q a b) a (budget a)) : Correct p P Q budget := by
   intro a ha
@@ -156,14 +116,14 @@ theorem VC.correct {State : Type} {M : Model State} {p : Program M}
 
 /-- Authoring loop proof: preservation and payment share the same post-state.
 The guard's positive cost turns the credit argument into termination. -/
-structure LoopProof {State : Type} {M : Model State} (q : Guard M) (body : Program M)
+structure LoopProof {State : Type} (q : Guard State) (body : Program State)
     (invariant : State → Prop) (potential : State → Nat) (post : State → Prop) : Prop where
   preservation : ∀ s, invariant s → q.test s = true →
     VC body (fun t remaining => invariant t ∧ potential t ≤ remaining) s (potential s - 1)
   payment : ∀ s, invariant s → q.test s = true → 1 ≤ potential s
   exit : ∀ s, invariant s → q.test s = false → post s
 
-theorem LoopProof.correct {State : Type} {M : Model State} {q : Guard M} {body : Program M}
+theorem LoopProof.correct {State : Type} {q : Guard State} {body : Program State}
     {I Q : State → Prop} {potential : State → Nat} (h : LoopProof q body I potential Q) :
     Correct (.loop q body) I (fun _ t => Q t) (fun s => potential s + 1) := by
   intro s hs
@@ -181,40 +141,21 @@ theorem LoopProof.correct {State : Type} {M : Model State} {q : Guard M} {body :
 
 /-- Procedures are verified once and used through a functional/cost contract.
 `call` hides their body from symbolic execution, but not from the compiler. -/
-structure Procedure {State : Type} (M : Model State) where
-  body : Program M
+structure Procedure (State : Type) where
+  body : Program State
   requires : State → Prop
   effect : State → State
+  /-- Logical credit allowance, independent of any instruction count. -/
   work : State → Nat
   verification : Correct body requires (fun s t => t = effect s) work
 
-def Procedure.call {State : Type} {M : Model State} (p : Procedure M) : Action M where
+def Procedure.call {State : Type} (p : Procedure State) : Action State where
   requires := p.requires
   effect := p.effect
   work := p.work
-  implementation := p.body.source
-  correct a s hs ha := by
-    obtain ⟨k, b, hb, he, hk⟩ := p.verification a ha
-    subst b
-    obtain ⟨j, t, ht, hr, hj⟩ := hb.refines s hs
-    exact ⟨j, t, ht, hr, hj.trans (Nat.mul_le_mul_left _ hk)⟩
-
-/-- Total correctness of the actual compiled program, generated from a paper proof. -/
-def Correct.method {State : Type} {M : Model State} {p : Program M}
-    {P : State → Prop} {Q : State → State → Prop} {budget : State → Nat}
-    (h : Correct p P Q budget) (a : State) (ha : P a) : Method where
-  body := p.source
-  requires := M.Represents a
-  ensures _ t := ∃ b, Q a b ∧ M.Represents b t
-  budget _ := M.overhead * budget a
-  verification s hs := by
-    obtain ⟨k, b, hb, hQ, hk⟩ := h a ha
-    obtain ⟨j, t, ht, hr, hj⟩ := hb.refines s hs
-    exact ⟨j, t, ht, ⟨b, hQ, hr⟩, hj.trans (Nat.mul_le_mul_left _ hk)⟩
-
 /-- Ghost assertions about untouched logical fields are framed by substitution;
 no address-level frame obligation reaches an algorithm author. -/
-theorem Action.frame {State : Type} {M : Model State} (a : Action M)
+theorem Action.frame {State : Type} (a : Action State)
     (F : State → Prop) (preserved : ∀ s, a.requires s → F s → F (a.effect s))
     (s : State) (hs : a.requires s) (hf : F s) :
     VC (.action a) (fun t _ => F t) s (a.work s) :=

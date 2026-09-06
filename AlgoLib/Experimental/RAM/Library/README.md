@@ -12,3 +12,5 @@ This directory is the boundary between algorithm proofs and data-structure imple
 The generic physical array, queue, stack, and graph contracts live in [Backend/Memory](../Backend/Memory). They are implementation APIs over memory, not additional student-level algorithms. A new public operation should expose an `Action` or `Procedure` here, with its representation proof in `Backend/Adapters` and stable logical equations for `paper_steps`.
 
 Framing has two levels. Backend footprint proofs preserve unrelated memory. At this level, symbolic execution preserves untouched logical record fields. An algorithm author proves neither adjacency-pointer preservation nor queue-address arithmetic.
+
+Logical credits and RAM costs are now separate: methods declare `credits`, and the selected backend infers `time`. See [the credit/backend guide](../docs/CREDITS-AND-BACKENDS.md) for certificate composition and proof reuse.

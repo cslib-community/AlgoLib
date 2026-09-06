@@ -23,6 +23,8 @@ example (xs : List Nat) :
   (Programs.Sorting.main xs).1
 ```
 
+See [Logical credits and inferred RAM time](docs/CREDITS-AND-BACKENDS.md) for the separated contracts, automatic compilation, and a two-backend reuse demo.
+
 ## Read from the theorem to its proof
 
 | Step | Sorting | BFS connectivity |
@@ -50,7 +52,6 @@ def insertionSort : Method Insertion.interface :=
     requires True;
     ensures SortedPermutation xs ys;
     credits (xs.length * (xs.length + 2) + 1);
-    time (50 * xs.length ^ 2 + 100 * xs.length + 55);
   do {
     while (more) {
       call insertNext;
@@ -81,10 +82,12 @@ These are responsibility boundaries. Some backend adapters implement authoring c
 
 ## What you prove, and what the library does
 
-You supply an invariant, preservation/exit arguments, operation preconditions, and the charging facts. `paper_steps` substitutes logical effects and generates call payments. `method_vc` opens the declared output and total-time obligations. Registered adapter equations and arithmetic automation discharge the routine representation-independent bookkeeping.
+You supply an invariant, preservation/exit arguments, operation preconditions, and the charging facts. `paper_steps` substitutes logical effects and generates call payments. `method_vc` opens the declared output and logical-credit obligations. The backend derives the RAM time bound automatically; it adds no payment subgoal to the algorithm proof.
 
 The library establishes physical framing, implements the operations, relates logical states to memory, compiles the declared body, transports its certificate, and runs it without fuel. The same certificate proves the output contract and the bound on actual compiled steps. Proof checking, host input encoding, and host output enumeration are outside the unit-cost RAM count; compiled preparation is included.
 
 `Programs.Connectivity.search graph source` is the convenience API with explicit graph and source arguments (`source : Fin graph.n`). Its `search_correct` theorem gives the same reachable-set, connectivity, and time guarantees.
 
 For runnable examples see [Programs/Examples.lean](Programs/Examples.lean). For the former layout and updated names see [migration](docs/MIGRATION.md). The [PDF tutorial](docs/verified-ram-student-tutorial.pdf) and slide deck document the earlier `2c78e53` layout; use the current source guides and [updated Lean companion](docs/StudentDemo.lean) for this layout.
+
+The exported PDF and slides predate the credit/backend split. For the current API, use [Credits and backends](docs/CREDITS-AND-BACKENDS.md) and the checked Lean examples.

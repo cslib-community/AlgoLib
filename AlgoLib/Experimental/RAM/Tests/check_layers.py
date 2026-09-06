@@ -48,6 +48,11 @@ for module, path in modules.items():
             for i in local for blocked in ("Programs", "Legacy")
         ), (path, "reusable layer depends on an algorithm/demo")
     assert re.search(r"/-!", text), (path, "missing module documentation")
+    if module in (prefix + "Authoring.Semantics", prefix + "Authoring.Syntax",
+            prefix + "Tests.CreditLogic"):
+        assert all(i in (prefix + "Authoring.Semantics",) for i in local), (
+            path, "logical credit core depends on a backend or machine"
+        )
     edges[module] = local
 
 active, done = set(), set()

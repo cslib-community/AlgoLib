@@ -26,14 +26,16 @@ namespace AlgoLib.Experimental.RAM.Authoring.Tests
 open Experimental.RAM.BFS
 
 /-- The syntax is compositional: nested control flow is not a BFS macro. -/
-def nested : Program Insertion.model := paper {
+def nested : Program Insertion.State := paper {
   while (Insertion.more) {
     if (Insertion.more) { call Insertion.insertNext; } else {}
   }
 }
 
-example : nested.source = Checked.Language.Cmd.loop Insertion.more.implementation
-    (.branch Insertion.more.implementation Insertion.insertNext.implementation .skip) := rfl
+example : nested.source Insertion.model = Checked.Language.Cmd.loop
+    (GuardImplementation.implementation Insertion.model Insertion.more)
+    (.branch (GuardImplementation.implementation Insertion.model Insertion.more)
+      (ActionImplementation.implementation Insertion.model Insertion.insertNext) .skip) := rfl
 
 /-- Symbolic execution preserves untouched logical fields automatically. -/
 example (a : Adjacency) (s : Search.State) (safe : (Search.visit a).requires s) :
@@ -43,8 +45,8 @@ example (a : Adjacency) (s : Search.State) (safe : (Search.visit a).requires s) 
   exact ⟨safe, by omega, by trivial⟩
 
 /-- A false invariant with a true guard cannot claim free termination. -/
-theorem zero_budget_rejected {State : Type} {M : Model State} {q : Guard M}
-    {body : Program M} {I Q : State → Prop} {s : State} (hs : I s) (go : q.test s = true) :
+theorem zero_budget_rejected {State : Type} {q : Guard State}
+    {body : Program State} {I Q : State → Prop} {s : State} (hs : I s) (go : q.test s = true) :
     ¬ LoopProof q body I (fun _ => 0) Q := by
   intro h
   have := h.payment s hs go

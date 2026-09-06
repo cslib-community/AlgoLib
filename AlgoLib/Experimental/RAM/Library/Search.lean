@@ -25,7 +25,7 @@ namespace AlgoLib.Experimental.RAM.Authoring.Search
 open Experimental.RAM.BFS
 
 /-- A generic while loop over a certified adjacency cursor. -/
-def scanRow (a : Adjacency) : Program (model a) := paper {
+def scanRow (a : Adjacency) : Program State := paper {
   while (rowNonempty a) { call visit a; }
 }
 
@@ -51,7 +51,7 @@ private theorem scanRow_run (a : Adjacency) (g : State)
     omega
 
 /-- Functional summary and linear cost of scanning any well-formed row. -/
-def scanNeighbors (a : Adjacency) : Procedure (model a) where
+def scanNeighbors (a : Adjacency) : Procedure State where
   body := scanRow a
   requires g := ∀ v ∈ g.row, v < a.n
   effect := scanEffect
@@ -95,5 +95,16 @@ attribute [paper_simps] dequeue_requires dequeue_effect dequeue_work
 
 /-- Certified implementation overhead, consumed by method_time. -/
 @[method_simps] theorem implementation_work (a : Adjacency) : (model a).overhead = 75 := rfl
+
+/-- Normalize inferred RAM cost using the adjacency representation's incidence bound. -/
+theorem linear_of_credits {β : Type} {a : Adjacency} {G : Graph Nat β}
+    (i : Input a G) {steps : Nat}
+    (h : steps ≤ (interface a G).preparationCost i +
+      (model a).overhead * (3 * a.n + 2 * a.entries + 1)) :
+    steps ≤ 370 * (a.n + i.representation.edges.card) := by
+  have := i.representation.incidenceBound
+  have := i.source_valid
+  simp only [preparation_work, implementation_work] at h
+  omega
 
 end AlgoLib.Experimental.RAM.Authoring.Search

@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Authoring.Semantics
+import AlgoLib.Experimental.RAM.Backend.Realization
 
 /-!
 # Certified input preparation and output observation
@@ -37,10 +37,10 @@ structure Result (Output : Type) where
 /-- Compile, prove termination, run, and decode. No fuel or compilation proof
 is an argument of the resulting executable. -/
 def Interface.method {State Input Output : Type} {M : Model State}
-    (api : Interface M Input Output) {p : Program M} {P : State → Prop}
+    (api : Interface M Input Output) {p : Program State} [Compilation M p] {P : State → Prop}
     {Q : State → State → Prop} {budget : State → Nat}
     (proof : Correct p P Q budget) (input : Input) (valid : P (api.initial input)) : Method where
-  body := .seq api.prepare p.source
+  body := .seq api.prepare (p.source M)
   requires s := s = api.encode input
   ensures _ t := ∃ b, Q (api.initial input) b ∧ M.Represents b t
   budget _ := api.preparationCost input + M.overhead * budget (api.initial input)
@@ -54,7 +54,7 @@ def Interface.method {State Input Output : Type} {M : Model State}
     omega
 
 def Interface.run {State Input Output : Type} {M : Model State}
-    (api : Interface M Input Output) {p : Program M} {P : State → Prop}
+    (api : Interface M Input Output) {p : Program State} [Compilation M p] {P : State → Prop}
     {Q : State → State → Prop} {budget : State → Nat}
     (proof : Correct p P Q budget) (input : Input) (valid : P (api.initial input)) :
     Result Output :=
@@ -62,7 +62,7 @@ def Interface.run {State Input Output : Type} {M : Model State}
   ⟨api.decode input r.2, r.1⟩
 
 theorem Interface.correct {State Input Output : Type} {M : Model State}
-    (api : Interface M Input Output) {p : Program M} {P : State → Prop}
+    (api : Interface M Input Output) {p : Program State} [Compilation M p] {P : State → Prop}
     {Q : State → State → Prop} {budget : State → Nat}
     (proof : Correct p P Q budget) (input : Input) (valid : P (api.initial input)) :
     (∃ b, Q (api.initial input) b ∧ api.Observes b (api.run proof input valid).value) ∧

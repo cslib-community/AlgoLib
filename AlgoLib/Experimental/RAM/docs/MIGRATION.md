@@ -64,3 +64,13 @@ This is a module-path and public-namespace migration. Old path shims are deliber
 The PDF tutorial and slide deck remain pinned historical artifacts for the earlier layout (`2c78e53` and preceding revisions). Their immutable GitHub source links still describe that version. The Lean companion has been migrated to current imports and names; use this map when comparing old screenshots or snippets with the current source.
 
 Current source guides are [the layer overview](../README.md), [authoring](../Authoring/README.md), and [architecture](ARCHITECTURE.md). Algorithm proof and compiler semantics have not been weakened to perform this migration. The new method theorem derives its guarantees from the same checked execution chain.
+
+## Unbundled logical credits
+
+The current method syntax has no `time` field. Remove explicit `time` clauses and
+the second RAM-payment branch of old verification proofs. `Action State` and
+`Program State` are pure contracts; separate `ActionImplementation` and `Compilation`
+certificates implement them. `method.certify proof` reconstructs those certificates.
+See [Credits and backends](CREDITS-AND-BACKENDS.md) for the complete migration and
+runnable proof-reuse example. The previously exported PDF and slides predate this
+API change; use this guide and the checked Lean demos for current syntax.

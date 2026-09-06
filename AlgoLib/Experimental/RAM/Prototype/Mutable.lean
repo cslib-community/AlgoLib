@@ -76,6 +76,11 @@ def Value.eval (s : State) : Value → Nat
   | .sub a b => a.eval s - b.eval s
   | .mul a b => a.eval s * b.eval s
 
+/-- Logical expression charge, independent of any target instruction language. -/
+def Value.credits : Value → Nat
+  | .literal _ | .local _ | .size => 1
+  | .add x y | .sub x y | .mul x y => x.credits + y.credits + 1
+
 def Value.compile : Value → Expr .word
   | .literal n => .lit n
   | .local x => .var (localVar x)
@@ -83,6 +88,10 @@ def Value.compile : Value → Expr .word
   | .add a b => .bin .add a.compile b.compile
   | .sub a b => .bin .sub a.compile b.compile
   | .mul a b => .bin .mul a.compile b.compile
+
+/-- This backend implements the independently defined expression charge. -/
+@[simp] theorem Value.compile_credits (e : Value) : e.compile.cost = e.credits := by
+  induction e <;> simp_all [Value.compile, Value.credits, Expr.cost]
 
 theorem Value.correct (e : Value) {a : State} {s : Store} (h : Represents a s) :
     e.compile.eval s = e.eval a := by
@@ -97,42 +106,57 @@ theorem address_correct (e : Value) {a : State} {s : Store} (h : Represents a s)
   simp [address, Expr.eval, Op.eval, Op.machine, Checked.BinOp.eval, e.correct h]
 
 /-- Compiler-generated scalar assignment, with an instruction certificate. -/
-def assign (x : String) (e : Value) : Action model where
+def assign (x : String) (e : Value) : Action State where
   requires _ := True
   effect s := s.set x (e.eval s)
-  work _ := e.compile.cost + 1
+  work _ := e.credits + 1
+
+instance assignImplementation (x : String) (e : Value) :
+    ActionImplementation model (assign x e) where
   implementation := .assign (localVar x) e.compile
   correct a s hs _ := by
+    dsimp only [assign] at *
     refine ⟨_, _, .assign _ _ _, ?_, by simp [model]⟩
     simpa [e.correct hs] using represents_set hs x (e.eval a)
 
 /-- Array access generates a bounds obligation, not a memory-address proof. -/
-def read (x : String) (i : Value) : Action model where
+def read (x : String) (i : Value) : Action State where
   requires s := i.eval s < s.array.size
   effect s := s.set x s.array[i.eval s]!
-  work _ := (address i).cost + 2
+  work _ := i.credits + 4
+
+instance readImplementation (x : String) (i : Value) : ActionImplementation model (read x i) where
   implementation := .assign (localVar x) (.load (address i))
   correct a s hs hi := by
-    refine ⟨_, _, .assign _ _ _, ?_, by simp [Expr.cost, model]⟩
+    dsimp only [read] at *
+    refine ⟨_, _, .assign _ _ _, ?_, by simp [Expr.cost, model, address] <;> omega⟩
     simpa [Expr.eval, address_correct i hs, hs.2.2 _ hi] using
       represents_set hs x a.array[i.eval a]!
 
 /-- Array update frames every scalar and the array length automatically. -/
-def write (i v : Value) : Action model where
+def write (i v : Value) : Action State where
   requires s := i.eval s < s.array.size
   effect s := { s with array := s.array.set! (i.eval s) (v.eval s) }
-  work _ := (address i).cost + v.compile.cost + 1
+  work _ := i.credits + v.credits + 3
+
+instance writeImplementation (i v : Value) : ActionImplementation model (write i v) where
   implementation := .write (address i) v.compile
   correct a s hs hi := by
-    refine ⟨_, _, .write _ _ _, ?_, by simp [model]⟩
+    dsimp only [write] at *
+    refine ⟨_, _, .write _ _ _, ?_, by simp [model, Expr.cost, address]; omega⟩
     simpa [address_correct i hs, v.correct hs] using
       represents_write hs (i.eval a) (v.eval a) hi
 
 /-- Guards compare materialized scalar operands, so their cost is uniformly bounded. -/
-def compare (op : Comparison) (x y : String) : Guard model where
+def compare (op : Comparison) (x y : String) : Guard State where
   test s := op.eval (s.locals x) (s.locals y)
+
+instance compareImplementation (op : Comparison) (x y : String) :
+    GuardImplementation model (compare op x y) where
   implementation := ⟨.word, op, .var (localVar x), .var (localVar y)⟩
-  correct _ _ h := by simp [Condition.eval, Expr.eval, h.1]
+  correct _ _ h := by
+    dsimp only [compare] at *
+    simp [Condition.eval, Expr.eval, h.1]
   cost := by simp [Condition.cost, Expr.cost, model]
 
 def initial (input : Array Nat) : State := ⟨input, fun _ => 0⟩

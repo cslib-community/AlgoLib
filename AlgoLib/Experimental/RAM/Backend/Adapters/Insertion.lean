@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Authoring.Semantics
+import AlgoLib.Experimental.RAM.Backend.Realization
 import AlgoLib.Experimental.RAM.Backend.Language.Refinement
 import AlgoLib.Experimental.RAM.Backend.Certificates.InsertionSort
 
@@ -47,12 +47,15 @@ theorem segment_contents {s : Store} {b : Nat} {xs : List Nat}
 
 /-- A linear-time insertion into an adjacent suffix. This is a reusable array
 operation, with a contract independent of the outer sorting invariant. -/
-def insertNext : Action model where
+def insertNext : Action State where
   requires g := g.todo ≠ []
   effect := effect
   work g := g.sorted.length + 1
+
+instance insertNextImplementation : ActionImplementation model insertNext where
   implementation := Refinement.lift outerBody
   correct g s hs hg := by
+    dsimp only [insertNext] at *
     obtain ⟨ready, hb, hc, he, hprefix, suffix⟩ := hs
     cases htodo : g.todo with
     | nil => exact (hg htodo).elim
@@ -122,10 +125,13 @@ def insertNext : Action model where
         apply get
         simpa [List.orderedInsert_length] using hcontents
 
-def more : Guard model where
+def more : Guard State where
   test g := !g.todo.isEmpty
+
+instance moreImplementation : GuardImplementation model more where
   implementation := Refinement.condition outerTest
   correct g s hs := by
+    dsimp only [more] at *
     rw [Refinement.condition_eval]
     simp only [outerTest, Test.eval, Operand.eval, hs.2.2.1]
     cases g.todo <;> simp

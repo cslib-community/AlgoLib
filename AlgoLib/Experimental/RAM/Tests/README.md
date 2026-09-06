@@ -19,3 +19,12 @@ execution, rejected contracts/annotations, and exact axiom lists for the observa
 connection, VCG, reconstruction, and sorting theorems. Existing axiom expectations are unchanged.
 
 Executable checks cover short lists with duplicates, all simple four-vertex graphs and sources, singleton and disconnected graphs, loops, and parallel edges. They compare against independent host reference implementations. Kernel-checked theorem statements, rather than these finite tests, establish the general correctness and cost claims.
+
+## Credit/backend separation
+
+`CreditLogic.lean` imports only the logical semantics. `BackendReuse.lean` reuses its
+four-credit procedure proof with two verified implementations and checks 16/24 actual
+RAM steps. `CreditAxioms.lean` guards concrete certificates as well as generic composition.
+The layer checker prevents the logical core and this proof fixture from importing a backend.
+Method tests check that preparation remains charged, while frontend tests reject a `time`
+override and missing realizations cannot be turned into executables.

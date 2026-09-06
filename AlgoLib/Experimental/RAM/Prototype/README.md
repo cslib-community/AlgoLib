@@ -13,7 +13,7 @@ both `ram method` and `ram_do`; import `Prototype.Graph` for the graph operation
 
 For mutable arrays, start with [InsertionSort.lean](InsertionSort.lean). It exposes
 both insertion-sort loops and every array operation. There is no `InsertNext` action, hidden insertion
-procedure, or student-written `Action.correct` proof.
+procedure, or student-written implementation proof.
 
 ```lean
 import AlgoLib.Experimental.RAM.Prototype.InsertionSort
@@ -85,8 +85,9 @@ using ordinary arrays, indices, and permutation. It imports no RAM or compiler c
 `remaining` is proof-only: the credits available at a loop boundary. The user
 chooses the potential; the verifier substitutes operation costs and proves the
 arithmetic. The compiler derives the RAM bound automatically from those credits;
-no compiler scaling factor appears in the program. An optional `time` clause can
-request a specific numerical bound, generating an additional checked condition. Decreasing measures generate genuine obligations as well. Invariants
+no compiler scaling factor appears in the program. A `time` clause is rejected: the
+backend supplies the RAM bound automatically. Decreasing measures generate genuine
+obligations as well. Invariants
 are supplied by the author, never guessed by the automation.
 
 ## Prove and run it
@@ -211,3 +212,5 @@ python3 AlgoLib/Experimental/RAM/Tests/check_layers.py
 The prototype stays isolated from the production `Programs` directory. Existing
 production BFS remains available. The new prototype BFS independently verifies its own
 composed program, reusing the graph primitive certificates and mathematical lemmas.
+
+Logical credits and RAM costs are now separate: methods declare `credits`, and the selected backend infers `time`. See [the credit/backend guide](../docs/CREDITS-AND-BACKENDS.md) for certificate composition and proof reuse.

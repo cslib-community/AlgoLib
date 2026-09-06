@@ -61,8 +61,8 @@ theorem loom_wp_eq {State α : Type} (m : Computation State α)
       (Computation.wp_pure (Q a) (fun post => post) t d).mpr h)
 
 /-- The frontend's generated obligations prove an actual upstream Loom WP. -/
-theorem Plan.loom_sound {State : Type} {M : Authoring.Model State}
-    {p : Authoring.Program M} (plan : Plan p) (Q : State → Nat → Prop)
+theorem Plan.loom_sound {State : Type}
+    {p : Authoring.Program State} (plan : Plan p) (Q : State → Nat → Prop)
     (s : State) (c : Nat) (h : plan.vc Q s c) :
     _root_.wp (denote p) (fun _ => Q) s c := by
   rw [loom_wp_eq]

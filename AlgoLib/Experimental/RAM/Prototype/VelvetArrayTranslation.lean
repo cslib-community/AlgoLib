@@ -49,7 +49,7 @@ private def pack (arrays : Fin 2 → Array Nat) : Outputs := ((), arrays 0, arra
 private abbrev executable := MultipleArrayTests.exchangeHeadsVerified
 
 def machineCode : Checked.Code :=
-  (Cmd.seq (MultipleArrays.interface 2).prepare executable.method.body.source).compile
+  (Cmd.seq (MultipleArrays.interface 2).prepare executable.compilation.source).compile
 
 def machineInput (input : Inputs) : Checked.State :=
   encode ((MultipleArrays.interface 2).encode (inputs input))

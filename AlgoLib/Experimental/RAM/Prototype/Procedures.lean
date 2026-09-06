@@ -23,7 +23,7 @@ namespace AlgoLib.Experimental.RAM.Prototype
 open Authoring Lean Elab Term Parser
 
 /-- Procedure contracts also establish the actual Loom observation. -/
-theorem Routine.loom_correct {State : Type} {M : Model State} (p : Routine M)
+theorem Routine.loom_correct {State : Type} (p : Routine State)
     (s : State) (hs : p.requires s) :
     _root_.wp (denote p.body) (fun _ t _ => p.ensures s t) s (p.work s) := by
   rw [loom_wp_eq]

@@ -28,20 +28,19 @@ example {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a G) :
       Programs.Connectivity.vertices (Programs.Connectivity.run i).value = G.vertexSet :=
   (Programs.Connectivity.main i).2.1
 
-/-- Empty code still cannot erase the certified cost of input preparation. -/
-def unpayable : Method Insertion.interface :=
+/-- A zero logical budget does not erase the automatically charged preparation. -/
+def emptyMethod : Method Insertion.interface :=
   ram_method (_xs : List Nat) returns (_ys : List Nat)
     using Insertion.interface;
     requires True;
     ensures True;
     credits 0;
-    time 0;
   do {}
 
-example : ¬ unpayable.VCs := by
-  intro h
-  have payment := (h [] trivial).2
-  norm_num [unpayable, method_simps] at payment
+example : emptyMethod.VCs := by
+  simp [Method.VCs, emptyMethod, VC]
+
+example : emptyMethod.time [] = 5 := rfl
 
 /-- A postcondition must be justified; it is not a display-only annotation. -/
 def impossibleOutput : Method Insertion.interface :=
@@ -50,12 +49,11 @@ def impossibleOutput : Method Insertion.interface :=
     requires True;
     ensures False;
     credits 0;
-    time 5;
   do {}
 
 example : ¬ impossibleOutput.VCs := by
   intro h
-  have output := (h [] trivial).1
+  have output := (h [] trivial)
   change ∀ out, Insertion.interface.Observes (Insertion.initial []) out → False at output
   exact output [] (by simp [method_simps, Insertion.initial])
 
@@ -69,7 +67,6 @@ def cannotSpecialize : Method Insertion.interface :=
     requires True;
     ensures True;
     credits 0;
-    time 5;
   do {
     call (if xs.isEmpty then Insertion.insertNext else Insertion.insertNext);
   }

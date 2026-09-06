@@ -50,7 +50,6 @@ def breadthFirstSearch {β : Type} (a : Adjacency) (G : Graph Nat β) :
     requires True;
     ensures Returns G input.source S;
     credits (3 * a.n + 2 * a.entries + 1);
-    time (370 * (a.n + input.representation.edges.card));
   do {
     while (queueNonempty a) {
       call dequeue a;
@@ -60,11 +59,11 @@ def breadthFirstSearch {β : Type} (a : Adjacency) (G : Graph Nat β) :
   }
 
 /-- The declared body depends on the adjacency API, not on the source value. -/
-def program {β : Type} (a : Adjacency) (G : Graph Nat β) : Program (model a) :=
+def program {β : Type} (a : Adjacency) (G : Graph Nat β) : Program State :=
   (breadthFirstSearch a G).body
 
 /-- Dequeue a vertex, scan its adjacency list, then record it as processed. -/
-def processVertex (a : Adjacency) : Program (model a) := paper {
+def processVertex (a : Adjacency) : Program State := paper {
   call dequeue a;
   call (scanNeighbors a).call;
   call finish a;
@@ -154,20 +153,16 @@ theorem verification {β : Type} (a : Adjacency) (G : Graph Nat β) :
     (breadthFirstSearch a G).VCs := by
   method_vc [breadthFirstSearch]
   intro i _
-  constructor
-  · apply (correct i.representation i.source).output_vc
-    · exact initially i
-    · simp only [method_simps, initial_credits, Nat.le_refl]
-    · intro t ht out view v
-      rw [show v ∈ vertices out ↔ v < a.n ∧ v ∈ t.seen from view v, ht v]
-      exact ⟨And.right, fun h => ⟨(i.representation.vertices v).mp h.right_mem, h⟩⟩
-  · have := i.representation.incidenceBound
-    have := i.source_valid
-    method_time
+  apply (correct i.representation i.source).output_vc
+  · exact initially i
+  · simp only [method_simps, initial_credits, Nat.le_refl]
+  · intro t ht out view v
+    rw [show v ∈ vertices out ↔ v < a.n ∧ v ∈ t.seen from view v, ht v]
+    exact ⟨And.right, fun h => ⟨(i.representation.vertices v).mp h.right_mem, h⟩⟩
 
 /-- One certificate packages this program, its output contract, and its time bound. -/
 def certified {β : Type} (a : Adjacency) (G : Graph Nat β) :
-    VerifiedMethod (Search.interface a G) := ⟨breadthFirstSearch a G, verification a G⟩
+    VerifiedMethod (Search.interface a G) := (breadthFirstSearch a G).certify (verification a G)
 
 /-- Run on a certified graph/source input without supplying fuel. -/
 def run {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a G) : Result VertexSet :=
@@ -181,7 +176,7 @@ theorem run_correct {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a 
 /-- The time contract counts actual compiled RAM steps, including visited initialization. -/
 theorem linear {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a G) :
     (run i).steps ≤ 370 * (a.n + i.representation.edges.card) :=
-  ((certified a G).correct i (by trivial)).2
+  Search.linear_of_credits i ((certified a G).correct i (by trivial)).2
 
 /-- All graph vertices are visited exactly when the graph is connected. -/
 theorem connected_iff {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a G) :

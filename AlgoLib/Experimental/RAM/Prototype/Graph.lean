@@ -30,7 +30,7 @@ abbrev discoverNext := Search.visit
 abbrev finishVertex := Search.finish
 
 /-- Scan the open adjacency row. Invariants refer only to the functional scan. -/
-def scanCode (a : Adjacency) : Annotated (Search.model a) :=
+def scanCode (a : Adjacency) : Annotated Search.State :=
   ram_do (entry, s, remaining) do
     while (neighborsRemain a)
       invariant ∀ v ∈ s.row, v < a.n
@@ -79,7 +79,7 @@ theorem scanVerification (a : Adjacency) (entry : Frontier)
     refine ⟨⟨by simp, hv⟩, by omega, by omega, hvs, he, by omega, trivial⟩
 
 /-- Modular neighbor scan; the compiler still sees `scanCode`'s actual loop. -/
-def scanNeighbors (a : Adjacency) : Routine (Search.model a) :=
+def scanNeighbors (a : Adjacency) : Routine Search.State :=
   (scanCode a).verify
     (fun s => ∀ v ∈ s.row, v < a.n)
     (fun s t => t = scanEffect s)
@@ -87,7 +87,7 @@ def scanNeighbors (a : Adjacency) : Routine (Search.model a) :=
     (scanVerification a)
 
 /-- Dequeue, scan the row through its contract, then record the completed vertex. -/
-def processCode (a : Adjacency) : Annotated (Search.model a) :=
+def processCode (a : Adjacency) : Annotated Search.State :=
   ram_do (_entry, s, remaining) do
     perform dequeue a
     call scanNeighbors a
@@ -115,7 +115,7 @@ theorem processVerification (a : Adjacency) (s : Frontier)
     simp [finishVertex, Search.finish, scanEffect, processEffect]
 
 /-- A reusable vertex-processing contract, independently composed from the row scan. -/
-def processVertex (a : Adjacency) : Routine (Search.model a) :=
+def processVertex (a : Adjacency) : Routine Search.State :=
   (processCode a).verify
     (fun s => s.queue ≠ [] ∧ s.queue.headD 0 < a.n)
     (fun s t => t = processEffect a s)

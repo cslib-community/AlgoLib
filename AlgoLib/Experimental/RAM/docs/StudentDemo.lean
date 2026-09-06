@@ -73,7 +73,7 @@ example {β : Type} {a : Adjacency} {G : Graph Nat β}
   Programs.Connectivity.run_correct input v
 
 /-- Compose two existing certified array operations. -/
-def twoBody : Program Insertion.model := paper {
+def twoBody : Program Insertion.State := paper {
   call Insertion.insertNext;
   call Insertion.insertNext;
 }
@@ -95,7 +95,7 @@ theorem twoBody_correct : Correct twoBody
       exact ⟨by simp, by omega, by simp, by omega, by trivial⟩
 
 /-- Package the checked body so another program can call just its contract. -/
-def twoInsertions : Procedure Insertion.model where
+def twoInsertions : Procedure Insertion.State where
   body := twoBody
   requires s := 2 ≤ s.todo.length
   effect s := Insertion.effect (Insertion.effect s)
@@ -103,7 +103,7 @@ def twoInsertions : Procedure Insertion.model where
   verification := twoBody_correct
 
 /-- A client uses the procedure without unfolding its body. -/
-def client : Program Insertion.model := paper {
+def client : Program Insertion.State := paper {
   call twoInsertions.call;
 }
 

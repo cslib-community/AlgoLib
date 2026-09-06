@@ -318,7 +318,7 @@ syntax "ram" "method" ident leafny_binder* "return" "(" ident ":" term ")"
   ramRequire* ramEnsures* ramCredits (ramTime)? "do" Term.doSeq : command
 
 private def declareMultiple (name : Ident) (binders : Array (TSyntax `leafny_binder))
-    (ret : Ident) (pre post : Array Term) (creditBudget : Term) (timeBudget : Option Term)
+    (ret : Ident) (pre post : Array Term) (creditBudget : Term)
     (body : TSyntax ``Parser.Term.doSeq) : CommandElabM Unit := do
   let arrays ← binders.mapM fun b => do
     let `(leafny_binder| (mut $a:ident : Array Nat)) := b
@@ -334,7 +334,7 @@ private def declareMultiple (name : Ident) (binders : Array (TSyntax `leafny_bin
   let input := Lean.mkIdent (← liftCoreM <| mkFreshUserName `inputArrays)
   let output := Lean.mkIdent (← liftCoreM <| mkFreshUserName `outputArrays)
   let count := quote arrays.size
-  let (fragment, precondition, postcondition, creditBudget, timeBudget) ←
+  let (fragment, precondition, postcondition, creditBudget) ←
       Command.runTermElabM fun _ => do
       let ctx : Context := { array := arrays[0]!, old := input, arrays }
       let bindInputs (term : Term) (current : Term) : TermElabM Term := do
@@ -352,11 +352,8 @@ private def declareMultiple (name : Ident) (binders : Array (TSyntax `leafny_bin
       let fragment ← statements ctx body
       let plan ← bindInputs fragment.plan (← `($input))
       let budget ← bindInputs creditBudget (← `($input))
-      let timeExpression ← match timeBudget with
-        | some bound => bindInputs bound (← `($input))
-        | none => `((MultipleArrays.model $count).overhead * $budget)
       return ({ fragment with plan }, ← bindInputs p (← `($input)),
-        ← bindInputs q (← `($output)), budget, timeExpression)
+        ← bindInputs q (← `($output)), budget)
   let planName := mkIdent (name.getId.appendAfter "Annotations")
   elabCommand (← `(command|
     set_option linter.unusedVariables false in
@@ -364,8 +361,7 @@ private def declareMultiple (name : Ident) (binders : Array (TSyntax `leafny_bin
       body := $(fragment.program)
       «requires» := fun $input => $precondition
       «ensures» := fun $input $output => let $ret := (); $postcondition
-      «credits» := fun $input => $creditBudget
-      «time» := fun $input => $timeBudget))
+      «credits» := fun $input => $creditBudget))
   elabCommand (← `(command|
     set_option linter.unusedVariables false in
     def $planName ($input : Fin $count → Array Nat) : Plan ($name).body := $(fragment.plan)))
@@ -375,22 +371,14 @@ elab_rules : command
       $pres:ramRequire* $posts:ramEnsures* $creditClause:ramCredits $[$timeClause:ramTime]?
       do $body:doSeq) => do
     let `(ramCredits| credits $creditBudget:term) := creditClause | throwUnsupportedSyntax
-    let timeBudget ← match timeClause with
-      | some timeClause =>
-        let `(ramTime| time $bound:term) := timeClause | throwUnsupportedSyntax
-        pure bound
-      | none => `(Mutable.model.overhead * $creditBudget)
+    if let some clause := timeClause then
+      throwErrorAt clause "RAM time is inferred from logical credits; remove the time clause"
     let pre : Array Term := pres.map (fun x => ⟨x.raw[1]⟩)
     let post : Array Term := posts.map (fun x => ⟨x.raw[1]⟩)
     unless retTy.raw.isIdent && retTy.raw.getId == `Unit do
       throwErrorAt retTy "A RAM array method returns Unit and its updated mutable arrays"
     if binders.size > 1 then
-      let suppliedTime ← match timeClause with
-        | some t =>
-          let `(ramTime| time $bound:term) := t | throwUnsupportedSyntax
-          pure (some bound)
-        | none => pure none
-      declareMultiple name binders ret pre post creditBudget suppliedTime body
+      declareMultiple name binders ret pre post creditBudget body
       return
     unless binders.size == 1 do
       throwError "Declare at least one mutable Array Nat input"
@@ -416,8 +404,7 @@ elab_rules : command
         body := $(fragment.program)
         «requires» := fun $old => let $array := $old; $pre
         «ensures» := fun $old $array => let $ret := (); $post
-        «credits» := fun $old => let $array := $old; $creditBudget
-        «time» := fun $old => let $array := $old; $timeBudget))
+        «credits» := fun $old => let $array := $old; $creditBudget))
     elabCommand (← `(command|
       def $planName ($old : Array Nat) : Plan ($name).body := $(fragment.plan)))
 
@@ -425,12 +412,12 @@ elab_rules : command
 macro "ram_vc" : tactic =>
   `(tactic| simp [Obligations, Plan.vc, Mutable.interface, Mutable.initial,
     Mutable.assign, Mutable.read, Mutable.write, Mutable.compare, Mutable.Value.eval,
-    Mutable.State.set, Function.update_apply, Mutable.Value.compile, Mutable.address,
-    Checked.Language.Expr.cost, Checked.Language.Comparison.eval, Mutable.model,
+    Mutable.State.set, Function.update_apply, Mutable.Value.credits,
+    Checked.Language.Comparison.eval,
     MultipleArrays.interface, MultipleArrays.initial, MultipleArrays.assign,
     MultipleArrays.read, MultipleArrays.write, MultipleArrays.compare,
     MultipleArrays.Value.eval, MultipleArrays.State.set, MultipleArrays.State.write,
-    MultipleArrays.Value.compile, MultipleArrays.address, MultipleArrays.model] at *)
+    MultipleArrays.Value.credits] at *)
 
 /-- Collect scalar/array views that should appear as ordinary variables in proof goals. -/
 private partial def views (e : Expr) : Array (Expr × Name) := Id.run do
