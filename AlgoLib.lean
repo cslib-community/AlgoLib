@@ -86,6 +86,13 @@ import AlgoLib.Util.Finset
 
 -- Experimental models
 import AlgoLib.Experimental.RAM
+import AlgoLib.Experimental.RAM.Language
+import AlgoLib.Experimental.RAM.Verification
+import AlgoLib.Experimental.RAM.Library
+import AlgoLib.Experimental.RAM.Implementations
+import AlgoLib.Experimental.RAM.Compiler
+import AlgoLib.Experimental.RAM.Machine
+import AlgoLib.Experimental.RAM.Examples
 import AlgoLib.Experimental.RAM.Tests.Language
 import AlgoLib.Experimental.RAM.Tests.Algorithms
 import AlgoLib.Experimental.RAM.Tests.Paper
@@ -95,20 +102,20 @@ import AlgoLib.Experimental.RAM.Tests.BackendReuse
 import AlgoLib.Experimental.RAM.Tests.CreditAxioms
 import AlgoLib.Experimental.RAM.Tests.ArraySubstitution
 import AlgoLib.Experimental.RAM.Tests.GeneralityAxioms
-import AlgoLib.Experimental.RAM.Prototype.GraphTests
-import AlgoLib.Experimental.RAM.Prototype.FrameworkTests
-import AlgoLib.Experimental.RAM.Prototype.Tests
-import AlgoLib.Experimental.RAM.Prototype.MultipleArrayTests
-import AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests
-import AlgoLib.Experimental.RAM.Prototype.VelvetArrayTranslation
-import AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation
-import AlgoLib.Experimental.RAM.Prototype.Axioms
-import AlgoLib.Experimental.RAM.Prototype.Composition
+import AlgoLib.Experimental.RAM.Historical.Prototype.GraphTests
+import AlgoLib.Experimental.RAM.Historical.Prototype.FrameworkTests
+import AlgoLib.Experimental.RAM.Historical.Prototype.Tests
+import AlgoLib.Experimental.RAM.Historical.Prototype.MultipleArrayTests
+import AlgoLib.Experimental.RAM.Research.Velvet.VelvetTranslationTests
+import AlgoLib.Experimental.RAM.Research.Velvet.VelvetArrayTranslation
+import AlgoLib.Experimental.RAM.Research.Velvet.RecursiveTranslation
+import AlgoLib.Experimental.RAM.Historical.Prototype.Axioms
+import AlgoLib.Experimental.RAM.Language.Owned
 import AlgoLib.Experimental.RAM.Tests.Composition
 import AlgoLib.Experimental.RAM.Tests.CompositionAxioms
 import AlgoLib.Experimental.RAM.Tests.ContractFrontend
 import AlgoLib.Experimental.RAM.Tests.MixedFrontend
-import AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution
+import AlgoLib.Experimental.RAM.Examples.InsertionSort.Execution
 import AlgoLib.Experimental.RAM.Tests.MixedAxioms
 
 import AlgoLib.Experimental.RAM.Tests.NamedAssembly
@@ -128,7 +135,7 @@ import AlgoLib.Experimental.RAM.Tests.EncoderLayout
 import AlgoLib.Experimental.RAM.Tests.OwnedBFSAxioms
 
 import AlgoLib.Experimental.RAM.Tests.IntegerRAM
-import AlgoLib.Experimental.RAM.Prototype.Composition.IntegerExecution
+import AlgoLib.Experimental.RAM.Compiler.Assembly.Natural.IntegerExecution
 import AlgoLib.Experimental.RAM.Tests.NativeArrays
 import AlgoLib.Experimental.RAM.Tests.NativeSourceFrontend
 import AlgoLib.Experimental.RAM.Tests.NativeCompiler
@@ -137,4 +144,6 @@ import AlgoLib.Experimental.RAM.Tests.SignedFrontend
 import AlgoLib.Experimental.RAM.Tests.SignedRejections
 import AlgoLib.Experimental.RAM.Tests.Conformance.Signed
 import AlgoLib.Experimental.RAM.Tests.SignedAxioms
+import AlgoLib.Experimental.RAM.Tests.CompatibilityAxioms
+import AlgoLib.Experimental.RAM.Tests.PublicCompatibility
 import AlgoLib.Experimental.RAM.Tests.SignedOwnership

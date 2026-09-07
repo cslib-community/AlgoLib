@@ -2,7 +2,7 @@
 
 Builds dependencies, checks a successful edit and a deliberately failing proof edit,
 then restores and rebuilds the original file even if either check fails.
-Do not run concurrently with other builds or edits of SortingProofs.lean.
+Do not run concurrently with other builds or edits of Proofs.lean.
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[4]
-BASE = "AlgoLib.Experimental.RAM.Prototype.Composition."
+BASE = "AlgoLib.Experimental.RAM.Examples.InsertionSort."
 OUT = ROOT / ".lake/build/ram-proof-edit"
 LAKE = shutil.which("lake") or str(Path.home() / ".elan/bin/lake")
 
@@ -31,7 +31,7 @@ def fingerprint(path: Path) -> dict:
 def build(label: str, *, expect_success: bool = True) -> float:
     start = time.perf_counter()
     with (OUT / (label + ".log")).open("w") as log:
-        result = subprocess.run([LAKE, "build", BASE + "SortingExecution"], cwd=ROOT,
+        result = subprocess.run([LAKE, "build", BASE + "Execution"], cwd=ROOT,
                                 stdout=log, stderr=subprocess.STDOUT, timeout=600)
     if (result.returncode == 0) != expect_success:
         raise RuntimeError(f"Unexpected build result for {label}: {result.returncode}")
@@ -45,10 +45,10 @@ def build(label: str, *, expect_success: bool = True) -> float:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     build("prepare")
-    proof = ROOT / (BASE.replace(".", "/") + "SortingProofs.lean")
+    proof = ROOT / (BASE.replace(".", "/") + "Proofs.lean")
     original = proof.read_bytes()
     watched = {name: artifact(BASE + name)
-               for name in ("SortingProgram", "SortingSpec", "SortingBackend", "SortingProofs")}
+               for name in ("Program", "Obligations", "Backend", "Proofs")}
     before = {name: fingerprint(path) for name, path in watched.items()}
     report = {"measurement": "proof-only source edit followed by executable rebuild",
               "before": before}
@@ -60,13 +60,13 @@ def main() -> None:
         report["seconds"] = build("edited-proof")
         after = {name: fingerprint(path) for name, path in watched.items()}
         report["after"] = after
-        report["api_reused"] = before["SortingSpec"] == after["SortingSpec"]
-        report["backend_reused"] = before["SortingBackend"] == after["SortingBackend"]
-        report["proof_rechecked"] = before["SortingProofs"] != after["SortingProofs"]
+        report["api_reused"] = before["Obligations"] == after["Obligations"]
+        report["backend_reused"] = before["Backend"] == after["Backend"]
+        report["proof_rechecked"] = before["Proofs"] != after["Proofs"]
         proof.write_bytes(original.replace(marker, b'fail "deliberate proof-edit regression"', 1))
         report["failing_edit_seconds"] = build("failing-proof", expect_success=False)
-        report["failing_api_reused"] = before["SortingSpec"] == fingerprint(watched["SortingSpec"])
-        report["failing_backend_reused"] = before["SortingBackend"] == fingerprint(watched["SortingBackend"])
+        report["failing_api_reused"] = before["Obligations"] == fingerprint(watched["Obligations"])
+        report["failing_backend_reused"] = before["Backend"] == fingerprint(watched["Backend"])
         report["passed"] = all(report[key] for key in
                                ("api_reused", "backend_reused", "proof_rechecked",
                                 "failing_api_reused", "failing_backend_reused"))

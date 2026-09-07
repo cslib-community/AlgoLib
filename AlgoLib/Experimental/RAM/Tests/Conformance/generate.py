@@ -87,7 +87,7 @@ def render():
            'Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.',
            'Released under Apache 2.0 license as described in the file LICENSE.',
            'Authors: Sorrachai Yingchareonthawornchai', '-/',
-           'import AlgoLib.Experimental.RAM.Prototype.Composition.Assembly', '',
+           'import AlgoLib.Experimental.RAM.Compiler.Assembly', '',
            '/-!\n# Generated frontend conformance corpus\n\nRegenerate with Tests/Conformance/generate.py. Expected arrays come from an independent\nPython evaluator. Every observation below executes compiled RAM, not source semantics.\nBounds are checked as upper bounds; reference interpreter steps are not RAM costs.\n-/',
            'namespace AlgoLib.Experimental.RAM.Tests.Conformance',
            'open Prototype.Composition Prototype.Frontend', '',

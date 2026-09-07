@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Tests.MixedFrontend
-import AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution
+import AlgoLib.Experimental.RAM.Examples.InsertionSort.Execution
 
 /-!
 # Trust regression for the unified frontend and actual linked executions

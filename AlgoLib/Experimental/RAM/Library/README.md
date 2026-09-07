@@ -1,16 +1,44 @@
-# Certified operations: the algorithm-facing library
+# Library: abstract models and contracts
 
-This directory is the boundary between algorithm proofs and data-structure implementations. Its files expose logical state transitions, preconditions, work bounds, and stable input/output equations. They import the implementation certificates on your behalf.
+**Preferred public import:** `AlgoLib.Experimental.RAM.Library`.
+See [public names and stability](../docs/PUBLIC-API.md); narrower module links below explain internals.
 
-| File | Use it for | Contract you use |
-|---|---|---|
-| [Insertion.lean](Insertion.lean) | An array with an unprocessed prefix and sorted suffix | `insertNext`: nonempty todo; ordered insertion; at most `sorted.length + 1` credits |
-| [Search.lean](Search.lean) | Visited flags, FIFO frontier, and adjacency cursor | `dequeue`, `visit`, `scanNeighbors`, `finish`; reusable row-scan cost |
+These modules describe what operations do and which logical resources they require.
+They do not select concrete queue or array addresses.
 
-`scanNeighbors` is a library procedure: its implementation loops through the row, while callers reason from its functional/cost summary. It belongs here rather than in a second BFS algorithm file. A call does not erase its code: the compiler emits the certified procedure body.
+- [Queue](Queue.lean): FIFO mathematical interface.
+- [Stack](Stack.lean): stack interface.
+- [Buffer](Buffer.lean): reusable buffer interface.
+- [GraphCursor](GraphCursor.lean): adjacency scanning model and contracts.
+- [QueueStacks](QueueStacks.lean): mathematical two-stack queue model and amortized argument.
+- [SortingFacts](SortingFacts.lean): reusable list/array sorting mathematics.
+- [Graph](Graph/): graph specifications, traversal, and the repository graph bridge.
 
-The generic physical array, queue, stack, and graph contracts live in [Backend/Memory](../Backend/Memory). They are implementation APIs over memory, not additional student-level algorithms. A new public operation should expose an `Action` or `Procedure` here, with its representation proof in `Backend/Adapters` and stable logical equations for `paper_steps`.
+Algorithms use these models in invariants. Implementations realize the operations
+using owned memory and private potential. [BFS](../Examples/BFS/README.md) shows
+one algorithm proof instantiated with two queues. Library extension belongs here
+when it changes the public mathematical contract; representation changes belong
+under Implementations.
 
-Framing has two levels. Backend footprint proofs preserve unrelated memory. At this level, symbolic execution preserves untouched logical record fields. An algorithm author proves neither adjacency-pointer preservation nor queue-address arithmetic.
+<!-- BEGIN GENERATED MODULE INDEX -->
 
-Logical credits and RAM costs are now separate: methods declare `credits`, and the selected backend infers `time`. See [the credit/backend guide](../docs/CREDITS-AND-BACKENDS.md) for certificate composition and proof reuse.
+## Module index (generated)
+
+Status and ownership come from `docs/modules.json`; summaries come from module docstrings.
+
+**Preferred import:** `AlgoLib.Experimental.RAM.Library`.
+
+| Module | Status | Responsibility |
+| --- | --- | --- |
+| [Library](../Library.lean) | public | Library: supported public entry point |
+| [Buffer.lean](Buffer.lean) | internal | Abstract bounded buffers: one client, two private clearing strategies |
+| [Graph/Graph.lean](Graph/Graph.lean) | internal | Graph-level algorithm specification |
+| [Graph/GraphBridge.lean](Graph/GraphBridge.lean) | internal | Connect graph specification APIs |
+| [Graph/Traversal.lean](Graph/Traversal.lean) | internal | Mathematical BFS discovery and frontier preservation |
+| [GraphCursor.lean](GraphCursor.lean) | internal | Read-only adjacency cursors |
+| [Queue.lean](Queue.lean) | internal | FIFO contracts shared by owned graph algorithms |
+| [QueueStacks.lean](QueueStacks.lean) | internal | Private two-stack FIFO implementation |
+| [SortingFacts.lean](SortingFacts.lean) | internal | The mathematical argument for adjacent-swap insertion sort |
+| [Stack.lean](Stack.lean) | internal | Bounded stack contracts |
+
+<!-- END GENERATED MODULE INDEX -->

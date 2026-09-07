@@ -1,0 +1,1140 @@
+{
+  "modules": {
+    "Compiler.lean": {
+      "entrypoint": true,
+      "layer": "Compiler",
+      "status": "public"
+    },
+    "Compiler/Assembly.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "public"
+    },
+    "Compiler/Assembly/Native/Execution.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Assembly/Native/Linking.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Assembly/Natural/CertifiedExecutable.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "compatibility"
+    },
+    "Compiler/Assembly/Natural/Execution.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "compatibility"
+    },
+    "Compiler/Assembly/Natural/IntegerExecution.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "compatibility"
+    },
+    "Compiler/Assembly/Natural/Linking.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "compatibility"
+    },
+    "Compiler/Assembly/Result.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Assembly/Tactics.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Native/Basic.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Native/Compiler.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Native/Execution.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Native/Expressions.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Native/Natural.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Compiler/Native/Ownership.lean": {
+      "entrypoint": false,
+      "layer": "Compiler",
+      "status": "internal"
+    },
+    "Examples.lean": {
+      "entrypoint": true,
+      "layer": "Examples",
+      "status": "public"
+    },
+    "Examples/BFS/Execution.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/Facts.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/Inputs.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/Obligations.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/Program.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/Proofs.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/QueueBackend.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/BFS/Storage.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/Composition/BufferAlgorithms.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/Composition/BufferClient.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/Composition/Demo.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/Composition/MixedAlgorithms.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/Composition/QueueAlgorithms.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/InsertionSort/Backend.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/InsertionSort/Execution.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/InsertionSort/MinimumCaller.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/InsertionSort/Obligations.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/InsertionSort/Program.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Examples/InsertionSort/Proofs.lean": {
+      "entrypoint": false,
+      "layer": "Examples",
+      "status": "internal"
+    },
+    "Historical/Adapters/CreditCompatibility.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Adapters/InstructionRefinement.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Adapters/NatEmbedding.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Authoring/Interface.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Authoring/Methods.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Adapters/Insertion.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Adapters/InsertionInput.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Adapters/Search.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Adapters/SearchInput.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Certificates/BFS.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Certificates/InsertionSort.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Certificates/LoopVC.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Certificates/SortingSpec.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Backend/Realization.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Guides/StudentDemo.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Legacy/BFS.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Legacy/Examples.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Legacy/InsertionSort.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Legacy/LanguageExamples.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Library/Insertion.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Library/Search.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/NatCompiler/Compiler.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/NatMachine/Machine.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/NatMachine/Output.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/NatMachine/Runner.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Programs/Connectivity.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Programs/Examples.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Programs/Sorting.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/ArraySubstitution.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Axioms.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/BFS.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/ExecutionBridge.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/FrameworkTests.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Frontend.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Graph.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/GraphTests.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/IndirectArrays.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/InsertionSort.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Interpretation.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/LegacyArrayFrontend.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/MultipleArrayTests.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/MultipleArrays.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Mutable.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/SortingAlgorithm.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/SupportedCompilation.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Tests.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/Verification.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Historical/Prototype/ZeroAlgorithm.lean": {
+      "entrypoint": false,
+      "layer": "Historical",
+      "status": "historical"
+    },
+    "Implementations.lean": {
+      "entrypoint": true,
+      "layer": "Implementations",
+      "status": "public"
+    },
+    "Implementations/Contracts/Focus.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Contracts/LocalRefinement.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Contracts/Ownership.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Contracts/ResidentInputs.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Contracts/ResourceRefinement.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/DataStructures/BufferImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/DataStructures/GraphCursorImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/DataStructures/QueueRing.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/DataStructures/QueueStacksImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/DataStructures/StackImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Native/ArrayExpressions.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Native/ArrayStorage.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Native/Encoding.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Native/Expressions.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Native/Locals.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Native/ScalarStorage.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "internal"
+    },
+    "Implementations/Natural/DataRefinement.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/EncoderLayout.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Encoding.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/ExpressionImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/Basic.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/IntegerExecution.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/Interface.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/Normalization.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/Syntax.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/VC.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Language/Verification.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/LocalImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Memory/Array.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Memory/Framing.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Memory/Graph.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Memory/GraphInput.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Memory/GraphMemory.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Memory/Sequences.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Ownership.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/SignedArithmetic.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/SignedArrays.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/SignedImplementation.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/SignedStorage.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Implementations/Natural/Storage.lean": {
+      "entrypoint": false,
+      "layer": "Implementations",
+      "status": "compatibility"
+    },
+    "Language.lean": {
+      "entrypoint": true,
+      "layer": "Language",
+      "status": "public"
+    },
+    "Language/Contracts.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Elaboration.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Elaboration/Expressions.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Elaboration/Method.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Elaboration/Resources.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Elaboration/Statements.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Elaboration/Syntax.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Expressions.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Frontend.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "public"
+    },
+    "Language/Model/ArrayFacts.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Model/Contracts.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Model/MultipleArrays.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Model/Mutable.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Model/NatArithmetic.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Model/Semantics.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Model/Syntax.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Language/Owned.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "public"
+    },
+    "Language/Program.lean": {
+      "entrypoint": false,
+      "layer": "Language",
+      "status": "internal"
+    },
+    "Library.lean": {
+      "entrypoint": true,
+      "layer": "Library",
+      "status": "public"
+    },
+    "Library/Buffer.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/Graph/Graph.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/Graph/GraphBridge.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/Graph/Traversal.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/GraphCursor.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/Queue.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/QueueStacks.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/SortingFacts.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Library/Stack.lean": {
+      "entrypoint": false,
+      "layer": "Library",
+      "status": "internal"
+    },
+    "Machine.lean": {
+      "entrypoint": true,
+      "layer": "Machine",
+      "status": "public"
+    },
+    "Machine/Integer/Frame.lean": {
+      "entrypoint": false,
+      "layer": "Machine",
+      "status": "internal"
+    },
+    "Machine/Integer/Machine.lean": {
+      "entrypoint": false,
+      "layer": "Machine",
+      "status": "internal"
+    },
+    "Machine/Integer/Runner.lean": {
+      "entrypoint": false,
+      "layer": "Machine",
+      "status": "internal"
+    },
+    "Machine/Output.lean": {
+      "entrypoint": false,
+      "layer": "Machine",
+      "status": "internal"
+    },
+    "Machine/Registers.lean": {
+      "entrypoint": false,
+      "layer": "Machine",
+      "status": "internal"
+    },
+    "Research/Velvet/ExecutableTranslation.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/Nondeterministic.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/NondeterministicRunner.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/RecursiveTranslation.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/VelvetArrayTranslation.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/VelvetSemantics.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/VelvetTranslationTests.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Research/Velvet/VelvetWP.lean": {
+      "entrypoint": false,
+      "layer": "Research",
+      "status": "research"
+    },
+    "Tests/Algorithms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ArraySubstitution.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/BackendReuse.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/CompatibilityAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Composition.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/CompositionAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Conformance/Generated.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Conformance/Rejections.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Conformance/Signed.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ContractFrontend.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/CreditAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/CreditLogic.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/EncoderLayout.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/GeneralityAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/IntegerFrontend.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/IntegerRAM.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Language.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Methods.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/MixedAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/MixedFrontend.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/NamedAssembly.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/NamedProofs.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/NativeArrays.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/NativeCompiler.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/NativeSourceFrontend.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ObligationAPI/Explorer.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ObligationAPI/ExplorerExamples.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ObligationAPI/Proofs.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ObligationAPI/Regression.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ObligationAPI/SourceContext.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/ObligationAPI/Specification.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/OwnedBFS.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/OwnedBFSAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/OwnedQueues.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/Paper.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/PaperAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/PaperLoopAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/PaperLoops.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/PublicAPI.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/PublicCompatibility.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/SignedAxioms.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/SignedFrontend.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/SignedOwnership.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/SignedRejections.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Tests/WorkAccounting.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
+    "Verification.lean": {
+      "entrypoint": true,
+      "layer": "Verification",
+      "status": "public"
+    },
+    "Verification/Algorithm.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/GeneratedObligations.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "public"
+    },
+    "Verification/Loom.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/NamedProofs.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/ObligationExplorer.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "public"
+    },
+    "Verification/Plan.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/ProofGoals.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/Semantics/LogicalInterpretation.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/Semantics/LogicalVerification.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/Semantics/LoomObservation.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/Semantics/Observation.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/Semantics/Procedures.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    },
+    "Verification/SourceMetadata.lean": {
+      "entrypoint": false,
+      "layer": "Verification",
+      "status": "internal"
+    }
+  },
+  "schema": 1
+}

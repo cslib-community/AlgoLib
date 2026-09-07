@@ -1,0 +1,144 @@
+/-
+Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Sorrachai Yingchareonthawornchai
+-/
+import AlgoLib.Experimental.RAM.Compiler.Assembly.Natural.Linking
+import AlgoLib.Experimental.RAM.Verification.Loom
+import AlgoLib.Experimental.RAM.Compiler.Assembly.Result
+import AlgoLib.Experimental.RAM.Implementations.Contracts.ResidentInputs
+import AlgoLib.Experimental.RAM.Implementations.Natural.Language.IntegerExecution
+
+/-!
+# Link once, execute actual RAM, recover ordinary mathematical outputs
+
+The verified integer Method runner supplies execution without fuel. A decoder is
+an observation of resident output storage; it cannot manufacture an output unrelated
+to the final represented value. Product decoders compose automatically.
+Initial potential is included in the bound and scaled with integer-lowering overhead.
+Encoding and decoding
+are host-side views, as in the existing RAM interfaces, not charged conversion code.
+-/
+set_option autoImplicit true
+set_option relaxedAutoImplicit true
+namespace AlgoLib.Experimental.RAM.Prototype.Composition
+open Checked.Language
+
+/-- The same linking law can be applied directly to actual upstream Loom WP. -/
+theorem loom_linking {A B : Type} {rate : Nat} {P : Representation A}
+    {Q : Representation B} {p : Program A B} (supported : Supported rate P Q p)
+    (post : B → Prop) (a : A) (budget : Nat)
+    (proof : _root_.wp (denote p a) (fun b _ _ => post b) () budget)
+    (r : Footprint) (initial : Store) (saved : Nat)
+    (rep : P.holds a r initial saved) :
+    ∃ steps final b left, Integer.Exec (Native.Natural.command supported.compile.code).compile
+      (integerEncode initial) steps final ∧
+      Q.holds b r (integerObserve final) left ∧ post b ∧ Writes r initial (integerObserve final) ∧
+      steps + 2 * left ≤ 2 * (rate * budget + saved) := by
+  rw [loom_wp_eq] at proof
+  obtain ⟨k, _, b, run, hk, hb⟩ := proof
+  obtain ⟨steps, t, left, exec, hQ, hw, hc⟩ := supported.compile.sound run r _ saved rep
+  obtain ⟨actual, native, overhead⟩ := Native.Natural.preserves exec
+  obtain ⟨final, ram, equal⟩ := native.compile _ (Native.observe_encode _)
+  have observation : integerObserve final = t := by simp [integerObserve, equal]
+  exact ⟨actual, final, b, left, ram, observation.symm ▸ hQ, hb,
+    observation.symm ▸ hw, by nlinarith⟩
+
+/-- Link a previously specified procedure using its public contract, without reopening VCs. -/
+theorem procedure_linking {A B : Type} {rate : Nat} {P : Representation A}
+    {Q : Representation B} (proc : Procedure A B)
+    (supported : Supported rate P Q proc.body) (a : A) (valid : proc.requires a)
+    (r : Footprint) (initial : Store) (saved : Nat)
+    (rep : P.holds a r initial saved) :
+    ∃ steps final b left, Integer.Exec (Native.Natural.command supported.compile.code).compile
+      (integerEncode initial) steps final ∧
+      Q.holds b r (integerObserve final) left ∧ proc.ensures a b ∧
+      Writes r initial (integerObserve final) ∧
+      steps + 2 * left ≤ 2 * (rate * proc.credits a + saved) := by
+  obtain ⟨k, b, run, hb, hk⟩ := proc.correct a valid
+  obtain ⟨steps, t, left, exec, hQ, hw, hc⟩ := supported.compile.sound run r _ saved rep
+  obtain ⟨actual, native, overhead⟩ := Native.Natural.preserves exec
+  obtain ⟨final, ram, equal⟩ := native.compile _ (Native.observe_encode _)
+  have observation : integerObserve final = t := by simp [integerObserve, equal]
+  exact ⟨actual, final, b, left, ram, observation.symm ▸ hQ, hb,
+    observation.symm ▸ hw, by nlinarith⟩
+
+abbrev Decoder (Q : Representation B) := Ownership.Decoder Q
+
+/-- The public runner's proof depends only on the logical theorem and linked leaves. -/
+def executable {A B : Type} {rate : Nat} {P : Representation A} {Q : Representation B}
+    {p : Program A B} [linked : Linked rate P p Q] (a : A) (budget : Nat) (post : B → Prop)
+    (proof : VC p (fun b _ => post b) a budget) (r : Footprint) (saved : Nat) : Method where
+  body := linked.supported.compile.code
+  requires s := P.holds a r s saved
+  ensures s t := ∃ b left, Q.holds b r t left ∧ post b ∧ Writes r s t
+  budget _ := rate * budget + saved
+  verification s rep := by
+    obtain ⟨k, b, run, hk, hb⟩ := VC.sound p _ a budget proof
+    obtain ⟨steps, t, left, exec, hQ, hw, hc⟩ := linked.supported.compile.sound run r s saved rep
+    exact ⟨steps, t, exec, ⟨b, left, hQ, hb, hw⟩, by nlinarith⟩
+
+
+def run {A B : Type} {rate : Nat} {P : Representation A} {Q : Representation B}
+    {p : Program A B} [Linked rate P p Q] [decoder : Decoder Q]
+    (a : A) (budget : Nat) (post : B → Prop) (proof : VC p (fun b _ => post b) a budget)
+    (r : Footprint) (s : Store) (saved : Nat) (initial : P.holds a r s saved) : Result B :=
+  let result := (executable (rate := rate) (P := P) (Q := Q) (p := p)
+    a budget post proof r saved).integerRun s initial
+  ⟨decoder.decode result.2, result.1⟩
+
+theorem run_correct {A B : Type} {rate : Nat} {P : Representation A} {Q : Representation B}
+    {p : Program A B} [Linked rate P p Q] [decoder : Decoder Q]
+    (a : A) (budget : Nat) (post : B → Prop) (proof : VC p (fun b _ => post b) a budget)
+    (r : Footprint) (s : Store) (saved : Nat) (initial : P.holds a r s saved) :
+    post (run (rate := rate) (P := P) (Q := Q) (p := p)
+      a budget post proof r s saved initial).value ∧
+      (run (rate := rate) (P := P) (Q := Q) (p := p)
+        a budget post proof r s saved initial).steps ≤ 2 * (rate * budget + saved) := by
+  have h := (executable (rate := rate) (P := P) (Q := Q) (p := p)
+    a budget post proof r saved).integerCorrect s initial
+  obtain ⟨b, left, hQ, hb, _⟩ := h.2.1
+  constructor
+  · change post (decoder.decode ((executable (rate := rate) (P := P) (Q := Q)
+      (p := p) a budget post proof r saved).integerRun s initial).2)
+    rw [decoder.correct _ _ _ _ hQ]
+    exact hb
+  · exact h.2.2
+
+/-- Prepare a verified procedure for the existing fuel-free RAM runner. -/
+def Procedure.executable (proc : Procedure A B) [linked : Linked rate P proc.body Q]
+    (a : A) (valid : proc.requires a) (r : Footprint) (saved : Nat) : Method where
+  body := linked.supported.compile.code
+  requires s := P.holds a r s saved
+  ensures _ t := ∃ b left, Q.holds b r t left ∧ proc.ensures a b
+  budget _ := rate * proc.credits a + saved
+  verification s rep := by
+    obtain ⟨k, b, run, post, paid⟩ := proc.correct a valid
+    obtain ⟨steps, t, left, exec, hQ, _, cost⟩ := linked.supported.compile.sound run r s saved rep
+    exact ⟨steps, t, exec, ⟨b, left, hQ, post⟩, by nlinarith⟩
+
+/-- Execute a summary-verified method. Only the implementation package supplies memory views. -/
+def runProcedure (proc : Procedure A B) [Linked rate P proc.body Q] [decoder : Decoder Q]
+    (a : A) (valid : proc.requires a) (r : Footprint) (s : Store) (saved : Nat)
+    (initial : P.holds a r s saved) : Result B :=
+  let method := proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved
+  let result := method.integerRun s initial
+  ⟨decoder.decode result.2, result.1⟩
+
+theorem runProcedure_correct (proc : Procedure A B) [Linked rate P proc.body Q]
+    [decoder : Decoder Q] (a : A) (valid : proc.requires a) (r : Footprint) (s : Store)
+    (saved : Nat) (initial : P.holds a r s saved) :
+    proc.ensures a (runProcedure (rate := rate) (P := P) (Q := Q)
+      proc a valid r s saved initial).value ∧
+    (runProcedure (rate := rate) (P := P) (Q := Q)
+      proc a valid r s saved initial).steps ≤ 2 * (rate * proc.credits a + saved) := by
+  have h := (proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved).integerCorrect
+    s initial
+  obtain ⟨b, left, rep, post⟩ := h.2.1
+  constructor
+  · change proc.ensures a (decoder.decode _)
+    rw [decoder.correct _ _ _ _ rep]
+    exact post
+  · exact h.2.2
+
+end AlgoLib.Experimental.RAM.Prototype.Composition

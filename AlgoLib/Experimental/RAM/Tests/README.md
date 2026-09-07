@@ -1,53 +1,93 @@
-# Regression checks
+# Validation and regression checks
 
-Run `lake build` for the repository and explicitly build these RAM regression modules when changing the stack:
+From the repository root:
 
 ```sh
-lake build AlgoLib.Experimental.RAM.Tests.Paper \
-  AlgoLib.Experimental.RAM.Tests.PaperAxioms \
-  AlgoLib.Experimental.RAM.Tests.Methods \
-  AlgoLib.Experimental.RAM.Tests.Language
+lake build
+python3 AlgoLib/Experimental/RAM/Tests/check_layers.py
+python3 AlgoLib/Experimental/RAM/Tests/check_elaboration.py
+python3 AlgoLib/Experimental/RAM/Tests/check_proof_edit.py
 ```
 
-`Paper` exercises canonical compiled sorting/BFS, logical framing, and rejected budgets. `PaperAxioms` rejects unexpected theorem axioms. `Methods` checks explicit input/output contracts, main-theorem use, and rejection of unpayable methods. `Algorithms` and `Language` retain the older low-level/compiler regressions as well; they are not additional canonical program locations.
+Run builds and the proof-edit benchmark sequentially. The latter temporarily edits
+and restores the sorting proof, including on failure; do not edit that file concurrently.
 
-The CI style job runs `python3 AlgoLib/Experimental/RAM/Tests/check_layers.py`. It checks local import cycles, missing modules, module documentation, and the public/backend dependency boundary.
+- Full build: Lean proofs, executable examples, rejection tests and guarded axiom checks.
+- Navigation check (included in the layer check): canonical module homes, working documentation links/imports, and complete example entry pages.
+- Layer check: import DAG, logical/backend boundary, no private queue unfolding in
+  BFS assembly, no retired target in author-facing witnesses, generated conformance consistency.
+- [Conformance](Conformance/README.md): independent bounded reference evaluator versus
+  compiled executions, including signed cases and explicit rejection tests.
+- `EncoderLayout`, `OwnedBFS`, `OwnedQueues`: layout and implementation substitution.
+- `ObligationAPI`: stable identities, source contexts, explorer and rejection coverage.
+- Elaboration benchmark: fresh checking of representative modules against configured budgets.
+- Proof-edit benchmark: successful and failing proof edits reuse specification/backend artifacts.
 
-The isolated [Loom-style prototype](../Prototype/README.md) adds `Prototype.Tests` and
-`Prototype.Axioms`, both included in the repository build. They check compiled insertion-sort
-execution, rejected contracts/annotations, and exact axiom lists for the observation, compiler
-connection, VCG, reconstruction, and sorting theorems. Existing axiom expectations are unchanged.
+Tests supplement kernel-checked theorems; bounded comparisons do not establish a
+universal semantics theorem for all source syntax.
 
-Executable checks cover short lists with duplicates, all simple four-vertex graphs and sources, singleton and disconnected graphs, loops, and parallel edges. They compare against independent host reference implementations. Kernel-checked theorem statements, rather than these finite tests, establish the general correctness and cost claims.
+Native assembly is checked transitively to exclude natural implementation adapters.
+CompatibilityAxioms imports those adapters explicitly and preserves their axiom
+guards; SignedAxioms and IntegerFrontend check the native path independently.
 
-## Credit/backend separation
+PublicAPI runs source and example clients through the seven public layer imports.
+PublicCompatibility checks definitional equality of preferred and older names.
+`generate_navigation.py --check` checks module metadata and generated documentation;
+`test_navigation.py` rejects missing records, wrong ownership/exports, and stale indexes
+in a temporary tree without editing the checkout. Both run through `check_layers.py`.
 
-`CreditLogic.lean` imports only the logical semantics. `BackendReuse.lean` reuses its
-four-credit procedure proof with two verified implementations and checks 16/24 actual
-RAM steps. `CreditAxioms.lean` guards concrete certificates as well as generic composition.
-The layer checker prevents the logical core and this proof fixture from importing a backend.
-Method tests check that preparation remains charged, while frontend tests reject a `time`
-override and missing realizations cannot be turned into executables.
+<!-- BEGIN GENERATED MODULE INDEX -->
 
-## Supported compilation and implementation substitution
+## Module index (generated)
 
-`ArraySubstitution.lean` checks the same insertion-sort and array-zeroing proof with
-contiguous storage and a pointer-table representation. It compares executable results
-against reference outputs and checks the inferred RAM bounds. It also checks structural
-support for nested constructs, rejection of an unsupported action in an unreachable
-branch, and the direct Loom-WP-to-RAM theorem. `GeneralityAxioms.lean` guards the
-generic compiler, that theorem, the indirect representation proofs, and both concrete
-algorithm certificates. Both modules are included in `lake build`.
+Status and ownership come from `docs/modules.json`; summaries come from module docstrings.
 
-The layer checker also follows transitive imports from the logical frontend, Loom
-reasoning, and the two algorithm proofs: none may depend on a RAM backend. See the
-[construction and scope guide](../docs/GENERALITY-AND-SUBSTITUTION.md).
+| Module | Status | Responsibility |
+| --- | --- | --- |
+| [Algorithms.lean](Algorithms.lean) | test | Regression checks: Algorithms |
+| [ArraySubstitution.lean](ArraySubstitution.lean) | test | Executable substitution and supported-language regressions |
+| [BackendReuse.lean](BackendReuse.lean) | test | One logical proof, two executable RAM backends |
+| [CompatibilityAxioms.lean](CompatibilityAxioms.lean) | test | Trust guards for explicit compatibility implementation contracts |
+| [Composition.lean](Composition.lean) | test | Composition regression suite |
+| [CompositionAxioms.lean](CompositionAxioms.lean) | test | Trust checks for local ownership, private resources, and concrete client linking |
+| [Conformance/Generated.lean](Conformance/Generated.lean) | test | Generated frontend conformance corpus |
+| [Conformance/Rejections.lean](Conformance/Rejections.lean) | test | Rejected source programs |
+| [Conformance/Signed.lean](Conformance/Signed.lean) | test | Signed differential frontend tests |
+| [ContractFrontend.lean](ContractFrontend.lean) | test | End-to-end contract/frontend regressions |
+| [CreditAxioms.lean](CreditAxioms.lean) | test | Trust checks for unbundled credits and reconstructed compilation |
+| [CreditLogic.lean](CreditLogic.lean) | test | A reusable algorithm proof with no RAM dependency |
+| [EncoderLayout.lean](EncoderLayout.lean) | test | Private-layout substitution through unchanged BFS assembly |
+| [GeneralityAxioms.lean](GeneralityAxioms.lean) | test | Exact trust checks for supported compilation and implementation substitution |
+| [IntegerFrontend.lean](IntegerFrontend.lean) | test | Default frontend executes integer instructions |
+| [IntegerRAM.lean](IntegerRAM.lean) | test | Signed execution and natural-number migration regressions |
+| [Language.lean](Language.lean) | test | Regression checks: Language |
+| [Methods.lean](Methods.lean) | test | Explicit method contracts: acceptance and rejection tests |
+| [MixedAxioms.lean](MixedAxioms.lean) | test | Trust regression for the unified frontend and actual linked executions |
+| [MixedFrontend.lean](MixedFrontend.lean) | test | Mixed scalar, array and owned-procedure regression |
+| [NamedAssembly.lean](NamedAssembly.lean) | test | Named proof blocks through final executable assembly |
+| [NamedProofs.lean](NamedProofs.lean) | test | Regression tests for independently checked proof blocks |
+| [NativeArrays.lean](NativeArrays.lean) | test | Native array storage through ordinary frontend assembly |
+| [NativeCompiler.lean](NativeCompiler.lean) | test | Native compiler regression |
+| [NativeSourceFrontend.lean](NativeSourceFrontend.lean) | test | Existing source frontend linked to single-cell native signed storage |
+| [ObligationAPI/Explorer.lean](ObligationAPI/Explorer.lean) | test | Explorer navigation and evidence boundaries |
+| [ObligationAPI/ExplorerExamples.lean](ObligationAPI/ExplorerExamples.lean) | test | Sorting and BFS explorer acceptance |
+| [ObligationAPI/Proofs.lean](ObligationAPI/Proofs.lean) | test | Proofs against an imported generated API |
+| [ObligationAPI/Regression.lean](ObligationAPI/Regression.lean) | test | Stable identities and checked explicit evidence |
+| [ObligationAPI/SourceContext.lean](ObligationAPI/SourceContext.lean) | test | Source contexts use explicit roles and product routes |
+| [ObligationAPI/Specification.lean](ObligationAPI/Specification.lean) | test | Specification-only obligation API fixture |
+| [OwnedBFS.lean](OwnedBFS.lean) | test | One BFS proof, two actual RAM queue implementations |
+| [OwnedBFSAxioms.lean](OwnedBFSAxioms.lean) | test | Trust audit for owned BFS and implementation substitution |
+| [OwnedQueues.lean](OwnedQueues.lean) | test | Actual RAM substitution tests for two FIFO implementations |
+| [Paper.lean](Paper.lean) | test | Regression checks: Paper |
+| [PaperAxioms.lean](PaperAxioms.lean) | test | Regression checks: PaperAxioms |
+| [PaperLoopAxioms.lean](PaperLoopAxioms.lean) | test | Trust guards for paper loop accounting and generated executables |
+| [PaperLoops.lean](PaperLoops.lean) | test | Acceptance tests for the paper loop interface |
+| [PublicAPI.lean](PublicAPI.lean) | test | Public layer imports and canonical names |
+| [PublicCompatibility.lean](PublicCompatibility.lean) | test | Canonical public aliases preserve existing clients |
+| [SignedAxioms.lean](SignedAxioms.lean) | test | Trusted dependencies of signed source compilation |
+| [SignedFrontend.lean](SignedFrontend.lean) | test | Signed source arithmetic on the certified Int-RAM runner |
+| [SignedOwnership.lean](SignedOwnership.lean) | test | Composition of separately owned signed arrays |
+| [SignedRejections.lean](SignedRejections.lean) | test | Signed typing and safety rejection regressions |
+| [WorkAccounting.lean](WorkAccounting.lean) | test | Negative checks for remaining-work annotations |
 
-## Ownership and private-resource composition
-
-`Composition.lean` tests the typed owned client linker, all four combinations of lazy/eager
-buffer implementations, exact RAM counts, framed payload preservation, argument/result
-transfer, nested loops, unsupported-operation rejection, overlapping ownership rejection,
-and unchanged insertion-sort proof transport. `CompositionAxioms.lean` pins the generic
-laws and concrete implementation dependencies. Both are part of `lake build`. The import
-checker prevents the abstract buffer interface and client proof from importing implementations.
+<!-- END GENERATED MODULE INDEX -->

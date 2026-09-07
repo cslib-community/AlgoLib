@@ -3,9 +3,9 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.QueueAlgorithms
-import AlgoLib.Experimental.RAM.Prototype.Composition.QueueRing
-import AlgoLib.Experimental.RAM.Prototype.Composition.QueueStacksImplementation
+import AlgoLib.Experimental.RAM.Examples.Composition.QueueAlgorithms
+import AlgoLib.Experimental.RAM.Implementations.DataStructures.QueueRing
+import AlgoLib.Experimental.RAM.Implementations.DataStructures.QueueStacksImplementation
 
 /-!
 # Actual RAM substitution tests for two FIFO implementations

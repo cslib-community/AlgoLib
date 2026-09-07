@@ -3,9 +3,9 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.Demo
-import AlgoLib.Experimental.RAM.Prototype.Composition.Compatibility
-import AlgoLib.Experimental.RAM.Prototype.SortingAlgorithm
+import AlgoLib.Experimental.RAM.Examples.Composition.Demo
+import AlgoLib.Experimental.RAM.Historical.Adapters.CreditCompatibility
+import AlgoLib.Experimental.RAM.Historical.Prototype.SortingAlgorithm
 
 /-!
 # Composition regression suite

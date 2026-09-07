@@ -3,22 +3,22 @@
   "cases": [
     {
       "name": "sorting-proof",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingProofs",
+      "module": "AlgoLib.Experimental.RAM.Examples.InsertionSort.Proofs",
       "seconds": 120
     },
     {
       "name": "sorting-linking",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingExecution",
+      "module": "AlgoLib.Experimental.RAM.Examples.InsertionSort.Execution",
       "seconds": 180
     },
     {
       "name": "bfs-proof",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirstProofs",
+      "module": "AlgoLib.Experimental.RAM.Examples.BFS.Proofs",
       "seconds": 120
     },
     {
       "name": "bfs-linking",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.BFSExecution",
+      "module": "AlgoLib.Experimental.RAM.Examples.BFS.Execution",
       "seconds": 90
     },
     {
@@ -28,12 +28,12 @@
     },
     {
       "name": "sorting-specification",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingSpec",
+      "module": "AlgoLib.Experimental.RAM.Examples.InsertionSort.Obligations",
       "seconds": 120
     },
     {
       "name": "sorting-backend",
-      "module": "AlgoLib.Experimental.RAM.Prototype.Composition.SortingBackend",
+      "module": "AlgoLib.Experimental.RAM.Examples.InsertionSort.Backend",
       "seconds": 180
     },
     {

@@ -8,15 +8,10 @@ import AlgoLib.Experimental.RAM.Tests.SignedFrontend
 /-!
 # Trusted dependencies of signed source compilation
 
-The arithmetic representation and assembled executable theorems retain the existing
-axiom allowlist. Generated certificates must not introduce sorryAx or native_decide.
+The native executable theorems retain the existing axiom allowlist.
+Compatibility representations are audited separately in CompatibilityAxioms. Generated certificates must not introduce sorryAx or native_decide.
 -/
 namespace AlgoLib.Experimental.RAM.Tests.SignedFrontend
-
-set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.Composition.SignedArithmetic.correct' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
-#print axioms Prototype.Composition.SignedArithmetic.correct
 
 set_option linter.hashCommand false in
 /-- info: 'AlgoLib.Experimental.RAM.Tests.SignedFrontend.subtractFiveCorrect' depends on axioms: [propext,

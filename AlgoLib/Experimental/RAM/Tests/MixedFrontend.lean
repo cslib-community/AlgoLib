@@ -3,9 +3,9 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.MixedAlgorithms
-import AlgoLib.Experimental.RAM.Prototype.Composition.Encoding
-import AlgoLib.Experimental.RAM.Prototype.Composition.BufferImplementation
+import AlgoLib.Experimental.RAM.Examples.Composition.MixedAlgorithms
+import AlgoLib.Experimental.RAM.Implementations.Natural.Encoding
+import AlgoLib.Experimental.RAM.Implementations.DataStructures.BufferImplementation
 
 /-!
 # Mixed scalar, array and owned-procedure regression

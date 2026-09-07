@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.Assembly
+import AlgoLib.Experimental.RAM.Compiler.Assembly
 
 /-!
 # Default frontend executes integer instructions
@@ -35,18 +35,5 @@ set_option linter.hashCommand false in
     unless result.value == [n - 5] && result.steps == 12 do
       throw <| IO.userError "default frontend did not execute Int-RAM Nat subtraction"
 
-set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Checked.Language.Method.integerRun_exec' depends on axioms: [propext,
- Classical.choice,
- Quot.sound] -/
-#guard_msgs in
-#print axioms Checked.Language.Method.integerRun_exec
-
-set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Checked.Language.Method.integerCorrect' depends on axioms: [propext,
- Classical.choice,
- Quot.sound] -/
-#guard_msgs in
-#print axioms Checked.Language.Method.integerCorrect
 
 end AlgoLib.Experimental.RAM.Tests.IntegerFrontend

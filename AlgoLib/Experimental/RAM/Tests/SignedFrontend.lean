@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.Assembly
+import AlgoLib.Experimental.RAM.Compiler.Assembly
 
 /-!
 # Signed source arithmetic on the certified Int-RAM runner

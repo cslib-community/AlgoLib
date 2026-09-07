@@ -3,7 +3,7 @@ Copyright (c) 2026 Sorrachai Yingchareonthawornchai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Experimental.RAM.Prototype.Composition.BFSExecution
+import AlgoLib.Experimental.RAM.Examples.BFS.Execution
 import AlgoLib.Experimental.RAM.Tests.Algorithms
 import AlgoLib.Experimental.RAM.Tests.WorkAccounting
 

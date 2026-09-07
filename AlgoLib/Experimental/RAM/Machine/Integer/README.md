@@ -89,7 +89,7 @@ counts its actual instructions. Sorting's displayed polynomial is now
 The owned frontend now supports `Int` locals, arithmetic, comparisons, arrays,
 procedure composition, and explicit `Int.ofNat`/`Int.toNat` conversions. Nat
 subtraction remains saturating. Signed indices generate nonnegativity and bounds
-obligations. See [the signed source tutorial](../../Prototype/Composition/SIGNED-INTEGERS.md).
+obligations. See [the signed source tutorial](../../Language/SIGNED-INTEGERS.md).
 
 `compile_scalar_method` assembles ordinary Nat/Int inputs and outputs;
 `compile_array_method` assembles lists of Nat or Int. Both use the existing

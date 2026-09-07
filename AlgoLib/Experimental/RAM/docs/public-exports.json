@@ -1,0 +1,432 @@
+[
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Operation",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Operation",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Run",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Run",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.VC",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.VC",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Procedure",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Procedure",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Contract",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Contract",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.UniformCredits",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.UniformCredits",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.identity",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.identity",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.swap",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.swap",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.invoke",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.invoke",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.seq",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.seq",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.frame",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.frame",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.branch",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.branch",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.loop",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.loop",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Program.call",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Program.call",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Contract.implement",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Contract.implement",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Procedure.verify",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Procedure.verify",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Language.Procedure.uniform",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Procedure.uniform",
+    "entry": "Language"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Plan",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Plan",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Algorithm",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Algorithm",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Obligation",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Obligation",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.ObligationAt",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.ObligationAt",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.SourceShape",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.SourceShape",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.SourceForall",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.SourceForall",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Plan.vc",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Plan.vc",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Plan.sound",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Plan.sound",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Plan.call_implementation_independent",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Plan.call_implementation_independent",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Algorithm.Obligations",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Algorithm.Obligations",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Algorithm.certify",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Algorithm.certify",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Verification.Algorithm.loom_correct",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Algorithm.loom_correct",
+    "entry": "Verification"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Queue.initializeQueue",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Queue.API.initializeQueue",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Queue.enqueue",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Queue.API.enqueue",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Queue.dequeue",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Queue.API.dequeue",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Queue.nonempty",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Queue.nonempty",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Stack.push",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Stack.API.push",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Stack.clear",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Stack.API.clear",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Buffer.append",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Buffer.API.append",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Buffer.appendFrom",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Buffer.API.appendFrom",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Buffer.clear",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Buffer.API.clear",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.GraphCursor.neighbors",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.GraphCursor.API.neighbors",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.GraphCursor.nextNeighbor",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.GraphCursor.API.nextNeighbor",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Graph.Adjacency",
+    "original": "AlgoLib.Experimental.RAM.BFS.Adjacency",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Graph.Represents",
+    "original": "AlgoLib.Experimental.RAM.BFS.Represents",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Graph.Reachable",
+    "original": "AlgoLib.Experimental.RAM.BFS.Reachable",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Library.Graph.Connected",
+    "original": "AlgoLib.Experimental.RAM.BFS.Connected",
+    "entry": "Library"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Representation",
+    "original": "AlgoLib.Experimental.RAM.Native.Representation",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Footprint",
+    "original": "AlgoLib.Experimental.RAM.Native.Footprint",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Encoder",
+    "original": "AlgoLib.Experimental.RAM.Native.Encoder",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Decoder",
+    "original": "AlgoLib.Experimental.RAM.Native.Decoder",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Linked",
+    "original": "AlgoLib.Experimental.RAM.Native.Linked",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Primitive",
+    "original": "AlgoLib.Experimental.RAM.Native.Primitive",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.Refinement",
+    "original": "AlgoLib.Experimental.RAM.Native.Refinement",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.naturalEncoder",
+    "original": "AlgoLib.Experimental.RAM.Native.naturalEncoder",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.signedEncoder",
+    "original": "AlgoLib.Experimental.RAM.Native.signedEncoder",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.arrayEncoder",
+    "original": "AlgoLib.Experimental.RAM.Native.arrayEncoder",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Implementations.ArrayLayout",
+    "original": "AlgoLib.Experimental.RAM.Native.ArrayLayout",
+    "entry": "Implementations"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Compiler.runEncoded",
+    "original": "AlgoLib.Experimental.RAM.Native.runEncoded",
+    "entry": "Compiler"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Compiler.runEncoded_correct",
+    "original": "AlgoLib.Experimental.RAM.Native.runEncoded_correct",
+    "entry": "Compiler"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Compiler.Result",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Result",
+    "entry": "Compiler"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Reg",
+    "original": "AlgoLib.Experimental.RAM.Checked.Reg",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Bitmap",
+    "original": "AlgoLib.Experimental.RAM.Checked.Bitmap",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Execution",
+    "original": "AlgoLib.Experimental.RAM.Checked.Execution",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.State",
+    "original": "AlgoLib.Experimental.RAM.Integer.State",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Operand",
+    "original": "AlgoLib.Experimental.RAM.Integer.Operand",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Instr",
+    "original": "AlgoLib.Experimental.RAM.Integer.Instr",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Code",
+    "original": "AlgoLib.Experimental.RAM.Integer.Code",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Exec",
+    "original": "AlgoLib.Experimental.RAM.Integer.Exec",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.Terminates",
+    "original": "AlgoLib.Experimental.RAM.Integer.Terminates",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.TotalProgram",
+    "original": "AlgoLib.Experimental.RAM.Integer.TotalProgram",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.run",
+    "original": "AlgoLib.Experimental.RAM.Integer.run",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.run_eq",
+    "original": "AlgoLib.Experimental.RAM.Integer.run_eq",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Machine.run_correct",
+    "original": "AlgoLib.Experimental.RAM.Integer.run_correct",
+    "entry": "Machine"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.run",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.run",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.main",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.main",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.quadratic",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.quadratic",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.bound_eq",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.bound_eq",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.search",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.search",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.search_correct",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.search_correct",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.connected",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.connected",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.linear",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.linear",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.same_result",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.same_result",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.insertionSort",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.insertionSort",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.insertionSortProcedure",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.insertionSortProcedure",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.InsertionSort.insertionSortBound",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.Sorting.insertionSortBound",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.bfs",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.bfs",
+    "entry": "Examples"
+  },
+  {
+    "name": "AlgoLib.Experimental.RAM.Examples.BFS.bfsProcedure",
+    "original": "AlgoLib.Experimental.RAM.Prototype.Composition.BreadthFirst.bfsProcedure",
+    "entry": "Examples"
+  }
+]

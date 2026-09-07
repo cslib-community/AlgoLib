@@ -1,113 +1,135 @@
-# Verified RAM algorithms, by abstraction layer
+# Verified algorithms on Int-RAM
 
-The new [composition contract layer](Prototype/Composition/README.md) makes ownership and
-private resource accounting compositional. It includes a generic client-linking theorem,
-actual Loom/RAM interpretations, and one client proof across four independently selected
-lazy/eager buffer implementations. Existing sorting/BFS entry points below remain available.
+Write a typed, paper-style algorithm, prove its named mathematical obligations,
+and obtain an executable with a correctness theorem and an inferred RAM upper bound.
+Start with **[insertion sort](Examples/InsertionSort/README.md)** or
+**[BFS connectivity](Examples/BFS/README.md)**. These are the supported examples.
 
+For the supported imports and preferred declaration names, see [the public API](docs/PUBLIC-API.md).
+The [generated dependency map](docs/DEPENDENCIES.md) explains actual imports.
 
-Start with [Pure algorithms and interchangeable array backends](docs/GENERALITY-AND-SUBSTITUTION.md) for the current source/proof workflow and supported-language theorem.
+## The six layers and the proof-authoring interface
 
+| Layer | Exposes | Read it when… |
+| --- | --- | --- |
+| 1. [Language](Language/README.md) | Typed variables, arrays, loops, calls, invariants, logical credits | Writing a program or extending source syntax |
+| 2. [Library](Library/README.md) | Mathematical models and functional/resource contracts | Calling or specifying reusable operations |
+| 3. [Implementations](Implementations/README.md) | Private layouts, ownership, potential, certified operations | Implementing a data structure |
+| 4. [Compiler](Compiler/README.md) | Linking, typed lowering, semantic and cost preservation | Maintaining code generation |
+| 5. [Machine](Machine/README.md) | Integer instructions, execution semantics, instruction count | Examining the computational model |
+| 6. [Examples](Examples/README.md) | Complete algorithms, proofs, execution, final theorems | Learning or evaluating the complete stack |
+| Proof-authoring interface: [Verification](Verification/README.md) | Named propositions, separate proof blocks, explorer, Loom WP | Proving initialization, preservation, termination, and accounting |
 
-The [Loom-connected BFS tutorial](Prototype/GRAPH-TUTORIAL.md) demonstrates typed
-graph primitives, modular neighbor-scan and vertex-processing procedures, and a
-checked connectivity/linear-time theorem for their composed RAM program.
+These are responsibility boundaries, not seven sequential compiler passes.
+Examples use the stack; Verification reasons about Language. Library contracts do
+not depend on their concrete implementation. An import DAG check enforces the
+backend-free logical layer and prevents reusable layers from importing examples.
 
-Start with **[sorting](Programs/Sorting.lean)** or **[connectivity via BFS](Programs/Connectivity.lean)**. Each file contains one complete story: the target statement, an input/output method, the generated verification conditions, the invariant proof, the executable, and the main theorem. There is no separate algorithm to find in an executable or proof directory.
-
-For the isolated mutable Velvet/Loom integration, see **[Prototype](Prototype/README.md)**.
-It verifies explicit mutable-array insertion sort using the actual Loom algebra and inline annotations,
-then reconstructs the existing RAM certificate for the same executable program. Its guide
-explains the connection, explicit Loom/Velvet attribution, and the RAM compilation boundary.
-
-```lean
-import AlgoLib.Experimental.RAM
-open AlgoLib.Experimental.RAM
-
-#eval (Programs.Sorting.run [3, 1, 4, 1]).value
--- [1, 1, 3, 4]
-
-example (xs : List Nat) :
-    Programs.Sorting.SortedPermutation xs (Programs.Sorting.run xs).value :=
-  (Programs.Sorting.main xs).1
+```mermaid
+flowchart TD
+  S["Language: source method and annotations"] --> P["Typed Program + indexed Plan"]
+  L["Library: models and logical contracts"] --> P
+  P --> O["Verification: generated named obligations"]
+  O --> U["Independent mathematical proof blocks"]
+  U --> C["Verified procedure and logical credit contract"]
+  C --> W["Loom weakest-precondition theorem"]
+  C --> K["Compiler: certified linking"]
+  I["Implementations: ownership and private potential"] --> K
+  K --> N["Native typed implementation commands"]
+  N --> R["Verified lowering to Int-RAM"]
+  R --> X["Machine: executable and counted execution"]
+  X --> T["Example: result, correctness, inferred RAM upper bound"]
+  C --> T
 ```
 
-See [Logical credits and inferred RAM time](docs/CREDITS-AND-BACKENDS.md) for the separated contracts, automatic compilation, and a two-backend reuse demo.
+### 1. Describe the algorithm
 
-## Read from the theorem to its proof
+The preferred public import is `AlgoLib.Experimental.RAM.Language`.
+The earlier `Language.Frontend` import remains supported.
+`ram method` supports mutable Nat/Int variables, arrays, structured loops, and
+registered procedure calls. Preconditions, postconditions, invariants, and counting
+arguments use mathematical Lean values. See [the frontend guide](Language/FRONTEND.md).
 
-| Step | Sorting | BFS connectivity |
-|---|---|---|
-| State the target | `SortedPermutation`, `Claim` | `Returns`, `Claim` |
-| Read the input/output program | `insertionSort` | `breadthFirstSearch` |
-| Choose the paper argument | sorted suffix + permutation | frontier + processed vertices |
-| Supply the charging argument | `potential` | `potential` |
-| Prove the algorithm obligations | `loopProof` | `loopProof` |
-| Check the generated method obligations | `verification : insertionSort.VCs` | `verification : (breadthFirstSearch a G).VCs` |
-| Run and use the theorem | `run`, `main`, `quadratic` | `run`, `main`, `connected_iff_set`, `linear` |
+Elaboration produces one typed `Program A B` and a `Plan` indexed by that exact body.
+The plan adds proof information; it is not an independently executable algorithm.
+Calls use procedure summaries during verification. The current structured language
+inlines finite procedure bodies; general runtime recursion and dynamic allocation
+are not claimed by this frontend.
 
-For every list, sorting returns a sorted permutation in at most `100n² + 200n + 110` RAM steps. For nonempty lists, `quadratic` gives `410n²`. The constant term matters for empty input. `exists_quadratic_sort` also states existence using a **verified procedure** as its witness.
+### 2. Prove the mathematical obligations
 
-BFS takes a graph represented by adjacency lists and a valid source, and returns a vertex-set membership view. `main` proves exact reachability, **`Connected G ↔ vertices S = G.vertexSet`**, and at most `740(|V| + |E|)` RAM steps. Disconnected graphs, isolated vertices, loops, and parallel labelled edges are supported. An empty graph cannot supply a valid source.
+`generate_obligations` establishes named Lean propositions. Inspect one with
+`#explain_obligation`, prove it in a separate `prove_obligation` declaration, then
+use `complete_algorithm`. See [the obligation API](Verification/OBLIGATION-API.md).
+The author supplies invariants and the counting argument; the framework supplies
+structural verification conditions. The underlying soundness results give abstract
+execution and a Loom WP theorem for the same body.
 
-## The displayed program is the executable program
+### 3. Select verified implementations
 
-The method syntax is Dafny-inspired. For example, inside the sorting file:
+A queue contract describes its mathematical sequence and logical charges. An
+implementation chooses its cells, representation relation, and amortization
+potential. Ownership framing proves that an operation preserves unrelated memory.
+Resource-aware refinement relates its actual execution cost to logical charges
+and private potential. Clients never prove facts about queue field addresses.
 
-```lean
-def insertionSort : Method Insertion.interface :=
-  ram_method (xs : List Nat) returns (ys : List Nat)
-    using Insertion.interface;
-    requires True;
-    ensures SortedPermutation xs ys;
-    credits (xs.length * (xs.length + 2) + 1);
-  do {
-    while (more) {
-      call insertNext;
-    }
-  }
-```
+### 4. Link and compile
 
-`insertNext` is the separately certified INSERT subroutine. It consumes one unprocessed value and inserts it into the sorted suffix. The implementation processes the input right to left. Its logical effect and cost are in [Library/Insertion.lean](Library/Insertion.lean); its memory proof belongs to the backend.
+Assembly selects implementations and reconstructs a `Linked` certificate.
+`compile_array_method` and `compile_scalar_method` package standard cases.
+Native typed commands compile to integer instructions with kernel-checked semantic
+and counted-execution theorems. Existing natural-valued implementation contracts
+use a maintained source adapter into this compiler; this is not a second RAM backend.
 
-For BFS, the method calls `dequeue`, `scanNeighbors`, and `finish` inside the frontier loop. `scanNeighbors` implements the neighbor loop and the mark-before-enqueue test. `finish` updates the proof's processed set and emits no instructions. Input preparation clears flags and seeds the queue. The [authoring guide](Authoring/README.md) maps these operations to textbook pseudocode.
+### 5. Run and use the result
 
-This is a language over certified operations, with compositional `while`, `if`, and procedure calls. It is **not a complete Dafny parser**: arbitrary `visited[v] := ...` statements are not yet part of this public mathematical API. New primitives must come with library contracts; they cannot acquire a cost bound merely by being given a name.
+The executable runner takes ordinary encoded inputs and returns an observed value
+and an actual instruction count. Termination evidence removes the need for user
+fuel. Final assembly combines the algorithm proof and implementation certificates
+into functional correctness and a physical upper bound.
 
-## Choose the layer for your task
+**Logical credits are not instruction counts.** Logical contracts are stable across
+implementation substitution. Concrete rates and private potential justify the RAM
+bound; that bound may be conservative and may change after compiler improvements.
+The machine uses unbounded, unit-cost Int arithmetic, not word-RAM or bit complexity.
+Input encoding/output observation determine the accounting boundary; host-language
+serialization is not automatically charged as RAM work.
 
-| Layer | Responsibility | Who normally reads it? |
-|---|---|---|
-| [Programs](Programs/README.md) | Complete algorithm specifications, methods, proofs, and demos | Algorithm students and authors |
-| [Authoring](Authoring/README.md) | Mathematical semantics, VC rules, method syntax, verified runner interface | Authors reusing proof rules; framework maintainers |
-| [Library](Library/README.md) | Public logical effects, preconditions, functional/cost contracts, input/output adapters | Authors choosing reusable operations |
-| [Specification](Specification/README.md) | Repository `Graph`, reachability, connectivity, adjacency representation | Authors proving graph mathematics |
-| [Backend](Backend/README.md) | Memory layouts, implementation certificates, typed language, compiler and refinement | Library and compiler maintainers |
-| [Machine](Machine/README.md) | RAM instructions, execution semantics, total runner, output views | Machine-model maintainers |
-| [Tests](Tests/README.md) | Runtime, negative-contract, compiler, and axiom regressions | Maintainers |
-| [Legacy](Legacy/README.md) | Older alternative demonstrations, explicitly opt-in | Historical comparison only |
+## Find the file you need
 
-These are responsibility boundaries. Some backend adapters implement authoring contracts, so the directory order is not itself a strict module-dependency order. No backend, library, machine, or authoring module imports a `Programs` or `Legacy` algorithm. The [architecture guide](docs/ARCHITECTURE.md) explains the actual handoffs.
+For an algorithm, follow `Program.lean → Obligations.lean → Proofs.lean → Execution.lean`.
+Read `Backend.lean` or `Storage.lean` only to select or develop an implementation.
+Sorting separates backend certificates from proof edits so those edits can reuse
+compiled artifacts. Each example entry page links every part and its final theorem.
 
-## What you prove, and what the library does
+For framework changes:
 
-You supply an invariant, preservation/exit arguments, operation preconditions, and the charging facts. `paper_steps` substitutes logical effects and generates call payments. `method_vc` opens the declared output and logical-credit obligations. The backend derives the RAM time bound automatically; it adds no payment subgoal to the algorithm proof.
+- Syntax and mutable elaboration: `Language/Elaboration/`.
+- Proof plans, obligation generation, and editor diagnostics: `Verification/`.
+- Abstract data-structure contract: `Library/`.
+- Ownership/refinement laws: `Implementations/Contracts/`.
+- Concrete layouts and operations: `Implementations/Native/` and `DataStructures/`.
+- Source-to-implementation linking: `Compiler/Assembly/`.
+- Instruction compiler: `Compiler/Native/`.
+- Execution semantics: `Machine/Integer/`.
 
-The library establishes physical framing, implements the operations, relates logical states to memory, compiles the declared body, transports its certificate, and runs it without fuel. The same certificate proves the output contract and the bound on actual compiled steps. Proof checking, host input encoding, and host output enumeration are outside the unit-cost RAM count; compiled preparation is included.
+## Status, history, and trust
 
-`Programs.Connectivity.search graph source` is the convenience API with explicit graph and source arguments (`source : Fin graph.n`). Its `search_correct` theorem gives the same reachable-set, connectivity, and time guarantees.
+[Historical](Historical/README.md) preserves older adapters and regression evidence.
+[Research](Research/README.md) contains ordinary-Velvet, recursive, and
+nondeterministic semantic fixtures, not alternative supported frontends.
+Neither directory is the starting point for new algorithms.
 
-For runnable examples see [Programs/Examples.lean](Programs/Examples.lean). For the former layout and updated names see [migration](docs/MIGRATION.md). The [PDF tutorial](docs/verified-ram-student-tutorial.pdf) and slide deck document the earlier `2c78e53` layout; use the current source guides and [updated Lean companion](docs/StudentDemo.lean) for this layout.
+Module paths and preferred public aliases now follow responsibilities. Existing
+declaration names remain compatible; `Prototype.Composition` is not a second implementation. See
+[the migration guide](docs/MIGRATION.md) and [API policy](Verification/API-POLICY.md).
 
-The exported PDF and slides predate the credit/backend split. For the current API, use [Credits and backends](docs/CREDITS-AND-BACKENDS.md) and the checked Lean examples.
+Run `lake build` and `python3 AlgoLib/Experimental/RAM/Tests/check_layers.py`.
+Conformance, axiom, layout-substitution, proof-edit, and elaboration checks are in
+[Tests](Tests/README.md). Bounded frontend tests complement the formal compiler
+proofs; they are not a universal surface-parser semantics theorem.
 
-
-### Owned mutable procedures
-
-[Composition/BufferAlgorithms.lean](Prototype/Composition/BufferAlgorithms.lean)
-is the starting example for the owned `ram method` frontend. Receiver calls generate
-frames and use public procedure summaries, including in annotated loops. Straight-line
-logical allowances are inferred. [The composition guide](Prototype/Composition/README.md)
-explains the single program/annotation path, supported syntax, and unchanged proofs
-across implementation choices. [Demo.lean](Prototype/Composition/Demo.lean) executes
-that exact source program and proof through the existing RAM runner.
+We reuse Loom's algebra/WP infrastructure and Velvet syntax. Ownership and
+resource-aware data-structure refinement follows the direction of
+[Sepref](https://www21.in.tum.de/~lammich/pub/cpp2016_impds.pdf).
+See [vendored framework attribution](../../../vendor/README.md).
