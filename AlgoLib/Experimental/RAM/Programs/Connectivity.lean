@@ -38,7 +38,7 @@ def Claim {β : Type} {a : Adjacency} {G : Graph Nat β}
     (bfs : Input a G → Result VertexSet) : Prop :=
   ∀ i, Returns G i.source (bfs i).value ∧
     (Connected G ↔ vertices (bfs i).value = G.vertexSet) ∧
-    (bfs i).steps ≤ 370 * (a.n + i.representation.edges.card)
+    (bfs i).steps ≤ 740 * (a.n + i.representation.edges.card)
 
 /-- Explicit graph/source input, vertex-set output, and linear-time contract.
 Preparation initializes visited flags and the frontier; `scanNeighbors` implements
@@ -175,7 +175,7 @@ theorem run_correct {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a 
 
 /-- The time contract counts actual compiled RAM steps, including visited initialization. -/
 theorem linear {β : Type} {a : Adjacency} {G : Graph Nat β} (i : Input a G) :
-    (run i).steps ≤ 370 * (a.n + i.representation.edges.card) :=
+    (run i).steps ≤ 740 * (a.n + i.representation.edges.card) :=
   Search.linear_of_credits i ((certified a G).correct i (by trivial)).2
 
 /-- All graph vertices are visited exactly when the graph is connected. -/
@@ -216,7 +216,7 @@ def search (graph : EdgeInput) (source : Fin graph.n) : Result VertexSet :=
 theorem search_correct (graph : EdgeInput) (source : Fin graph.n) :
     Returns graph.graph source.val (search graph source).value ∧
     (Connected graph.graph ↔ vertices (search graph source).value = graph.graph.vertexSet) ∧
-    (search graph source).steps ≤ 370 * (graph.n + graph.represents.edges.card) :=
+    (search graph source).steps ≤ 740 * (graph.n + graph.represents.edges.card) :=
   main (graph.fromSource source.val source.isLt)
 
 end AlgoLib.Experimental.RAM.Programs.Connectivity

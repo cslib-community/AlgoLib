@@ -49,7 +49,7 @@ Ghost state never executes. In particular BFS's processed-set update emits no in
 
 Every RAM instruction and guard costs one. A library work unit has a proved upper bound on actual compiled cost, including expression evaluation, loads/stores, and control flow. Framework theorems multiply and compose these bounds automatically. A true paper loop spends a positive guard credit, making its verified potential argument establish termination. No fuel is supplied to the runner.
 
-The new conservative bounds are `50n² + 100n + 55` for insertion sort and `370(n+m)` for BFS with a valid source. The executable theorem counts input preparation, including clearing arbitrary visited flags. Explicitly imported legacy APIs retain their earlier tighter constants; these are different contracts for related compiled programs, not contradictory measurements.
+The new conservative bounds are `100n² + 200n + 110` for insertion sort and `740(n+m)` for BFS with a valid source. The executable theorem counts input preparation, including clearing arbitrary visited flags. Explicitly imported legacy APIs retain their earlier tighter constants; these are different contracts for related compiled programs, not contradictory measurements.
 
 These are upper bounds, not exact runtimes or lower bounds. Time receipts are deferred.
 

@@ -8,7 +8,8 @@ import AlgoLib.Experimental.RAM.Prototype.VelvetSemantics
 /-!
 # Nondeterministic RAM and all-outcome translation contracts
 
-`Code` extends the existing instruction semantics with choice of a natural word.
+`Code` extends native integer instructions with choice of a natural value stored
+in an integer register. The natural-valued choice schedule remains unchanged.
 A choice is an actual charged instruction. A finite procedure table supports
 recursive and mutually recursive control transfers: call and return cost one each.
 All registers are shared; `call` saves no local variables or arrays. A compiler must
@@ -17,8 +18,10 @@ this semantics does not copy an unbounded register file as a constant-time step.
 
 A choice is a primitive nondeterministic instruction; no Lean predicate or state transformer
 is accepted as a machine operation. Unsupported predicates must be implemented by
-ordinary code, whose execution cost is counted. The old deterministic RAM is
+ordinary code, whose execution cost is counted. The deterministic integer RAM is
 embedded without modifying its semantics or invalidating its determinism theorem.
+Invalid memory addresses have no successful execution; the interpreter propagates
+the same failure instead of manufacturing a result.
 
 `Translation` relates an actual ordinary Velvet method to one fixed target program.
 Its two directions prohibit both lost and invented terminating outcomes. The
@@ -26,10 +29,11 @@ correctness transport theorem quantifies over every target execution; a successf
 example run is never used as evidence of a worst-case cost or universal property.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Nondeterministic
-open Checked
+open Integer
+open Checked (Reg)
 
 inductive Code where
-  | deterministic (code : Checked.Code)
+  | deterministic (code : Integer.Code)
   | choose (destination : Reg)
   | seq (first second : Code)
   | branch (test : Test) (yes no : Code)
@@ -40,7 +44,7 @@ inductive Code where
 /-- All finite executions, including every possible value of a choice instruction. -/
 inductive ExecIn (procedures : List Code) : Code → State → Nat → State → Prop where
   | deterministic {code s k t} :
-      Checked.Exec code s k t → ExecIn procedures (.deterministic code) s k t
+      Integer.Exec code s k t → ExecIn procedures (.deterministic code) s k t
   | choose (s : State) (r : Reg) (n : Nat) : ExecIn procedures (.choose r) s 1 (s.set r n)
   | seq {a b s u t i j} : ExecIn procedures a s i u → ExecIn procedures b u j t →
       ExecIn procedures (.seq a b) s (i+j) t
@@ -57,9 +61,9 @@ inductive ExecIn (procedures : List Code) : Code → State → Nat → State →
 /-- Compatibility execution for programs with no procedure declarations. -/
 abbrev Exec := ExecIn []
 
-@[simp] theorem deterministic_iff {procedures : List Code} {code : Checked.Code}
+@[simp] theorem deterministic_iff {procedures : List Code} {code : Integer.Code}
     {s t : State} {k : Nat} :
-    ExecIn procedures (.deterministic code) s k t ↔ Checked.Exec code s k t := by
+    ExecIn procedures (.deterministic code) s k t ↔ Integer.Exec code s k t := by
   constructor
   · intro h; cases h with | deterministic h => exact h
   · exact .deterministic

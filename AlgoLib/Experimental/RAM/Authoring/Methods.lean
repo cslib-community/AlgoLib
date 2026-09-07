@@ -62,7 +62,7 @@ def Method.specification {State Input Output : Type} {M : Model State}
 /-- The backend derives a RAM upper bound from logical credits and input preparation. -/
 def Method.time {State Input Output : Type} {M : Model State}
     {api : Interface M Input Output} (method : Method api) (i : Input) : Nat :=
-  api.preparationCost i + M.overhead * method.credits i
+  2 * (api.preparationCost i + M.overhead * method.credits i)
 
 /-- A method cannot run until its generated verification conditions are proved. -/
 structure VerifiedMethod {State Input Output : Type} {M : Model State}

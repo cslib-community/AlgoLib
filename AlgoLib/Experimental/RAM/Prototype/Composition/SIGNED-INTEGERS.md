@@ -109,24 +109,28 @@ natural index `i.toNat`.
 
 ## Implementation and cost boundary
 
-The source semantics and proofs use Lean `Int`. The current verified compiler IR
-still has natural-valued words. Signed scalars therefore use private canonical
-positive/negative lanes and staging registers; signed arrays use two adjacent
-cells per element. Array layouts have independent base addresses, so separate
-arrays can be linked using the existing separating encoder interface. All compiled
-instructions execute on **Int-RAM**. This stage
-does not claim direct, single-register signed lowering.
+The source semantics and proofs use Lean `Int`. Standard scalar and array assembly
+now lowers directly into the native integer implementation language and its verified
+Int-RAM compiler. A signed scalar occupies one integer register, and a signed array
+element occupies one consecutive heap cell. Nat values retain nonnegativity and
+saturating subtraction. The source algorithm and its proof do not change.
 
-The representation contracts prove reads, writes, ownership framing, and decoding.
-Staging evaluates indices and both result lanes before changing a destination,
-so self-referential assignments preserve source evaluation order. Layout choices
-and intermediate payment details do not appear in algorithm obligations.
+Shared ownership, path focusing, private-local initialization, and resident-input
+contracts automatically preserve unrelated components and private potential. The
+same interfaces support separate array bases, mixed Nat/Int locals, and calls.
 
-Costs include the actual expanded expression and storage operations. The generated
-RAM bound retains the conservative translation factor used by the existing stack.
-Unbounded unit-cost integer arithmetic is still not a word-RAM or bit-complexity
-claim. A future direct integer compiler can replace this private representation
-while retaining mathematical source proofs; numerical bounds may improve.
+Logical credits are unchanged. Native expression certificates provide alternative
+code views for signed values, their negations, and truncated natural parts. Only the
+requested view executes; these are not paired storage lanes. Swapping code views
+eliminates repeated negations, and truncating the negative of an embedded Nat can
+emit zero directly. This preserves the existing cheap source allowances without
+hiding runtime computation in decoding.
+
+The generated RAM bound retains the conservative factor-two allowance during
+migration, while the runner counts actual native instructions. Unbounded unit-cost
+integer arithmetic is still not a word-RAM or bit-complexity claim. Legacy paired
+storage modules remain compatibility work and are not selected by standard
+`compile_scalar_method` or `compile_array_method` assembly.
 
 ## Checked evidence and navigation
 
@@ -136,9 +140,11 @@ while retaining mathematical source proofs; numerical bounds may improve.
   independent Python evaluator, including negative inputs and nested loops.
 - `Tests/SignedOwnership.lean`: one source proof for two independently placed
   signed arrays, with private signed scratch storage.
-- `SignedArithmetic.lean`: canonical arithmetic identities.
-- `SignedImplementation.lean`: reusable signed expression and storage contracts.
-- `SignedStorage.lean` and `SignedArrays.lean`: private implementations and encoders.
+- `Tests/NativeArrays.lean`: checks consecutive native signed cells through standard assembly.
+- `Native/Expressions.lean` and `Native/ArrayExpressions.lean`: semantic and credit certificates.
+- `Native/ScalarStorage.lean` and `Native/ArrayStorage.lean`: native representations.
+- `Native/Locals.lean`, `Native/Encoding.lean`, and `Native/Execution.lean`: automatic framing,
+  resident inputs, and certified execution.
 - `Frontend/Expressions.lean`: type-directed source expression elaboration.
 
 Regenerate signed differential tests with

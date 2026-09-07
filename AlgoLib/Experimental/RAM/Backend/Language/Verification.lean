@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Backend.Language.Compiler
+import AlgoLib.Experimental.RAM.Backend.Native.Natural
 
 /-!
 # Typed total contracts and runner binding
@@ -86,27 +87,60 @@ structure Method where
   budget : Store → Nat
   verification : Contract body requires ensures budget
 
+/-- Natural observation of the legacy implementation contract's cells. -/
+def integerObserve (s : Integer.State) : Store :=
+  Native.Natural.project (Native.observe s)
+
+/-- Input encoding uses native integer cells directly. -/
+def integerEncode (s : Store) : Integer.State := Native.encode (Native.Natural.store s)
+
+@[simp] theorem integerObserve_encode (s : Store) :
+    integerObserve (integerEncode s) = s := by
+  simp [integerObserve, integerEncode]
+
+/-- Default execution compiles through the native integer compiler only. -/
+def Method.integerCode (p : Method) : Integer.Code :=
+  (Native.Natural.command p.body).compile
+
+private theorem Method.integerTerminates (p : Method) (s : Store) (hs : p.requires s) :
+    Integer.Terminates p.integerCode (integerEncode s) := by
+  obtain ⟨k, t, hx, _, _⟩ := p.verification s hs
+  obtain ⟨j, hj, _⟩ := Native.Natural.preserves hx
+  exact Native.terminates _ _ ⟨j, _, hj⟩
+
+/-- Actual integer-machine result and exact instruction count, with no fuel. -/
 def Method.run (p : Method) (s : Store) (hs : p.requires s) : Nat × Store :=
-  let result := Checked.run p.body.compile (encode s) (by
-    obtain ⟨k, t, hx, _, _⟩ := p.verification s hs
-    obtain ⟨u, hu, _⟩ := hx.compile (encode s) (observe_encode s)
-    exact ⟨k, u, hu⟩)
-  (result.1, observe result.2)
+  let result := Integer.run p.integerCode (integerEncode s) (p.integerTerminates s hs)
+  (result.1, integerObserve result.2)
 
+/-- The returned count belongs to actual integer instructions, not the old IR semantics. -/
+theorem Method.run_exec (p : Method) (s : Store) (hs : p.requires s) :
+    ∃ final, Integer.Exec p.integerCode (integerEncode s)
+      (p.run s hs).1 final ∧ (p.run s hs).2 = integerObserve final :=
+  ⟨_, Integer.run_correct _ _ (p.integerTerminates s hs), rfl⟩
+
+/-- Source contracts and public bounds survive replacement of the compiler. -/
 theorem Method.correct (p : Method) (s : Store) (hs : p.requires s) :
-    Eval p.body s (p.run s hs).1 (p.run s hs).2 ∧
-      p.ensures s (p.run s hs).2 ∧ (p.run s hs).1 ≤ p.budget s := by
-  obtain ⟨k, t, hx, hQ, hk⟩ := p.verification s hs
-  obtain ⟨u, hu, ht⟩ := hx.compile (encode s) (observe_encode s)
-  simp only [Method.run, run_eq hu, ht]
-  exact ⟨hx, hQ, hk⟩
+    (∃ k, Eval p.body s k (p.run s hs).2) ∧
+      p.ensures s (p.run s hs).2 ∧ (p.run s hs).1 ≤ 2 * p.budget s := by
+  obtain ⟨k, t, hx, post, paid⟩ := p.verification s hs
+  obtain ⟨j, hj, cost⟩ := Native.Natural.preserves hx
+  obtain ⟨u, hu, observed⟩ := hj.compile _ (Native.observe_encode _)
+  simp only [Method.run, Method.integerCode, integerEncode, Integer.run_eq hu,
+    integerObserve, observed, Native.Natural.project_store]
+  exact ⟨⟨k, hx⟩, post, by omega⟩
 
-/-- A contract always certifies actual RAM work, not just a source cost annotation. -/
+
+/-- Source credit contracts certify actual native integer execution. The bound
+includes lowering overhead; source and machine step counts need not coincide. -/
 theorem Contract.ram {c : Cmd} {P : Store → Prop} {Q : Store → Store → Prop}
-    {budget : Store → Nat} (h : Contract c P Q budget) (s : State) (hs : P (observe s)) :
-    ∃ k t, Exec c.compile s k t ∧ Q (observe s) (observe t) ∧ k ≤ budget (observe s) := by
-  obtain ⟨k, t, hx, hQ, hk⟩ := h (observe s) hs
-  obtain ⟨u, hu, ht⟩ := hx.compile s rfl
-  exact ⟨k, u, hu, ht ▸ hQ, hk⟩
+    {budget : Store → Nat} (h : Contract c P Q budget) (s : Store) (hs : P s) :
+    ∃ k t, Integer.Exec (Native.Natural.command c).compile (integerEncode s) k t ∧
+      Q s (integerObserve t) ∧ k ≤ 2 * budget s := by
+  obtain ⟨k, t, hx, hQ, hk⟩ := h s hs
+  obtain ⟨j, hj, cost⟩ := Native.Natural.preserves hx
+  obtain ⟨u, hu, observed⟩ := hj.compile _ (Native.observe_encode _)
+  refine ⟨j, u, hu, ?_, by omega⟩
+  simpa only [integerObserve, observed, Native.Natural.project_store] using hQ
 
 end AlgoLib.Experimental.RAM.Checked.Language

@@ -76,17 +76,18 @@ set_option linter.hashCommand false in
         for eagerRight in [false, true] do
           let result := Demo.execute eagerLeft eagerRight (n + m + 2) xs ys (by simp [xs])
             (by simp [ys])
-          let expected := 44 + (if eagerLeft then 13 * (n + 2) + 3 else 2) +
-            (if eagerRight then 13 * (m + 2) + 3 else 2)
+          -- Native Nat reads normalize explicitly; retain exact instruction checks.
+          let expected := 56 + (if eagerLeft then 16 * (n + 2) + 4 else 2) +
+            (if eagerRight then 16 * (m + 2) + 4 else 2)
           let framed := Demo.executeFramed eagerLeft eagerRight (n + m + 2) xs ys
             (by simp [xs]) (by simp [ys]; omega)
           unless framed.value == ([], ys) do
             throw <| IO.userError "framing changed an unrelated buffer"
           let pushed := Demo.executePush eagerLeft (n + 1) xs 42 (by simp [xs])
-          unless pushed.value == xs ++ [42] && pushed.steps == 11 do
+          unless pushed.value == xs ++ [42] && pushed.steps == 14 do
             throw <| IO.userError "typed append did not preserve its payload"
           let drained := Demo.executeDrain eagerLeft n xs (by simp [xs])
-          let drainCost := if n == 0 then 3 else 6 + (if eagerLeft then 13 * n + 3 else 2)
+          let drainCost := if n == 0 then 4 else 8 + (if eagerLeft then 16 * n + 4 else 2)
           unless drained.value == [] && drained.steps == drainCost do
             throw <| IO.userError "nested client/implementation loop failed"
           unless result.value == ([], []) do

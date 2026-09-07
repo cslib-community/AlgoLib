@@ -42,14 +42,14 @@ example (xs : List Nat) : (Programs.Sorting.run xs).value.Perm xs :=
   (Programs.Sorting.run_correct xs).2
 
 example (xs : List Nat) (h : xs ≠ []) :
-    (Programs.Sorting.run xs).steps ≤ 205 * xs.length ^ 2 := Programs.Sorting.quadratic xs h
+    (Programs.Sorting.run xs).steps ≤ 410 * xs.length ^ 2 := Programs.Sorting.quadratic xs h
 
 example {β : Type} {a : Adjacency} {G : Graph Nat β} (input : Input a G) (v : Nat) :
     (Programs.Connectivity.run input).value.contains v = true ↔ Reachable G input.source v :=
   Programs.Connectivity.run_correct input v
 
 example {β : Type} {a : Adjacency} {G : Graph Nat β} (input : Input a G) :
-    (Programs.Connectivity.run input).steps ≤ 370 * (a.n + input.representation.edges.card) :=
+    (Programs.Connectivity.run input).steps ≤ 740 * (a.n + input.representation.edges.card) :=
   Programs.Connectivity.linear input
 
 /- Explicit graph/source arguments; the result is a vertex-set view. -/

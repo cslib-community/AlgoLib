@@ -6,22 +6,15 @@ Authors: Sorrachai Yingchareonthawornchai
 import AlgoLib.Experimental.RAM.Machine.Runner
 
 /-!
-# RAM output observations
+# Shared output views and historical register framing
 
-Defines static output descriptors and bitmap membership views together with execution/output and
-register-frame facts.
+`Bitmap` and `Execution` are mathematical output containers used by the native
+method interfaces. Turning a bitmap into a list is a host-side observation,
+separate from the charged algorithm execution.
 
-Converting a returned view to a display list is a separate host operation. Interface layers relate
-the observed values to mathematical specifications.
-
-## Further details
-
-# Typed RAM input and output interfaces
-
-A procedure has a typed input encoder, one fixed code body, and a restricted
-output descriptor. Outputs can read registers or expose a bitmap view; there
-is no arbitrary Lean result transformer that could hide an algorithm in decoding.
-Encoding supplies the initial input representation, outside the body cost.
+The remaining register-frame lemmas support historical instruction certificates.
+The obsolete Nat-machine `Output`/`Procedure` executable wrappers are removed;
+use the native typed method input/output interface or `Integer.TotalProgram`.
 -/
 namespace AlgoLib.Experimental.RAM.Checked
 
@@ -38,36 +31,9 @@ def Bitmap.contains (b : Bitmap) (v : Nat) : Bool :=
 /-- Host-side display/serialization, separate from the procedure's RAM count. -/
 def Bitmap.toList (b : Bitmap) : List Nat := (List.range b.length).filter b.contains
 
-/-- Restricted, static output descriptors. No arbitrary result computation. -/
-inductive Output : Type → Type 1 where
-  | word (r : Reg) : Output Nat
-  | bitmap (length : Reg) (stride offset : Nat) : Output Bitmap
-  | pair {α β} (left : Output α) (right : Output β) : Output (α × β)
-
-def Output.read {α : Type} : Output α → State → α
-  | .word r, s => s.regs r
-  | .bitmap r stride offset, s => ⟨s.regs r, s.memory, stride, offset⟩
-  | .pair a b, s => (a.read s, b.read s)
-
 structure Execution (α : Type) where
   output : α
   steps : Nat
-
-/-- Input and output types are part of the program's public signature. -/
-structure Procedure (Input : Type*) (OutputType : Type) where
-  encode : Input → State
-  body : Code
-  output : Output OutputType
-  terminates : ∀ input, Terminates body (encode input)
-
-def Procedure.run {I : Type*} {O : Type} (p : Procedure I O) (input : I) : Execution O :=
-  let result := Checked.run p.body (p.encode input) (p.terminates input)
-  ⟨p.output.read result.2, result.1⟩
-
-theorem Procedure.correct {I : Type*} {O : Type} (p : Procedure I O) (input : I) :
-    ∃ final, Exec p.body (p.encode input) (p.run input).steps final ∧
-      (p.run input).output = p.output.read final :=
-  ⟨_, Checked.run_correct _ _ _, rfl⟩
 
 /-- Syntactic register footprint, useful for proving output lengths and frames. -/
 def Instr.writes (r : Reg) : Instr → Bool

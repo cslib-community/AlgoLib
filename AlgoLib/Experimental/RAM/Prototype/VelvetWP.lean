@@ -64,7 +64,7 @@ theorem Returns.satisfies_wp {α : Type} {p : VelvetM α} {x : α}
 theorem loom_to_ram {Input Output : Type} {source : Input → VelvetM Output}
     (translation : Nondeterministic.Translation source) (input : Input)
     (valid : translation.valid input) (post : Output → Prop)
-    (proof : wp (source input) post) {steps : Nat} {final : Checked.State}
+    (proof : wp (source input) post) {steps : Nat} {final : Integer.State}
     (run : Nondeterministic.ExecIn translation.procedures translation.code
       (translation.encode input) steps final) :
     post (translation.decode final) :=

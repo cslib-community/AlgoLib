@@ -174,7 +174,7 @@ theorem run_correct {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β}
 
 /-- Linear RAM time, including initialization, for the very same executable. -/
 theorem linear {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β} (i : Input a G) :
-    (run i).steps ≤ 370 * (a.n + i.representation.edges.card) :=
+    (run i).steps ≤ 740 * (a.n + i.representation.edges.card) :=
   Search.linear_of_credits i ((certified a G).correct i (by trivial)).2
 
 /-- BFS solves connectivity by checking whether its returned set is the whole vertex set. -/
@@ -196,7 +196,7 @@ theorem connected_iff {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β}
 theorem main {β : Type} {a : Adjacency} {G : AlgoLib.Graph Nat β} (i : Input a G) :
     Returns G i.source (run i).value ∧
     (Connected G ↔ vertices (run i).value = G.vertexSet) ∧
-    (run i).steps ≤ 370 * (a.n + i.representation.edges.card) :=
+    (run i).steps ≤ 740 * (a.n + i.representation.edges.card) :=
   ⟨run_correct i, connected_iff i, linear i⟩
 
 /-- Ordinary edge-list graph plus a valid source; returns a Lean bitmap/vertex-set view. -/
@@ -207,7 +207,7 @@ def search (graph : EdgeInput) (source : Fin graph.n) : Result VertexSet :=
 theorem search_correct (graph : EdgeInput) (source : Fin graph.n) :
     Returns graph.graph source.val (search graph source).value ∧
     (Connected graph.graph ↔ vertices (search graph source).value = graph.graph.vertexSet) ∧
-    (search graph source).steps ≤ 370 * (graph.n + graph.represents.edges.card) :=
+    (search graph source).steps ≤ 740 * (graph.n + graph.represents.edges.card) :=
   main (graph.fromSource source.val source.isLt)
 
 /-- The same program, including composed procedure bodies, satisfies upstream Loom WP. -/

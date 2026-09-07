@@ -28,7 +28,7 @@ open Prototype.Composition
 ```
 
 Both return the vertex set `{0, 1, 2, 3}`. On this diamond input, the circular
-backend takes 520 RAM steps and the two-stack backend takes 589. `search` takes an ordinary `EdgeInput`
+backend takes 688 RAM steps and the two-stack backend takes 790. `search` takes an ordinary `EdgeInput`
 and a valid source `Fin input.n`, returns a Lean `Finset Nat`, and reports actual
 RAM instruction steps. It asks for no fuel. Termination follows from the checked
 loop obligations.

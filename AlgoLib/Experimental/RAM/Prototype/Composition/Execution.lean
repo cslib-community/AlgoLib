@@ -5,6 +5,7 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.Linking
 import AlgoLib.Experimental.RAM.Prototype.Composition.Loom
+import AlgoLib.Experimental.RAM.Prototype.Composition.ResidentInputs
 import AlgoLib.Experimental.RAM.Backend.Language.IntegerExecution
 
 /-!
@@ -27,43 +28,41 @@ theorem loom_linking {A B : Type} {rate : Nat} {P : Representation A}
     {Q : Representation B} {p : Program A B} (supported : Supported rate P Q p)
     (post : B → Prop) (a : A) (budget : Nat)
     (proof : _root_.wp (denote p a) (fun b _ _ => post b) () budget)
-    (r : Footprint) (machine : Checked.State) (saved : Nat)
-    (rep : P.holds a r (observe machine) saved) :
-    ∃ steps final b left, Checked.Exec supported.compile.code.compile machine steps final ∧
-      Q.holds b r (observe final) left ∧ post b ∧ Writes r (observe machine) (observe final) ∧
-      steps + left ≤ rate * budget + saved := by
+    (r : Footprint) (initial : Store) (saved : Nat)
+    (rep : P.holds a r initial saved) :
+    ∃ steps final b left, Integer.Exec (Native.Natural.command supported.compile.code).compile
+      (integerEncode initial) steps final ∧
+      Q.holds b r (integerObserve final) left ∧ post b ∧ Writes r initial (integerObserve final) ∧
+      steps + 2 * left ≤ 2 * (rate * budget + saved) := by
   rw [loom_wp_eq] at proof
   obtain ⟨k, _, b, run, hk, hb⟩ := proof
   obtain ⟨steps, t, left, exec, hQ, hw, hc⟩ := supported.compile.sound run r _ saved rep
-  obtain ⟨final, ram, equal⟩ := exec.compile machine rfl
-  exact ⟨steps, final, b, left, ram, equal ▸ hQ, hb, equal ▸ hw,
-    hc.trans (Nat.add_le_add_right (Nat.mul_le_mul_left _ hk) _)⟩
+  obtain ⟨actual, native, overhead⟩ := Native.Natural.preserves exec
+  obtain ⟨final, ram, equal⟩ := native.compile _ (Native.observe_encode _)
+  have observation : integerObserve final = t := by simp [integerObserve, equal]
+  exact ⟨actual, final, b, left, ram, observation.symm ▸ hQ, hb,
+    observation.symm ▸ hw, by nlinarith⟩
 
 /-- Link a previously specified procedure using its public contract, without reopening VCs. -/
 theorem procedure_linking {A B : Type} {rate : Nat} {P : Representation A}
     {Q : Representation B} (proc : Procedure A B)
     (supported : Supported rate P Q proc.body) (a : A) (valid : proc.requires a)
-    (r : Footprint) (machine : Checked.State) (saved : Nat)
-    (rep : P.holds a r (observe machine) saved) :
-    ∃ steps final b left, Checked.Exec supported.compile.code.compile machine steps final ∧
-      Q.holds b r (observe final) left ∧ proc.ensures a b ∧
-      Writes r (observe machine) (observe final) ∧
-      steps + left ≤ rate * proc.credits a + saved := by
+    (r : Footprint) (initial : Store) (saved : Nat)
+    (rep : P.holds a r initial saved) :
+    ∃ steps final b left, Integer.Exec (Native.Natural.command supported.compile.code).compile
+      (integerEncode initial) steps final ∧
+      Q.holds b r (integerObserve final) left ∧ proc.ensures a b ∧
+      Writes r initial (integerObserve final) ∧
+      steps + 2 * left ≤ 2 * (rate * proc.credits a + saved) := by
   obtain ⟨k, b, run, hb, hk⟩ := proc.correct a valid
   obtain ⟨steps, t, left, exec, hQ, hw, hc⟩ := supported.compile.sound run r _ saved rep
-  obtain ⟨final, ram, equal⟩ := exec.compile machine rfl
-  exact ⟨steps, final, b, left, ram, equal ▸ hQ, hb, equal ▸ hw,
-    hc.trans (Nat.add_le_add_right (Nat.mul_le_mul_left _ hk) _)⟩
+  obtain ⟨actual, native, overhead⟩ := Native.Natural.preserves exec
+  obtain ⟨final, ram, equal⟩ := native.compile _ (Native.observe_encode _)
+  have observation : integerObserve final = t := by simp [integerObserve, equal]
+  exact ⟨actual, final, b, left, ram, observation.symm ▸ hQ, hb,
+    observation.symm ▸ hw, by nlinarith⟩
 
-class Decoder (Q : Representation B) where
-  decode : Store → B
-  correct : ∀ b r s left, Q.holds b r s left → decode s = b
-
-instance [p : Decoder P] [q : Decoder Q] : Decoder (Representation.sep P Q) where
-  decode s := (p.decode s, q.decode s)
-  correct b r s left h := by
-    obtain ⟨r₁, r₂, p₁, p₂, _, _, _, hp, hq⟩ := h
-    exact Prod.ext (p.correct _ _ _ _ hp) (q.correct _ _ _ _ hq)
+abbrev Decoder (Q : Representation B) := Ownership.Decoder Q
 
 /-- The public runner's proof depends only on the logical theorem and linked leaves. -/
 def executable {A B : Type} {rate : Nat} {P : Representation A} {Q : Representation B}

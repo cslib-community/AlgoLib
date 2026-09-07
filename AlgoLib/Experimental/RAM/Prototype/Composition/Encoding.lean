@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.LocalImplementation
+import AlgoLib.Experimental.RAM.Prototype.Composition.ResidentInputs
 
 /-!
 # Compositional resident input interfaces
@@ -18,14 +19,7 @@ set_option relaxedAutoImplicit true
 namespace AlgoLib.Experimental.RAM.Prototype.Composition
 open Checked.Language
 
-structure Encoder (P : Representation A) where
-  footprint : Footprint
-  requires : A → Prop
-  saved : A → Nat
-  store : A → Store
-  correct : ∀ a, requires a → P.holds a footprint (store a) (saved a)
-
-/-- Recover an encoder's representation without repeating its generated local layout. -/
+abbrev Encoder (P : Representation A) := Ownership.Encoder P
 abbrev Encoder.representation {A : Type} {P : Representation A} (_ : Encoder P) := P
 
 /-- Copy only owned cells when assembling disjoint resident inputs. -/
@@ -43,23 +37,17 @@ theorem overlay_right (r f : Footprint) (s t : Store) (h : Disjoint r f) :
   have hn : l ∉ r := fun hr => Finset.disjoint_left.mp h hr hl
   cases l <;> simp_all [cell, overlay]
 
-def Encoder.sep (p : Encoder P) (q : Encoder Q) (hd : Disjoint p.footprint q.footprint) :
-    Encoder (P.sep Q) where
-  footprint := p.footprint ∪ q.footprint
-  requires a := p.requires a.1 ∧ q.requires a.2
-  saved a := p.saved a.1 + q.saved a.2
-  store a := overlay p.footprint (p.store a.1) (q.store a.2)
-  correct a h := ⟨p.footprint, q.footprint, p.saved a.1, q.saved a.2, hd, rfl, rfl,
-    P.locality (overlay_left _ _ _) (p.correct _ h.1),
-    Q.locality (overlay_right _ _ _ _ hd) (q.correct _ h.2)⟩
+instance : Ownership.Overlay ownershipModel where
+  overlay := overlay
+  left := overlay_left
+  right := overlay_right
 
-def Encoder.hide {Q : Representation L} (p : Encoder P) (q : Encoder Q) [l : Locals L]
-    (hq : q.requires l.initial) (hd : Disjoint p.footprint q.footprint) : Encoder (P.hide Q) where
-  footprint := p.footprint ∪ q.footprint
-  requires := p.requires
-  saved a := p.saved a + q.saved l.initial
-  store a := (p.sep q hd).store (a, l.initial)
-  correct _ h := ⟨l.initial, (p.sep q hd).correct _ ⟨h, hq⟩⟩
+abbrev Encoder.sep (p : Encoder P) (q : Encoder Q) (hd : Disjoint p.footprint q.footprint) :
+    Encoder (P.sep Q) := Ownership.Encoder.sep p q hd
+
+abbrev Encoder.hide {Q : Representation L} (p : Encoder P) (q : Encoder Q) [l : Locals L]
+    (hq : q.requires l.initial) (hd : Disjoint p.footprint q.footprint) : Encoder (P.hide Q) :=
+  Ownership.Encoder.hide p q hq hd
 
 def scalarEncoder (v : Var .word) : Encoder (Storage.scalar v) where
   footprint := {.register .word v.name}

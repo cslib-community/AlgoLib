@@ -133,28 +133,32 @@ No user invariant or additional compiler proof is an argument of this function. 
   | .call proc hp => @compileAction State M proc.call
       (@compileProcedure State M proc hp.compile)
 
-/-- All supported constructs preserve source execution and pay concrete RAM instructions. -/
+/-- All supported constructs preserve source execution and pay native integer instructions. -/
 theorem Supported.sound {State : Type} {M : Model State} {p : Program State}
     (supported : Supported M p) {s t : State} {credits : Nat} (run : Run p s credits t)
-    (machine : Checked.State) (rep : M.Represents s (observe machine)) :
-    ∃ steps final, Checked.Exec supported.compile.source.compile machine steps final ∧
-      M.Represents t (observe final) ∧ steps ≤ M.overhead * credits := by
+    (machine : Store) (rep : M.Represents s machine) :
+    ∃ steps final, Integer.Exec (Native.Natural.command supported.compile.source).compile
+      (integerEncode machine) steps final ∧
+      M.Represents t (integerObserve final) ∧ steps ≤ 2 * (M.overhead * credits) := by
   obtain ⟨steps, store, execution, represents, cost⟩ := supported.compile.refinement run _ rep
-  obtain ⟨final, target, equal⟩ := execution.compile machine rfl
-  exact ⟨steps, final, target, equal ▸ represents, cost⟩
+  obtain ⟨nativeSteps, native, lowering⟩ := Native.Natural.preserves execution
+  obtain ⟨final, target, equal⟩ := native.compile _ (Native.observe_encode _)
+  refine ⟨nativeSteps, final, target, ?_, by omega⟩
+  simpa only [integerObserve, equal, Native.Natural.project_store] using represents
 
-/-- The public supported-language theorem: logical VCs suffice for termination,
-functional correctness, and a RAM bound for the generated target. -/
+/-- Logical VCs suffice for termination, functional correctness, and the inferred
+native RAM bound. The source credit contract is unchanged by lowering. -/
 theorem Supported.vc_sound {State : Type} {M : Model State} {p : Program State}
     (supported : Supported M p) (post : State → Prop) (s : State) (credits : Nat)
     (proof : VC p (fun t _ => post t) s credits)
-    (machine : Checked.State) (rep : M.Represents s (observe machine)) :
-    ∃ steps final t, Checked.Exec supported.compile.source.compile machine steps final ∧
-      M.Represents t (observe final) ∧ post t ∧ steps ≤ M.overhead * credits := by
+    (machine : Store) (rep : M.Represents s machine) :
+    ∃ steps final t, Integer.Exec (Native.Natural.command supported.compile.source).compile
+      (integerEncode machine) steps final ∧
+      M.Represents t (integerObserve final) ∧ post t ∧ steps ≤ 2 * (M.overhead * credits) := by
   obtain ⟨k, t, run, cost, result⟩ := VC.sound p _ s credits proof
   obtain ⟨steps, final, execution, represents, time⟩ := supported.sound run machine rep
   exact ⟨steps, final, t, execution, represents, result,
-    time.trans (Nat.mul_le_mul_left _ cost)⟩
+    time.trans (Nat.mul_le_mul_left 2 (Nat.mul_le_mul_left _ cost))⟩
 
 open Lean Meta Elab Tactic in
 /-- Reconstruct syntax-directed support evidence from the program tree.

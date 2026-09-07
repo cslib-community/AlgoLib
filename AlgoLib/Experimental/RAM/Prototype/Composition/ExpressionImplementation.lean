@@ -5,6 +5,8 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.Expressions
 import AlgoLib.Experimental.RAM.Prototype.Composition.Linking
+import AlgoLib.Experimental.RAM.Prototype.Composition.Focus
+import AlgoLib.Experimental.RAM.Prototype.Composition.LocalRefinement
 
 /-!
 # Ownership-directed compilation of scalar and array expressions
@@ -19,36 +21,9 @@ set_option relaxedAutoImplicit true
 namespace AlgoLib.Experimental.RAM.Prototype.Composition
 open Checked.Language
 
-/-- A typed path borrows a represented component and can put an updated component back. -/
-class Focus (P : Representation S) (p : Path S A) (Q : outParam (Representation A)) where
-  open_ : ∀ a r s saved, P.holds a r s saved → ∃ f credit,
-    Q.holds (p.get a) f s credit ∧
-    ∀ b t left, Q.holds b f t left → Writes f s t →
-      ∃ total, P.holds (p.set a b) r t total ∧ Writes r s t ∧
-        total + credit = left + saved
-
-instance : Focus P .here P where
-  open_ a r s saved h := ⟨r, saved, h, fun _ _ left hb hw => ⟨left, hb, hw, by omega⟩⟩
-
-instance [f : Focus P p T] : Focus (P.sep Q) (.left p) T where
-  open_ a r s saved rep := by
-    obtain ⟨r₁, r₂, c₁, c₂, hd, rfl, rfl, hp, hq⟩ := rep
-    obtain ⟨r, c, hr, restore⟩ := f.open_ a.1 r₁ s c₁ hp
-    refine ⟨r, c, hr, ?_⟩
-    intro b t left hb hw
-    obtain ⟨total, ht, hw', hc⟩ := restore b t left hb hw
-    exact ⟨total + c₂, ⟨r₁, r₂, total, c₂, hd, rfl, rfl, ht, Q.frame hq hd hw'⟩,
-      hw'.mono Finset.subset_union_left, by omega⟩
-
-instance (P : Representation A) [f : Focus Q p T] : Focus (P.sep Q) (.right p) T where
-  open_ a r s saved rep := by
-    obtain ⟨r₁, r₂, c₁, c₂, hd, rfl, rfl, hp, hq⟩ := rep
-    obtain ⟨r, c, hr, restore⟩ := f.open_ a.2 r₂ s c₂ hq
-    refine ⟨r, c, hr, ?_⟩
-    intro b t left hb hw
-    obtain ⟨total, ht, hw', hc⟩ := restore b t left hb hw
-    exact ⟨c₁ + total, ⟨r₁, r₂, c₁, total, hd, rfl, rfl, P.frame hp hd.symm hw', ht⟩,
-      hw'.mono Finset.subset_union_right, by omega⟩
+/-- Source-compatible name for shared ownership-directed path focusing. -/
+abbrev Focus (P : Representation S) (p : Path S A) (Q : Representation A) :=
+  Ownership.Focus P p Q
 
 /-- A scalar occupies one word register; updates preserve its potential. -/
 class ScalarStorage (P : Representation Nat) where
@@ -146,17 +121,5 @@ instance [a : Expression P (.scalar x)] [b : Expression P (.scalar y)] :
     cases op <;> simp [Condition.eval, Comparison.eval, compare, Relation.eval,
       a.correct s r t c h trivial, b.correct s r t c h trivial, Value.eval]
   cost := by simp [Condition.cost, a.cost, b.cost, Value.credits]
-
-instance (P : Representation A) (Q : Representation B) (R : Representation C) :
-    Primitive rate ((P.sep Q).sep R) (associate A B C) (P.sep (Q.sep R)) where
-  code := .skip
-  correct a _ r s c h := ⟨0, s, c, .skip s,
-    (Representation.sep_assoc P Q R).mp h, Writes.refl _ _, by simp [associate]⟩
-
-instance (P : Representation A) (Q : Representation B) (R : Representation C) :
-    Primitive rate (P.sep (Q.sep R)) (unassociate A B C) ((P.sep Q).sep R) where
-  code := .skip
-  correct a _ r s c h := ⟨0, s, c, .skip s,
-    (Representation.sep_assoc P Q R).mpr h, Writes.refl _ _, by simp [unassociate]⟩
 
 end AlgoLib.Experimental.RAM.Prototype.Composition

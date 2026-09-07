@@ -180,7 +180,7 @@ theorem result_list_correct {β : Type*} {a : Experimental.RAM.BFS.Adjacency} {G
 
 theorem linear {β : Type*} {a : Experimental.RAM.BFS.Adjacency} {G : Graph Nat β}
     (args : Experimental.RAM.BFS.Input a G) :
-    (run args).steps ≤ 160 * (a.n + args.representation.edges.card) := by
+    (run args).steps ≤ 320 * (a.n + args.representation.edges.card) := by
   have h := (executable args.representation args.source args.source_valid).correct
     (input args) (input_valid args)
   have hpos := args.source_valid
@@ -197,8 +197,9 @@ theorem connected_iff {β : Type*} {a : Experimental.RAM.BFS.Adjacency} {G : Gra
 /-- End-to-end refinement of the compiled instructions to the graph specification. -/
 theorem ram_correct {β : Type*} {a : Experimental.RAM.BFS.Adjacency} {G : Graph Nat β}
     (rep : Experimental.RAM.BFS.Represents a G) (source : Nat) (hs : source < a.n)
-    (s : State) (h : Requires a source (observe s)) :
-    ∃ k t, Exec sourceProgram.compile s k t ∧ Post a G source (observe s) (observe t) ∧
-      k ≤ budget a.n rep.edges.card := (correct rep source hs).ram s h
+    (s : Store) (h : Requires a source s) :
+    ∃ k t, Integer.Exec (Native.Natural.command sourceProgram).compile (integerEncode s) k t ∧
+      Post a G source s (integerObserve t) ∧ k ≤ 2 * budget a.n rep.edges.card :=
+  (correct rep source hs).ram s h
 
 end AlgoLib.Experimental.RAM.Legacy.BFS

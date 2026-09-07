@@ -14,7 +14,9 @@ selected by executable extraction. The RAM budget is established for every
 execution. The examples are small semantic regressions, not a full compiler.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests
-open Checked VelvetSemantics Nondeterministic
+open Integer
+open Checked (Reg)
+open VelvetSemantics Nondeterministic
 
 method chooseWord return (result : Nat)
   do
@@ -37,18 +39,18 @@ theorem relay_returns (n : Nat) : Returns relay n := by
   exact .pick (x := n) trivial (.pure n)
 
 def resultRegister : Reg := .user 0 "result"
-def inputState : Checked.State := ⟨fun _ => 0, fun _ => 0⟩
+def inputState : Integer.State := ⟨fun _ => 0, fun _ => 0⟩
 
 /-- An actual source/target equivalence, with preservation and reflection. -/
 def chooseWordTranslation : Translation (fun (_ : Unit) => chooseWord) where
   code := .choose resultRegister
   encode _ := inputState
-  decode s := s.regs resultRegister
+  decode s := (s.regs resultRegister).toNat
   valid _ := True
   equivalent _ _ n := by
     constructor
     · intro _
-      exact ⟨1, _, .choose _ _ n, by simp [Checked.State.set]⟩
+      exact ⟨1, _, .choose _ _ n, by simp [Integer.State.set]⟩
     · intro _; exact chooseWord_returns n
 
 /-- The ordinary call is preserved as a charged target call through a finite table. -/
@@ -56,12 +58,12 @@ def relayTranslation : Translation (fun (_ : Unit) => relay) where
   code := .call 0
   procedures := [.choose resultRegister]
   encode _ := inputState
-  decode s := s.regs resultRegister
+  decode s := (s.regs resultRegister).toNat
   valid _ := True
   equivalent _ _ n := by
     constructor
     · intro _
-      exact ⟨3, _, .call rfl (.choose _ _ n), by simp [Checked.State.set]⟩
+      exact ⟨3, _, .call rfl (.choose _ _ n), by simp [Integer.State.set]⟩
     · intro _; exact relay_returns n
 
 /-- A universal cost bound, not a bound on one favorable nondeterministic run. -/
@@ -72,9 +74,9 @@ theorem chooseWord_budget : chooseWordTranslation.Within (fun _ => 1) := by
   exact Nat.le_refl _
 
 /-- Deterministic RAM cannot preserve all the outcomes of this ordinary Velvet method. -/
-theorem choice_needs_nondeterministic_RAM (code : Checked.Code) (input : Checked.State)
-    (decode : Checked.State → Nat) :
-    ¬ (∀ n, Returns chooseWord n ↔ ∃ k t, Checked.Exec code input k t ∧ decode t = n) :=
+theorem choice_needs_nondeterministic_RAM (code : Integer.Code) (input : Integer.State)
+    (decode : Integer.State → Nat) :
+    ¬ (∀ n, Returns chooseWord n ↔ ∃ k t, Integer.Exec code input k t ∧ decode t = n) :=
   deterministic_target_impossible chooseWord 0 1 (chooseWord_returns 0) (chooseWord_returns 1)
     (by decide) code input decode
 
@@ -96,9 +98,37 @@ theorem every_word_executable (n : Nat) :
       1 (inputState.set resultRegister n) := .next rfl (.done _ 1)
   have eq := Nondeterministic.run_eq trace
     (chooseWordExecutable.terminates () trivial (fun _ => n))
-  change (Nondeterministic.run [] (fun _ => n) (.choose resultRegister) inputState _).2.regs
-    resultRegister = n
+  change ((Nondeterministic.run [] (fun _ => n) (.choose resultRegister) inputState _).2.regs
+    resultRegister).toNat = n
   rw [eq]
   simp [State.set]
+
+/-- An invalid signed address cannot become a successful interpreter trace. -/
+example : ¬ Terminates [] (fun _ => 0)
+    (.deterministic (.block [.load resultRegister (.lit (-1))])) inputState := by
+  rintro ⟨k, t, trace⟩
+  have run := trace.exec
+  cases run with
+  | deterministic run =>
+    cases run with
+    | block success => simp [blockEval, Instr.eval, Operand.eval, address] at success
+
+private def signedCode : Nondeterministic.Code := .deterministic (.block [
+  .bin .sub resultRegister (.lit 3) (.lit 5),
+  .store (.lit 0) (.reg resultRegister),
+  .load resultRegister (.lit 0)])
+
+private theorem signed_terminates : Terminates [] (fun _ => 0) signedCode inputState := by
+  have execution : ∃ t, ExecIn [] signedCode inputState 3 t :=
+    ⟨_, .deterministic (.block rfl)⟩
+  obtain ⟨t, execution⟩ := execution
+  exact ⟨_, t, execution.trace (by simp) trivial (.done t 0)⟩
+
+/- Negative values survive both memory operations in the scheduled integer runner. -/
+set_option linter.hashCommand false in
+#eval show IO Unit from do
+  let r := Nondeterministic.run [] (fun _ => 0) signedCode inputState signed_terminates
+  unless r.1 == 3 && r.2.regs resultRegister == -2 && r.2.memory 0 == -2 do
+    throw <| IO.userError "native nondeterministic runner: signed memory regression"
 
 end AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests

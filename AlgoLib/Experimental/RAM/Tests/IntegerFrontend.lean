@@ -26,13 +26,13 @@ generate_obligations subtractFive
 complete_algorithm subtractFive
 compile_array_method subtractFive
 
--- Ten old IR instructions include one subtraction; integer lowering adds one clamp.
+-- Ten IR instructions gain two native clamps: one Nat load and one subtraction.
 set_option linter.hashCommand false in
 #guard_msgs in
 #eval show IO Unit from do
   for n in List.range 11 do
     let result := subtractFiveRun [n] (by simp)
-    unless result.value == [n - 5] && result.steps == 11 do
+    unless result.value == [n - 5] && result.steps == 12 do
       throw <| IO.userError "default frontend did not execute Int-RAM Nat subtraction"
 
 set_option linter.hashCommand false in

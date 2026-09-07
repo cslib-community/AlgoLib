@@ -39,7 +39,7 @@ no execution fuel is supplied by the caller.
 
 - `out.contains v = true ↔ Reachable G source v`, for every natural number `v`;
 - `Connected G ↔ BFS.vertices out = G.vertexSet`;
-- `steps ≤ 370 * (a.n + input.representation.edges.card)`.
+- `steps ≤ 740 * (a.n + input.representation.edges.card)`.
 
 The specification uses the repository's `AlgoLib.Graph`, its vertex set, and its
 labelled edges. The adjacency representation proves the connection to graph

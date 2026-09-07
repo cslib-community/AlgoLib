@@ -129,6 +129,9 @@ import AlgoLib.Experimental.RAM.Tests.OwnedBFSAxioms
 
 import AlgoLib.Experimental.RAM.Tests.IntegerRAM
 import AlgoLib.Experimental.RAM.Prototype.Composition.IntegerExecution
+import AlgoLib.Experimental.RAM.Tests.NativeArrays
+import AlgoLib.Experimental.RAM.Tests.NativeSourceFrontend
+import AlgoLib.Experimental.RAM.Tests.NativeCompiler
 import AlgoLib.Experimental.RAM.Tests.IntegerFrontend
 import AlgoLib.Experimental.RAM.Tests.SignedFrontend
 import AlgoLib.Experimental.RAM.Tests.SignedRejections

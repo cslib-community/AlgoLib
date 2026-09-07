@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Sorrachai Yingchareonthawornchai
 -/
 import Velvet.Std
-import AlgoLib.Experimental.RAM.Machine.Machine
+import AlgoLib.Experimental.RAM.Machine.Integer.Machine
 
 /-!
 # All-outcome semantics for ordinary Velvet methods
@@ -52,8 +52,8 @@ def Equivalent (p q : VelvetM α) : Prop := ∀ y, Returns p y ↔ Returns q y
 /-- A deterministic target cannot preserve two distinct nondeterministic outcomes. -/
 theorem deterministic_target_impossible {α : Type} (p : VelvetM α) (x y : α)
     (hx : Returns p x) (hy : Returns p y) (different : x ≠ y)
-    (code : Checked.Code) (input : Checked.State) (decode : Checked.State → α) :
-    ¬ (∀ z, Returns p z ↔ ∃ k t, Checked.Exec code input k t ∧ decode t = z) := by
+    (code : Integer.Code) (input : Integer.State) (decode : Integer.State → α) :
+    ¬ (∀ z, Returns p z ↔ ∃ k t, Integer.Exec code input k t ∧ decode t = z) := by
   intro equivalent
   obtain ⟨i, s, hs, hxs⟩ := (equivalent x).mp hx
   obtain ⟨j, t, ht, hyt⟩ := (equivalent y).mp hy

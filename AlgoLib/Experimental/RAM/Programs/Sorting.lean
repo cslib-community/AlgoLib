@@ -30,7 +30,7 @@ def SortedPermutation (xs ys : List Nat) : Prop :=
 The constant term covers empty-input initialization; the growth is quadratic. -/
 def Claim (sort : List Nat → Result (List Nat)) : Prop :=
   ∀ xs, SortedPermutation xs (sort xs).value ∧
-    (sort xs).steps ≤ 50 * xs.length ^ 2 + 100 * xs.length + 55
+    (sort xs).steps ≤ 100 * xs.length ^ 2 + 200 * xs.length + 110
 
 /-- The displayed body is the body compiled and executed. Input preparation
 creates todo = reverse xs and sorted = []; the output is the final array. -/
@@ -124,11 +124,11 @@ theorem run_correct (xs : List Nat) :
 
 /-- Exact advertised upper bound, including the empty-input constant. -/
 theorem time_bound (xs : List Nat) :
-    (run xs).steps ≤ 50 * xs.length ^ 2 + 100 * xs.length + 55 := (main xs).2
+    (run xs).steps ≤ 100 * xs.length ^ 2 + 200 * xs.length + 110 := (main xs).2
 
-/-- For nonempty inputs the same algorithm takes at most 205 n² RAM steps. -/
+/-- For nonempty inputs the same algorithm takes at most 410 n² RAM steps. -/
 theorem quadratic (xs : List Nat) (nonempty : xs ≠ []) :
-    (run xs).steps ≤ 205 * xs.length ^ 2 := by
+    (run xs).steps ≤ 410 * xs.length ^ 2 := by
   have h := time_bound xs
   have : 0 < xs.length := List.length_pos_iff.mpr nonempty
   nlinarith [Nat.mul_self_le_mul_self this]
@@ -139,7 +139,7 @@ theorem exists_quadratic_sort : ∃ p : VerifiedMethod Insertion.interface,
     p.method.requires = (fun _ => True) ∧
     ∀ xs (h : p.method.requires xs),
       SortedPermutation xs (p.run xs h).value ∧
-      (xs ≠ [] → (p.run xs h).steps ≤ 205 * xs.length ^ 2) := by
+      (xs ≠ [] → (p.run xs h).steps ≤ 410 * xs.length ^ 2) := by
   refine ⟨certified, rfl, ?_⟩
   intro xs h
   exact ⟨run_correct xs, quadratic xs⟩

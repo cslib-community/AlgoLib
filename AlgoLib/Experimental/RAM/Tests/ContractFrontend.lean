@@ -152,14 +152,15 @@ set_option linter.hashCommand false in
         for eagerRight in [false, true] do
           let r := Demo.execute eagerLeft eagerRight (n + m + 2) xs ys
             (by simp [xs]) (by simp [ys])
-          let expected := 44 + (if eagerLeft then 13 * (n + 2) + 3 else 2) +
-            (if eagerRight then 13 * (m + 2) + 3 else 2)
+          -- Native Nat reads normalize explicitly; retain exact instruction checks.
+          let expected := 56 + (if eagerLeft then 16 * (n + 2) + 4 else 2) +
+            (if eagerRight then 16 * (m + 2) + 4 else 2)
           unless r.value == ([], []) && r.steps == expected do
             throw <| IO.userError "contract frontend changed the buffer program or execution"
           let loop := Demo.executeLoop eagerLeft eagerRight (n + m) xs ys
             (by simp [xs]) (by simp [ys])
-          let expectedLoop := if n == 0 then 3 else
-            9 + (if eagerLeft then 13 * n + 3 else 2)
+          let expectedLoop := if n == 0 then 4 else
+            12 + (if eagerLeft then 16 * n + 4 else 2)
           unless loop.value == ([], ys) && loop.steps == expectedLoop do
             throw <| IO.userError "nested contract call or automatic frame failed"
 

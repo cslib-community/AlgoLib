@@ -68,12 +68,34 @@ error recovery must not leave a placeholder for completion to consume. The moder
 negative tests check missing proofs, invalid evidence, unknown names, and overlap
 without using the removed proof engine.
 
-## Backend migration in progress
+## Native execution backend
 
 `Machine.Integer` is now the default execution target for the supported owned
-frontend, including generated array runners and BFS assembly. The Nat machine is a
-temporary compiler intermediate and historical regression reference, not a public
-backend selector. Signed `Int` locals, arrays, arithmetic, comparisons, calls, and explicit conversions
+frontend, including generated array runners and BFS assembly. The supported frontend now lowers directly through `Backend.Native`; signed
+values occupy one integer cell. The Nat machine remains a historical regression
+reference, not a public backend selector. Natural-valued library implementation
+contracts translate at the source-semantics level without invoking the Nat compiler. Signed `Int` locals, arrays, arithmetic, comparisons, calls, and explicit conversions
 are supported by the owned frontend. See [signed source types](SIGNED-INTEGERS.md). See [the migration status](../../Machine/Integer/README.md).
 Source `Nat` subtraction remains saturating. Machine bounds now include the verified
 integer-lowering overhead; polynomial-display lemmas have been regenerated.
+
+## Removed Nat-machine execution wrappers
+
+`Checked.TotalProgram`, `Checked.Procedure`, their runners, and the unused
+`Checked.Output` descriptor are removed. Low-level integer programs use
+`Integer.TotalProgram`; typed inputs/outputs use `Native.Method` or the generated
+frontend runners. The older `Checked.Language.Function.run` and `Method.run`
+also execute native integer instructions now.
+
+`Checked.run` remains an internal historical reference evaluator for regression
+and migration proofs. The old instruction semantics and compiler theorems remain
+available to those proofs; retaining that evidence does not provide a selectable
+Nat execution backend. `sortCode_terminates` retains the historical sorting
+termination certificate without packaging another executable API.
+
+The same target now backs nondeterministic/recursive translation fixtures and
+supported-language soundness theorems. Their source scopes remain as documented.
+The boundary check rejects explicit historical target references in author-facing
+Lean modules and transitive old-compiler/runner imports from `Backend.Native`.
+Natural-valued private implementation contracts remain compatible source views;
+they do not expose a Nat-RAM backend option.

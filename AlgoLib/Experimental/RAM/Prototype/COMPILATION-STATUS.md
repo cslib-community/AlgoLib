@@ -12,6 +12,18 @@ certificates. It does not turn an arbitrary `method` declaration into RAM code.
 A certificate whose fields ask for an equivalence proof is not itself a proof that
 an automatic compiler produces such a certificate for every supported method.
 
+## Integer target
+
+These translation certificates and the scheduled interpreter now use native
+Int-RAM state and instructions. Source natural numbers remain natural numbers;
+encoders and output observations preserve that boundary. Choices still accept the
+same external natural-number schedule. Recursive calls and returns retain their
+charges. Invalid addresses are stuck, not successful outcomes.
+
+The ordinary multiple-array translation now uses the native method execution
+witness directly. There is no separate Nat-target witness for that example.
+This backend replacement does not expand the frontend scope described above.
+
 ## What users can run now
 
 ```lean

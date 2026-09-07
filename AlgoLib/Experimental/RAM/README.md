@@ -46,9 +46,9 @@ See [Logical credits and inferred RAM time](docs/CREDITS-AND-BACKENDS.md) for th
 | Check the generated method obligations | `verification : insertionSort.VCs` | `verification : (breadthFirstSearch a G).VCs` |
 | Run and use the theorem | `run`, `main`, `quadratic` | `run`, `main`, `connected_iff_set`, `linear` |
 
-For every list, sorting returns a sorted permutation in at most `50n² + 100n + 55` RAM steps. For nonempty lists, `quadratic` gives `205n²`. The constant term matters for empty input. `exists_quadratic_sort` also states existence using a **verified procedure** as its witness.
+For every list, sorting returns a sorted permutation in at most `100n² + 200n + 110` RAM steps. For nonempty lists, `quadratic` gives `410n²`. The constant term matters for empty input. `exists_quadratic_sort` also states existence using a **verified procedure** as its witness.
 
-BFS takes a graph represented by adjacency lists and a valid source, and returns a vertex-set membership view. `main` proves exact reachability, **`Connected G ↔ vertices S = G.vertexSet`**, and at most `370(|V| + |E|)` RAM steps. Disconnected graphs, isolated vertices, loops, and parallel labelled edges are supported. An empty graph cannot supply a valid source.
+BFS takes a graph represented by adjacency lists and a valid source, and returns a vertex-set membership view. `main` proves exact reachability, **`Connected G ↔ vertices S = G.vertexSet`**, and at most `740(|V| + |E|)` RAM steps. Disconnected graphs, isolated vertices, loops, and parallel labelled edges are supported. An empty graph cannot supply a valid source.
 
 ## The displayed program is the executable program
 

@@ -283,11 +283,10 @@ theorem no_zero_time_sort : ¬ ∃ c : Code, SortsWithin c (fun _ => 0) := by
   subst t
   norm_num [s, initial, contents, ofList] at hs
 
-/-- Package the RAM program once; callers only supply the input state. -/
-def sortProgram : TotalProgram where
-  code := sortCode
-  terminates s := by
-    obtain ⟨k, t, hx, _, _⟩ := sortCode_exec s
-    exact ⟨k, t, hx⟩
+/-- Termination of the historical instruction certificate. Native method
+assembly reuses the source refinement proof; this is not an alternative runner. -/
+theorem sortCode_terminates (s : State) : Terminates sortCode s := by
+  obtain ⟨k, t, hx, _, _⟩ := sortCode_exec s
+  exact ⟨k, t, hx⟩
 
 end AlgoLib.Experimental.RAM.Checked

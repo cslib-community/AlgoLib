@@ -138,22 +138,23 @@ def run (xs : List Nat) : Result :=
   ⟨contents result.2.heap 0 xs.length, result.1⟩
 
 theorem run_correct (xs : List Nat) : (run xs).values.Pairwise (· ≤ ·) ∧
-    (run xs).values.Perm xs ∧ (run xs).steps ≤ budget xs.length := by
+    (run xs).values.Perm xs ∧ (run xs).steps ≤ 2 * budget xs.length := by
   have h := method.correct (input xs) (by
     change Refinement.Ready (input xs)
     simp [input, Refinement.Ready])
   simpa [run, method, Post, input, Refinement.slot, Refinement.name, contents_input] using
     And.intro h.2.1.1 (And.intro h.2.1.2.1 h.2.2)
 
-theorem quadratic (xs : List Nat) (hn : 1 ≤ xs.length) : (run xs).steps ≤ 70 * xs.length ^ 2 := by
+theorem quadratic (xs : List Nat) (hn : 1 ≤ xs.length) : (run xs).steps ≤ 140 * xs.length ^ 2 := by
   have h := (run_correct xs).2.2
   have : xs.length ≤ xs.length ^ 2 := by nlinarith
   dsimp [budget] at h
   nlinarith
 
 /-- End-to-end theorem: the compiled instructions establish the same contract. -/
-theorem ram_correct (s : State) (hs : Refinement.Ready (observe s)) :
-    ∃ k t, Exec sourceProgram.compile s k t ∧ Post (observe s) (observe t) ∧
-      k ≤ budget ((observe s).vars .word remaining.name) := correct.ram s hs
+theorem ram_correct (s : Store) (hs : Refinement.Ready s) :
+    ∃ k t, Integer.Exec (Native.Natural.command sourceProgram).compile (integerEncode s) k t ∧
+      Post s (integerObserve t) ∧ k ≤ 2 * budget (s.vars .word remaining.name) :=
+  correct.ram s hs
 
 end AlgoLib.Experimental.RAM.Legacy.InsertionSort

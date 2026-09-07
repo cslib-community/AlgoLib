@@ -13,7 +13,7 @@ import AlgoLib.Experimental.RAM.Tests.CreditLogic
 Here a backend author realizes its one primitive in two ways: a direct increment,
 and an increment with a scratch assignment. Both implement the exact same action.
 The compiler reconstructs sequence and procedure certificates. The selected backend
-infers bounds of 16 and 24 instructions; the logical method specifies only 4 credits.
+infers bounds of 32 and 48 instructions; the logical method specifies only 4 credits.
 
 This is an implementation-author example. Algorithm authors need only CreditLogic.lean.
 Both executions use the verified RAM runner, with no supplied fuel or host evaluation
@@ -84,8 +84,8 @@ theorem correct (scratch : Bool) (n : Nat) :
     (run scratch n).value = n + 4 ∧ (run scratch n).steps ≤ (method scratch).time n :=
   (certified scratch).correct n trivial
 
-example (n : Nat) : (method false).time n = 16 := rfl
-example (n : Nat) : (method true).time n = 24 := rfl
+example (n : Nat) : (method false).time n = 32 := rfl
+example (n : Nat) : (method true).time n = 48 := rfl
 
 /-- An abstract effect is not an executable implementation certificate. -/
 def unimplemented : Action Nat where
@@ -104,9 +104,9 @@ set_option linter.hashCommand false in
 #eval show IO Unit from do
   let direct := run false 7
   let scratch := run true 7
-  unless direct.value == 11 && direct.steps == 16 do
+  unless direct.value == 11 && direct.steps == 20 do
     throw <| IO.userError "direct backend failed"
-  unless scratch.value == 11 && scratch.steps == 24 do
+  unless scratch.value == 11 && scratch.steps == 28 do
     throw <| IO.userError "scratch backend failed"
 
 end AlgoLib.Experimental.RAM.Tests.BackendReuse

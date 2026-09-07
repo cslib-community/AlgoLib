@@ -76,7 +76,7 @@ set_option linter.hashCommand false in
       let r := Programs.Sorting.run xs
       unless r.value == xs.mergeSort (· ≤ ·) do
         throw <| IO.userError s!"paper sort: {xs}"
-      unless r.steps ≤ 50*n*n + 100*n + 55 do
+      unless r.steps ≤ 100*n*n + 200*n + 110 do
         throw <| IO.userError s!"paper sort budget: {xs}"
   for mask in List.range 64 do
     for source in List.finRange 4 do
@@ -84,7 +84,7 @@ set_option linter.hashCommand false in
       let r := Programs.Connectivity.run (graph.fromSource source.val source.isLt)
       unless r.value.toList == Experimental.RAM.Tests.reference graph source.val do
         throw <| IO.userError s!"paper BFS: mask={mask}, source={source.val}"
-      unless r.steps ≤ 370 * (4 + graph.edges.length) do
+      unless r.steps ≤ 740 * (4 + graph.edges.length) do
         throw <| IO.userError s!"paper BFS budget: mask={mask}, source={source.val}"
   let singleton := Experimental.RAM.Legacy.Examples.singleton
   unless (Programs.Connectivity.run (singleton.fromSource 0 (by decide))).value.toList == [0] do

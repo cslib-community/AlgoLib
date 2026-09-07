@@ -45,9 +45,9 @@ attribute [paper_simps] List.orderedInsert_length
 
 /-- Normalize the backend's inferred bound for the standard insertion credit budget. -/
 theorem quadratic_of_credits (xs : List Nat) {steps : Nat}
-    (h : steps ≤ interface.preparationCost xs +
-      model.overhead * (xs.length * (xs.length + 2) + 1)) :
-    steps ≤ 50 * xs.length ^ 2 + 100 * xs.length + 55 := by
+    (h : steps ≤ 2 * (interface.preparationCost xs +
+      model.overhead * (xs.length * (xs.length + 2) + 1))) :
+    steps ≤ 100 * xs.length ^ 2 + 200 * xs.length + 110 := by
   simp only [preparation_work, implementation_work] at h
   nlinarith
 

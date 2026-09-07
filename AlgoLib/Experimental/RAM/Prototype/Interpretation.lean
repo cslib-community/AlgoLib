@@ -18,17 +18,19 @@ variable {State : Type} {M : Model State}
 
 /-- The compiler receives exactly the syntax inspected by `denote`. -/
 def compile (M : Model State) (p : Program State)
-    (c : Compilation M p := by ram_compile) : Checked.Code :=
-  (p.source M c).compile
+    (c : Compilation M p := by ram_compile) : Integer.Code :=
+  (Native.Natural.command (p.source M c)).compile
 
 /-- A symbolic execution certifies the same compiled program, with bounded RAM work. -/
 theorem compilation_sound {p : Program State} [Compilation M p] {s t : State} {k : Nat}
-    (h : denote p s k t ()) (r : Checked.State)
-    (hr : M.Represents s (Checked.Language.observe r)) :
-    ∃ j u, Checked.Exec (compile M p) r j u ∧
-      M.Represents t (Checked.Language.observe u) ∧ j ≤ M.overhead * k := by
+    (h : denote p s k t ()) (r : Checked.Language.Store)
+    (hr : M.Represents s r) :
+    ∃ j u, Integer.Exec (compile M p) (Checked.Language.integerEncode r) j u ∧
+      M.Represents t (Checked.Language.integerObserve u) ∧ j ≤ 2 * (M.overhead * k) := by
   obtain ⟨j, v, hv, ht, hj⟩ := (denote_run p h).refines _ hr
-  obtain ⟨u, hu, he⟩ := hv.compile r rfl
-  exact ⟨j, u, hu, he ▸ ht, hj⟩
+  obtain ⟨nativeSteps, native, lowering⟩ := Native.Natural.preserves hv
+  obtain ⟨u, hu, observed⟩ := native.compile _ (Native.observe_encode _)
+  refine ⟨nativeSteps, u, hu, ?_, by omega⟩
+  simpa only [Checked.Language.integerObserve, observed, Native.Natural.project_store] using ht
 
 end AlgoLib.Experimental.RAM.Prototype

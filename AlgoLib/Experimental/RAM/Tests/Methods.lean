@@ -40,7 +40,7 @@ def emptyMethod : Method Insertion.interface :=
 example : emptyMethod.VCs := by
   simp [Method.VCs, emptyMethod, VC]
 
-example : emptyMethod.time [] = 5 := rfl
+example : emptyMethod.time [] = 10 := rfl
 
 /-- A postcondition must be justified; it is not a display-only annotation. -/
 def impossibleOutput : Method Insertion.interface :=

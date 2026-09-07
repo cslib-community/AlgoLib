@@ -29,7 +29,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Authoring.Run.refines
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Authoring.Interface.correct' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Authoring.Interface.correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Authoring.Interface.correct
 
@@ -61,7 +61,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Programs.Connectivity.connected_iff
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Authoring.VerifiedMethod.correct' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Authoring.VerifiedMethod.correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Authoring.VerifiedMethod.correct
 

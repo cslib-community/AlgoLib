@@ -67,7 +67,7 @@ theorem Interface.correct {State Input Output : Type} {M : Model State}
     (proof : Correct p P Q budget) (input : Input) (valid : P (api.initial input)) :
     (∃ b, Q (api.initial input) b ∧ api.Observes b (api.run proof input valid).value) ∧
       (api.run proof input valid).steps ≤
-        api.preparationCost input + M.overhead * budget (api.initial input) := by
+        2 * (api.preparationCost input + M.overhead * budget (api.initial input)) := by
   have h := (api.method proof input valid).correct (api.encode input) rfl
   obtain ⟨b, hb, hr⟩ := h.2.1
   exact ⟨⟨b, hb, api.output input b _ hr⟩, h.2.2⟩

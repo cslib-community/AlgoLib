@@ -56,9 +56,9 @@ open AlgoLib.Experimental.RAM.Prototype
 #check InsertionSort.loom_correct
 ```
 
-`main` proves a sorted permutation and at most `300*n² + 300*n + 360` executed
+`main` proves a sorted permutation and at most `600*n² + 600*n + 720` executed
 RAM instructions for **every** input, including the empty array. `quadratic` gives
-`960*n²` for nonempty inputs. These conservative constants pay for the explicit
+`1920*n²` for nonempty inputs. These conservative constants pay for the explicit
 array implementation and all its guards and scalar bookkeeping. `run` takes no fuel.
 
 ## Write the algorithm

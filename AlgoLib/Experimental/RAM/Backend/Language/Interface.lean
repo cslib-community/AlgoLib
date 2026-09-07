@@ -31,26 +31,24 @@ structure Function (Input : Type*) where
   verification : ∀ x, ∃ k t, Eval body (input x) k t ∧
     ensures x (t.vars .word output.name) ∧ k ≤ budget x
 
-def Function.machine {Input : Type*} (p : Function Input) : Checked.Procedure Input Nat where
-  encode x := encode (p.input x)
-  body := p.body.compile
-  output := .word p.output.reg
-  terminates x := by
-    obtain ⟨k, t, hx, _, _⟩ := p.verification x
-    obtain ⟨u, hu, _⟩ := hx.compile _ (observe_encode _)
-    exact ⟨k, u, hu⟩
+/-- The lower entry point shares the native method runner. Its contract is still
+stated in source credits; lowering supplies the machine bound. -/
+def Function.machine {Input : Type*} (p : Function Input) (x : Input) : Method where
+  body := p.body
+  requires s := s = p.input x
+  ensures _ t := p.ensures x (t.vars .word p.output.name)
+  budget _ := p.budget x
+  verification s hs := by
+    subst s
+    exact p.verification x
 
 def Function.run {Input : Type*} (p : Function Input) (x : Input) : Execution Nat :=
-  p.machine.run x
+  let result := (p.machine x).run (p.input x) rfl
+  ⟨result.2.vars .word p.output.name, result.1⟩
 
 theorem Function.correct {Input : Type*} (p : Function Input) (x : Input) :
-    p.ensures x (p.run x).output ∧ (p.run x).steps ≤ p.budget x := by
-  obtain ⟨k, t, hx, hQ, hk⟩ := p.verification x
-  obtain ⟨u, hu, ht⟩ := hx.compile _ (observe_encode _)
-  have hv : u.regs p.output.reg = t.vars .word p.output.name :=
-    congrArg (fun s : Store => s.vars .word p.output.name) ht
-  simp only [Function.run, Function.machine, Checked.Procedure.run, Checked.run_eq hu,
-    Output.read, hv]
-  exact ⟨hQ, hk⟩
+    p.ensures x (p.run x).output ∧ (p.run x).steps ≤ 2 * p.budget x := by
+  have h := (p.machine x).correct (p.input x) rfl
+  exact ⟨h.2.1, h.2.2⟩
 
 end AlgoLib.Experimental.RAM.Checked.Language

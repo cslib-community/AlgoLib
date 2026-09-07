@@ -31,7 +31,7 @@ private theorem scratch_disjoint (kind : FIFO) (a : Adjacency) (base capacity : 
   cases location with
   | heap address => simp [scratch, Encoder.sep, scalarEncoder] at localOwned
   | register ty name =>
-    simp only [scratch, Encoder.sep, scalarEncoder, Finset.mem_union,
+    simp only [scratch, Encoder.sep, Ownership.Encoder.sep_footprint, scalarEncoder, Finset.mem_union,
       Finset.mem_singleton, Location.register.injEq] at localOwned
     repeat' first | cases_type Or | cases_type And
     all_goals subst_vars

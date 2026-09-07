@@ -26,16 +26,16 @@ ram method swapFirst (mut left : Array Int) (mut right : Array Int) return (u : 
 generate_obligations swapFirst
 complete_algorithm swapFirst
 
-private abbrev leftLayout : SignedArrays.Layout :=
-  ⟨SignedStorageImpl.Layout.named "twins.left", 10, 2⟩
-private abbrev rightLayout : SignedArrays.Layout :=
-  ⟨SignedStorageImpl.Layout.named "twins.right", 100, 2⟩
-private abbrev scratch := local_storage% "twins.scratch" : swapFirstLocals
+private abbrev leftLayout : Native.ArrayLayout :=
+  ⟨⟨"twins.left.size"⟩, 10, 2⟩
+private abbrev rightLayout : Native.ArrayLayout :=
+  ⟨⟨"twins.right.size"⟩, 100, 2⟩
+private abbrev scratch := native_local_storage% "twins.scratch" : swapFirstLocals
 private abbrev encoder :=
-  ((SignedArrays.encoder leftLayout).sep (SignedArrays.encoder rightLayout) (by decide)).hide
+  ((Native.arrayEncoder id leftLayout).sep (Native.arrayEncoder id rightLayout) (by decide)).hide
     scratch (by trivial) (by decide)
 
-private instance : Linked 24 encoder.representation swapFirst.body encoder.representation := by
+private instance : Native.Linked 24 encoder.representation swapFirst.body encoder.representation := by
   ram_link
 
 set_option linter.hashCommand false in
@@ -44,9 +44,9 @@ set_option linter.hashCommand false in
   for k in List.range 11 do
     let a : Int := (k : Int) - 5
     let input := (#[a, -9], #[-a, 7])
-    let result := runEncoded (rate := 24) (Q := encoder.representation)
+    let result := Native.runEncoded (rate := 24) (Q := encoder.representation)
       swapFirstProcedure encoder input (by simp [input]) (by simp [encoder, input,
-        Encoder.hide, Encoder.sep, SignedArrays.encoder, leftLayout, rightLayout])
+        Native.Encoder.hide, Native.Encoder.sep, Native.arrayEncoder, leftLayout, rightLayout])
     unless result.value == (#[-a, -9], #[a, 7]) do
       throw <| IO.userError "signed ownership/layout composition"
 

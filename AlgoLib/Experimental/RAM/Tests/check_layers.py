@@ -160,4 +160,18 @@ subprocess.run([sys.executable, str(root / "Tests/Conformance/generate.py"), "--
                check=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
 subprocess.run([sys.executable, str(root / "Tests/Conformance/generate_signed.py"), "--check"],
                check=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+
+# Supported interfaces must not leak the retired target back into execution
+# witnesses. Historical instruction references belong in Backend/Machine/Tests.
+for module, path in modules.items():
+    if path.relative_to(root).parts[0] in {"Authoring", "Programs", "Prototype"}:
+        assert not re.search(r"\bChecked\.(?:Exec|Code|run)\b", path.read_text()), (
+            path, "supported interface references the retired Nat execution target"
+        )
+    if "Backend/Native/" in path.as_posix():
+        for retired in ("Backend.Language.Compiler", "Machine.Runner"):
+            assert prefix + retired not in dependencies(module), (
+                path, "native compiler transitively imports a retired compiler/runner", retired
+            )
+
 print(f"Checked {len(modules)} documented modules: boundaries and import DAG OK")

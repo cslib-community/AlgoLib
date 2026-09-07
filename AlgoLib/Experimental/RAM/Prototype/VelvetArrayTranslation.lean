@@ -48,14 +48,15 @@ private def pack (arrays : Fin 2 → Array Nat) : Outputs := ((), arrays 0, arra
 
 private abbrev executable := MultipleArrayTests.exchangeHeadsVerified
 
-def machineCode : Checked.Code :=
-  (Cmd.seq (MultipleArrays.interface 2).prepare executable.compilation.source).compile
+def machineCode : Integer.Code :=
+  (Native.Natural.command
+    (Cmd.seq (MultipleArrays.interface 2).prepare executable.compilation.source)).compile
 
-def machineInput (input : Inputs) : Checked.State :=
-  encode ((MultipleArrays.interface 2).encode (inputs input))
+def machineInput (input : Inputs) : Integer.State :=
+  integerEncode ((MultipleArrays.interface 2).encode (inputs input))
 
-def decode (state : Checked.State) : Outputs :=
-  pack ((MultipleArrays.interface 2).decode (fun _ => #[]) (observe state))
+def decode (state : Integer.State) : Outputs :=
+  pack ((MultipleArrays.interface 2).decode (fun _ => #[]) (integerObserve state))
 
 private theorem result_eq (input : Inputs) (hl : 0 < input.1.size) (hr : 0 < input.2.size) :
     pack (executable.run (inputs input) ⟨hl, hr, trivial⟩).value = answer input := by
@@ -73,7 +74,7 @@ def translation : Translation source where
     obtain ⟨final, run, result⟩ := method_execution executable (inputs input)
       ⟨valid.1, valid.2, trivial⟩
     have decoded : decode final = answer input := by
-      change pack ((MultipleArrays.interface 2).decode (inputs input) (observe final)) = _
+      change pack ((MultipleArrays.interface 2).decode (inputs input) (integerObserve final)) = _
       rw [result]
       exact result_eq input valid.1 valid.2
     rw [source_outcomes]
@@ -89,7 +90,7 @@ def translation : Translation source where
 
 /-- Source correctness is now transportable to every execution of the RAM translation. -/
 theorem correct (input : Inputs) (valid : translation.valid input)
-    {steps : Nat} {final : Checked.State}
+    {steps : Nat} {final : Integer.State}
     (run : Nondeterministic.ExecIn translation.procedures translation.code
       (translation.encode input) steps final) :
     translation.decode final = answer input :=

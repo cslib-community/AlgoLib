@@ -99,9 +99,9 @@ attribute [paper_simps] dequeue_requires dequeue_effect dequeue_work
 /-- Normalize inferred RAM cost using the adjacency representation's incidence bound. -/
 theorem linear_of_credits {β : Type} {a : Adjacency} {G : Graph Nat β}
     (i : Input a G) {steps : Nat}
-    (h : steps ≤ (interface a G).preparationCost i +
-      (model a).overhead * (3 * a.n + 2 * a.entries + 1)) :
-    steps ≤ 370 * (a.n + i.representation.edges.card) := by
+    (h : steps ≤ 2 * ((interface a G).preparationCost i +
+      (model a).overhead * (3 * a.n + 2 * a.entries + 1))) :
+    steps ≤ 740 * (a.n + i.representation.edges.card) := by
   have := i.representation.incidenceBound
   have := i.source_valid
   simp only [preparation_work, implementation_work] at h

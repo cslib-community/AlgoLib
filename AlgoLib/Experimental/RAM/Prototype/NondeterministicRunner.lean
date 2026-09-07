@@ -19,7 +19,8 @@ For choice-free code, any big-step execution supplies this proof automatically,
 including recursive calls. No input fuel, guessed timeout, or output oracle is used.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Nondeterministic
-open Checked
+open Integer
+open Checked (Reg)
 
 inductive Frame where
   | code (body : Nondeterministic.Code)
@@ -27,7 +28,7 @@ inductive Frame where
 
 structure Config where
   todo : List Frame
-  state : Checked.State
+  state : Integer.State
   choiceIndex : Nat := 0
 
 /-- The schedule supplies the next natural word only at a choice instruction. -/
@@ -37,7 +38,7 @@ def step (procedures : List Nondeterministic.Code) (schedule : Nat → Nat)
   | [] => none
   | .returning :: rest => some (1, { c with todo := rest })
   | .code (.deterministic (.block is)) :: rest =>
-    some (is.length, { c with todo := rest, state := blockEval is c.state })
+    (blockEval is c.state).map (fun s => (is.length, { c with todo := rest, state := s }))
   | .code (.deterministic (.seq a b)) :: rest =>
     some (0, { c with todo := .code (.deterministic a) :: .code (.deterministic b) :: rest })
   | .code (.deterministic (.ite q a b)) :: rest =>
@@ -62,14 +63,14 @@ def Next (procedures : List Nondeterministic.Code) (schedule : Nat → Nat)
 
 /-- A successful finite trace must reach the empty control stack. -/
 inductive Trace (procedures : List Nondeterministic.Code) (schedule : Nat → Nat) :
-    Config → Nat → Checked.State → Prop where
-  | done (s : Checked.State) (index : Nat) : Trace procedures schedule ⟨[], s, index⟩ 0 s
-  | next {c d : Config} {i j : Nat} {t : Checked.State} :
+    Config → Nat → Integer.State → Prop where
+  | done (s : Integer.State) (index : Nat) : Trace procedures schedule ⟨[], s, index⟩ 0 s
+  | next {c d : Config} {i j : Nat} {t : Integer.State} :
       step procedures schedule c = some (i, d) → Trace procedures schedule d j t →
       Trace procedures schedule c (i + j) t
 
 theorem Trace.accessible {procedures : List Nondeterministic.Code} {schedule : Nat → Nat}
-    {c : Config} {k : Nat} {s : Checked.State} (h : Trace procedures schedule c k s) :
+    {c : Config} {k : Nat} {s : Integer.State} (h : Trace procedures schedule c k s) :
     Acc (Next procedures schedule) c := by
   induction h with
   | done s index =>
@@ -85,7 +86,7 @@ theorem Trace.accessible {procedures : List Nondeterministic.Code} {schedule : N
 
 /-- Termination proofs are erased; evaluation follows actual machine transitions. -/
 def execute (procedures : List Nondeterministic.Code) (schedule : Nat → Nat)
-    (c : Config) (h : Acc (Next procedures schedule) c) : Nat × Checked.State :=
+    (c : Config) (h : Acc (Next procedures schedule) c) : Nat × Integer.State :=
   match hs : step procedures schedule c with
   | none => (0, c.state)
   | some (k, d) =>
@@ -95,7 +96,7 @@ termination_by (⟨c, h⟩ : { c : Config // Acc (Next procedures schedule) c })
 decreasing_by exact ⟨k, hs⟩
 
 theorem execute_eq {procedures : List Nondeterministic.Code} {schedule : Nat → Nat}
-    {c : Config} {k : Nat} {t : Checked.State} (trace : Trace procedures schedule c k t)
+    {c : Config} {k : Nat} {t : Integer.State} (trace : Trace procedures schedule c k t)
     (h : Acc (Next procedures schedule) c) : execute procedures schedule c h = (k, t) := by
   induction trace with
   | done s index => rw [execute]; rfl
@@ -110,25 +111,25 @@ theorem execute_eq {procedures : List Nondeterministic.Code} {schedule : Nat →
       rw [ih]
 
 def Terminates (procedures : List Nondeterministic.Code) (schedule : Nat → Nat)
-    (code : Nondeterministic.Code) (s : Checked.State) : Prop :=
+    (code : Nondeterministic.Code) (s : Integer.State) : Prop :=
   ∃ k t, Trace procedures schedule ⟨[.code code], s, 0⟩ k t
 
 def run (procedures : List Nondeterministic.Code) (schedule : Nat → Nat)
-    (code : Nondeterministic.Code) (s : Checked.State)
-    (h : Terminates procedures schedule code s) : Nat × Checked.State :=
+    (code : Nondeterministic.Code) (s : Integer.State)
+    (h : Terminates procedures schedule code s) : Nat × Integer.State :=
   execute procedures schedule ⟨[.code code], s, 0⟩ (by
     obtain ⟨_, _, trace⟩ := h
     exact trace.accessible)
 
 theorem run_eq {procedures : List Nondeterministic.Code} {schedule : Nat → Nat}
-    {code : Nondeterministic.Code} {s t : Checked.State} {k : Nat}
+    {code : Nondeterministic.Code} {s t : Integer.State} {k : Nat}
     (trace : Trace procedures schedule ⟨[.code code], s, 0⟩ k t)
     (h : Terminates procedures schedule code s) : run procedures schedule code s h = (k, t) :=
   execute_eq trace _
 
 /-- Execution of a pending control stack; return markers are charged explicitly. -/
 private inductive StackExec (procedures : List Nondeterministic.Code) :
-    List Frame → Checked.State → Nat → Checked.State → Prop where
+    List Frame → Integer.State → Nat → Integer.State → Prop where
   | nil (s) : StackExec procedures [] s 0 s
   | code {a rest s u t i j} : ExecIn procedures a s i u → StackExec procedures rest u j t →
       StackExec procedures (.code a :: rest) s (i + j) t
@@ -136,7 +137,7 @@ private inductive StackExec (procedures : List Nondeterministic.Code) :
       StackExec procedures (.returning :: rest) s (1 + k) t
 
 private theorem step_back {procedures : List Nondeterministic.Code} {schedule : Nat → Nat}
-    {c d : Config} {i j : Nat} {t : Checked.State}
+    {c d : Config} {i j : Nat} {t : Integer.State}
     (hs : step procedures schedule c = some (i, d))
     (rest : StackExec procedures d.todo d.state j t) :
     StackExec procedures c.todo c.state (i+j) t := by
@@ -153,8 +154,12 @@ private theorem step_back {procedures : List Nondeterministic.Code} {schedule : 
       | deterministic a =>
         cases a with
         | block is =>
-          cases Option.some.inj hs
-          exact .code (.deterministic (.block is s)) rest
+          cases hb : blockEval is s with
+          | none => simp [step, hb] at hs
+          | some u =>
+            simp only [step, hb, Option.map_some] at hs
+            cases Option.some.inj hs
+            exact .code (.deterministic (.block hb)) rest
         | seq a b =>
           cases Option.some.inj hs
           cases rest with
@@ -232,10 +237,10 @@ private theorem step_back {procedures : List Nondeterministic.Code} {schedule : 
 
 /-- Every successful interpreter trace reconstructs a declarative RAM execution. -/
 theorem Trace.exec {procedures : List Nondeterministic.Code} {schedule : Nat → Nat}
-    {code : Nondeterministic.Code} {s t : Checked.State} {k index : Nat}
+    {code : Nondeterministic.Code} {s t : Integer.State} {k index : Nat}
     (trace : Trace procedures schedule ⟨[.code code], s, index⟩ k t) :
     ExecIn procedures code s k t := by
-  have aux : ∀ {c : Config} {k : Nat} {t : Checked.State}, Trace procedures schedule c k t →
+  have aux : ∀ {c : Config} {k : Nat} {t : Integer.State}, Trace procedures schedule c k t →
       StackExec procedures c.todo c.state k t := by
     intro c k t h
     induction h with
@@ -249,7 +254,7 @@ theorem Trace.exec {procedures : List Nondeterministic.Code} {schedule : Nat →
 
 /-- All public executions satisfy the same RAM relation used in translation and cost theorems. -/
 theorem run_correct (procedures : List Nondeterministic.Code) (schedule : Nat → Nat)
-    (code : Nondeterministic.Code) (s : Checked.State)
+    (code : Nondeterministic.Code) (s : Integer.State)
     (h : Terminates procedures schedule code s) :
     ExecIn procedures code s (run procedures schedule code s h).1
       (run procedures schedule code s h).2 := by
@@ -264,13 +269,62 @@ def Code.ChoiceFree : Nondeterministic.Code → Prop
   | .seq a b | .branch _ a b => a.ChoiceFree ∧ b.ChoiceFree
   | .loop _ b => b.ChoiceFree
 
+/-- With choice excluded from every procedure body, recursive executions have
+one result and one instruction count. This law is independent of the client. -/
+theorem ExecIn.unique {procedures : List Nondeterministic.Code}
+    (closed : ∀ code ∈ procedures, code.ChoiceFree)
+    {a : Nondeterministic.Code} {s t : Integer.State} {i : Nat}
+    (h : ExecIn procedures a s i t) (noChoice : a.ChoiceFree)
+    {u : Integer.State} {j : Nat} (other : ExecIn procedures a s j u) :
+    i = j ∧ t = u := by
+  induction h generalizing u j with
+  | deterministic h =>
+    cases other with
+    | deterministic other => exact h.deterministic other
+  | choose => exact noChoice.elim
+  | seq ha hb iha ihb =>
+    cases other with
+    | seq ha' hb' =>
+      obtain ⟨rfl, rfl⟩ := iha noChoice.1 ha'
+      obtain ⟨rfl, rfl⟩ := ihb noChoice.2 hb'
+      exact ⟨rfl, rfl⟩
+  | ifTrue guard h ih =>
+    cases other with
+    | ifTrue _ other =>
+      obtain ⟨rfl, rfl⟩ := ih noChoice.1 other
+      exact ⟨rfl, rfl⟩
+    | ifFalse opposite _ => simp [guard] at opposite
+  | ifFalse guard h ih =>
+    cases other with
+    | ifFalse _ other =>
+      obtain ⟨rfl, rfl⟩ := ih noChoice.2 other
+      exact ⟨rfl, rfl⟩
+    | ifTrue opposite _ => simp [guard] at opposite
+  | whileFalse guard =>
+    cases other with
+    | whileFalse => exact ⟨rfl, rfl⟩
+    | whileTrue opposite _ _ => simp [guard] at opposite
+  | whileTrue guard ha hb iha ihb =>
+    cases other with
+    | whileFalse opposite => simp [guard] at opposite
+    | whileTrue _ ha' hb' =>
+      obtain ⟨rfl, rfl⟩ := iha noChoice ha'
+      obtain ⟨rfl, rfl⟩ := ihb noChoice hb'
+      exact ⟨rfl, rfl⟩
+  | call lookup h ih =>
+    cases other with
+    | call lookup' other =>
+      cases Option.some.inj (lookup.symm.trans lookup')
+      obtain ⟨rfl, rfl⟩ := ih (closed _ (List.mem_of_getElem? lookup)) other
+      exact ⟨rfl, rfl⟩
+
 private theorem deterministic_trace {procedures : List Nondeterministic.Code}
-    {schedule : Nat → Nat} {a : Checked.Code} {s t : Checked.State} {i : Nat}
-    (h : Checked.Exec a s i t) {rest : List Frame} {u : Checked.State} {j index : Nat}
+    {schedule : Nat → Nat} {a : Integer.Code} {s t : Integer.State} {i : Nat}
+    (h : Integer.Exec a s i t) {rest : List Frame} {u : Integer.State} {j index : Nat}
     (ht : Trace procedures schedule ⟨rest, t, index⟩ j u) :
     Trace procedures schedule ⟨.code (.deterministic a) :: rest, s, index⟩ (i + j) u := by
   induction h generalizing rest u j with
-  | block is s => exact .next rfl ht
+  | block hb => exact .next (by simp [step, hb]) ht
   | seq ha hb iha ihb =>
     simpa [Nat.add_assoc] using Trace.next
       (c := ⟨.code (.deterministic (.seq _ _)) :: rest, _, index⟩) rfl (iha (ihb ht))
@@ -291,8 +345,8 @@ private theorem deterministic_trace {procedures : List Nondeterministic.Code}
 /-- Recursive choice-free execution supplies a trace for every external schedule. -/
 theorem ExecIn.trace {procedures : List Nondeterministic.Code} {schedule : Nat → Nat}
     (closed : ∀ code ∈ procedures, code.ChoiceFree)
-    {a : Nondeterministic.Code} {s t : Checked.State} {i : Nat} (h : ExecIn procedures a s i t)
-    (noChoice : a.ChoiceFree) {rest : List Frame} {u : Checked.State} {j index : Nat}
+    {a : Nondeterministic.Code} {s t : Integer.State} {i : Nat} (h : ExecIn procedures a s i t)
+    (noChoice : a.ChoiceFree) {rest : List Frame} {u : Integer.State} {j index : Nat}
     (ht : Trace procedures schedule ⟨rest, t, index⟩ j u) :
     Trace procedures schedule ⟨.code a :: rest, s, index⟩ (i + j) u := by
   induction h generalizing rest u j with

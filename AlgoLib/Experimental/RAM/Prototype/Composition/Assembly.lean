@@ -5,6 +5,7 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.LogicalFrontend
 import AlgoLib.Experimental.RAM.Prototype.Composition.SignedArrays
+import AlgoLib.Experimental.RAM.Prototype.Composition.Native.Execution
 
 /-!
 # Assemble an executable and its correctness/cost theorem
@@ -93,30 +94,24 @@ def declareArrayBackend (name : Ident) : CommandElabM Unit := do
   let hasLocals := (← getEnv).contains ((← getCurrNamespace) ++ locals.getId) ||
     (← getEnv).contains locals.getId
   if hasLocals then
-    elabCommand (← `(command| abbrev $scratch := local_storage% $stem:str : $locals))
+    elabCommand (← `(command| abbrev $scratch := native_local_storage% $stem:str : $locals))
   else
     elabCommand (← `(command| abbrev $scratch := ()))
-  if signed then
-    elabCommand (← `(command| abbrev $layout (n : Nat) : SignedArrays.Layout :=
-      ⟨SignedStorageImpl.Layout.named $(quote (name.getId.toString ++ ".array")), 0, n⟩))
-  else
-    elabCommand (← `(command| abbrev $layout (n : Nat) : Storage.ArrayLayout :=
-      ⟨⟨$(quote (name.getId.toString ++ ".array.size"))⟩, 0, n⟩))
-  let encode := if signed then mkIdent ``SignedArrays.encoder else mkIdent ``arrayEncoder
+  elabCommand (← `(command| abbrev $layout (n : Nat) : Native.ArrayLayout :=
+    ⟨⟨$(quote (name.getId.toString ++ ".array.size"))⟩, 0, n⟩))
+  let encode ← if signed then `(id) else `(Int.ofNat)
   if hasLocals then
     elabCommand (← `(command| abbrev $encoder (n : Nat) :=
-      ($encode ($layout n)).hide $scratch
-        (by simp [$scratch:term, Encoder.sep, scalarEncoder, signedEncoder,
-          SignedStorageImpl.encoder])
-        (by simp [arrayEncoder, $layout:term, Storage.ArrayLayout.footprint, $scratch:term,
-          Encoder.sep, scalarEncoder, signedEncoder, SignedStorageImpl.encoder,
-          SignedStorageImpl.Layout.footprint, SignedArrays.encoder, SignedArrays.Layout.footprint,
-          SignedStorageImpl.Layout.named, Fin.forall_fin_succ, Fin.exists_fin_succ,
+      (Native.arrayEncoder $encode ($layout n)).hide $scratch
+        (by simp [$scratch:term, Native.Encoder.sep, Native.naturalEncoder, Native.signedEncoder])
+        (by simp [Native.arrayEncoder, $layout:term, Native.ArrayLayout.footprint, $scratch:term,
+          Native.Encoder.sep, Native.naturalEncoder, Native.signedEncoder,
           Finset.disjoint_left] <;> aesop)))
   else
-    elabCommand (← `(command| abbrev $encoder (n : Nat) := $encode ($layout n)))
+    elabCommand (← `(command| abbrev $encoder (n : Nat) :=
+      Native.arrayEncoder $encode ($layout n)))
   elabCommand (← `(command| instance $linked:ident (n : Nat) :
-    Linked 24 ($encoder n).representation ($name).body ($encoder n).representation := by
+    Native.Linked 24 ($encoder n).representation ($name).body ($encoder n).representation := by
       ram_link))
   -- Comparing large reconstructed certificates is backend work, not a user proof setting.
   withScope (fun scope =>
@@ -147,9 +142,9 @@ elab_rules : command
     let correct := mkIdent (name.getId.appendAfter "Correct")
     elabCommand (← `(command| def $run (xs : List $element)
         (valid : ($proc).requires xs.toArray := by trivial) : Result (List $element) :=
-      let r := runEncoded (rate := 24) (Q := ($encoder xs.length).representation)
+      let r := Native.runEncoded (rate := 24) (Q := ($encoder xs.length).representation)
         $proc ($encoder xs.length) xs.toArray valid
-        (by simp [Encoder.hide, arrayEncoder, SignedArrays.encoder, $layout:term])
+        (by simp [Native.Encoder.hide, Native.arrayEncoder, $layout:term])
       ⟨r.value.toList, r.steps⟩))
     elabCommand (← `(command| def $bound (xs : List $element) : Nat :=
       2 * (24 * ($proc).credits xs.toArray)))
@@ -157,12 +152,11 @@ elab_rules : command
         (valid : ($proc).requires xs.toArray) :
         ($proc).ensures xs.toArray (($run xs valid).value.toArray) ∧
           ($run xs valid).steps ≤ $bound xs := by
-      have h := runEncoded_correct (rate := 24) (Q := ($encoder xs.length).representation)
+      have h := Native.runEncoded_correct (rate := 24) (Q := ($encoder xs.length).representation)
         $proc ($encoder xs.length) xs.toArray valid
-        (by simp [Encoder.hide, arrayEncoder, SignedArrays.encoder, $layout:term])
-      simpa [$run:term, $bound:term, Encoder.hide, $encoder:term, $scratch:term, Encoder.sep,
-        scalarEncoder, arrayEncoder, signedEncoder, SignedStorageImpl.encoder,
-        SignedArrays.encoder] using h))
+        (by simp [Native.Encoder.hide, Native.arrayEncoder, $layout:term])
+      simpa [$run:term, $bound:term, Native.Encoder.hide, $encoder:term, $scratch:term, Native.Encoder.sep,
+        Native.naturalEncoder, Native.arrayEncoder, Native.signedEncoder] using h))
 
 /-- Assemble a typed scalar method with private local storage and a fuel-free runner. -/
 syntax "compile_scalar_method " ident : command
@@ -185,29 +179,28 @@ elab_rules : command
         throwErrorAt name "compile_scalar_method expects one Nat or Int input"
       if input.isConstOf ``Int then `(Int) else `(Nat)
     let input ← if ty.raw.isIdent && ty.raw.getId.eraseMacroScopes == `Nat then
-        `(scalarEncoder ⟨$(quote (name.getId.toString ++ ".input"))⟩)
-      else `(signedEncoder $(quote (name.getId.toString ++ ".input")))
+        `(Native.naturalEncoder ⟨$(quote (name.getId.toString ++ ".input"))⟩)
+      else `(Native.signedEncoder ⟨$(quote (name.getId.toString ++ ".input"))⟩)
     let hasLocals := (← getEnv).contains ((← getCurrNamespace) ++ locals.getId) ||
       (← getEnv).contains locals.getId
     if hasLocals then
       elabCommand (← `(command| abbrev $scratch :=
-        local_storage% $(quote (name.getId.toString ++ ".locals")):str : $locals))
+        native_local_storage% $(quote (name.getId.toString ++ ".locals")):str : $locals))
       elabCommand (← `(command| abbrev $encoder := ($input).hide $scratch
-        (by simp [$scratch:term, Encoder.sep, scalarEncoder, signedEncoder,
-          SignedStorageImpl.encoder])
+        (by simp [$scratch:term, Native.Encoder.sep, Native.naturalEncoder, Native.signedEncoder])
         (by decide)))
     else
       elabCommand (← `(command| abbrev $encoder := $input))
     elabCommand (← `(command| instance $linked:ident :
-      Linked 24 ($encoder).representation ($name).body ($encoder).representation := by ram_link))
+      Native.Linked 24 ($encoder).representation ($name).body ($encoder).representation := by ram_link))
     elabCommand (← `(command| def $run (x : $ty)
         (valid : ($proc).requires x := by trivial) : Result $ty :=
-      runEncoded (rate := 24) (Q := ($encoder).representation) $proc $encoder x valid (by trivial)))
+      Native.runEncoded (rate := 24) (Q := ($encoder).representation) $proc $encoder x valid (by trivial)))
     elabCommand (← `(command| def $bound (x : $ty) : Nat :=
       2 * (24 * ($proc).credits x + ($encoder).saved x)))
     elabCommand (← `(command| theorem $correct (x : $ty) (valid : ($proc).requires x) :
         ($proc).ensures x ($run x valid).value ∧ ($run x valid).steps ≤ $bound x :=
-      runEncoded_correct (rate := 24) (Q := ($encoder).representation)
+      Native.runEncoded_correct (rate := 24) (Q := ($encoder).representation)
         $proc $encoder x valid (by trivial)))
 
 /-- Beginner entry point: prove the algorithm and assemble its standard list executable. -/

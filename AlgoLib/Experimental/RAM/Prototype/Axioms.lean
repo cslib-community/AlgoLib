@@ -54,7 +54,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Prototype.denote_deterministic
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.compilation_sound' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.compilation_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.compilation_sound
 
@@ -220,7 +220,7 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Authoring.MultipleArrays.represents_initial
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.method_execution' depends on axioms: [propext, Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.method_execution' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.method_execution
 
@@ -260,22 +260,21 @@ set_option linter.hashCommand false in
 #print axioms AlgoLib.Experimental.RAM.Prototype.VelvetTranslationTests.every_word_executable
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.translation' depends on axioms: [propext,
- Classical.choice,
- Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.translation' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.translation
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.budget' depends on axioms: [propext,
- Classical.choice,
- Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.budget' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.budget
 
 set_option linter.hashCommand false in
-/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.run_correct' depends on axioms: [propext,
- Classical.choice,
- Quot.sound] -/
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.run_correct' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms AlgoLib.Experimental.RAM.Prototype.RecursiveTranslation.run_correct
+
+set_option linter.hashCommand false in
+/-- info: 'AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecIn.unique' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms AlgoLib.Experimental.RAM.Prototype.Nondeterministic.ExecIn.unique

@@ -25,16 +25,17 @@ unbounded loops, and nested, nonrecursive verified procedure bodies. -/
 theorem loom_to_supported_ram {State : Type} {M : Model State} {p : Program State}
     (supported : Supported M p) (post : State → Prop) (s : State) (credits : Nat)
     (proof : _root_.wp (denote p) (fun _ t _ => post t) s credits)
-    (machine : Checked.State) (rep : M.Represents s (Checked.Language.observe machine)) :
-    ∃ steps final t, Checked.Exec supported.compile.source.compile machine steps final ∧
-      M.Represents t (Checked.Language.observe final) ∧ post t ∧
-      steps ≤ M.overhead * credits := by
+    (machine : Checked.Language.Store) (rep : M.Represents s machine) :
+    ∃ steps final t, Integer.Exec (Native.Natural.command supported.compile.source).compile
+      (Checked.Language.integerEncode machine) steps final ∧
+      M.Represents t (Checked.Language.integerObserve final) ∧ post t ∧
+      steps ≤ 2 * (M.overhead * credits) := by
   rw [loom_wp_eq] at proof
   obtain ⟨k, t, u, run, cost, result⟩ := proof
   cases u
   obtain ⟨steps, final, execution, represents, time⟩ :=
     supported.sound (denote_run _ run) machine rep
   exact ⟨steps, final, t, execution, represents, result,
-    time.trans (Nat.mul_le_mul_left _ cost)⟩
+    time.trans (Nat.mul_le_mul_left 2 (Nat.mul_le_mul_left _ cost))⟩
 
 end AlgoLib.Experimental.RAM.Prototype

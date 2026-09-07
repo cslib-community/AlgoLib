@@ -39,20 +39,20 @@ theorem quadratic (xs : List Nat) : (run xs).steps ≤ 3888 * (xs.length + 1)^2 
   rw [bound_eq] at h
   nlinarith
 
-private abbrev minimumEncoder (n : Nat) := (insertionSortEncoder n).sep (scalarEncoder ⟨"minimum"⟩)
-  (by simp [insertionSortEncoder, Encoder.hide, arrayEncoder, insertionSortLayout,
-    Storage.ArrayLayout.footprint,
-    insertionSortScratch, Encoder.sep, scalarEncoder, Finset.disjoint_left])
+private abbrev minimumEncoder (n : Nat) := (insertionSortEncoder n).sep (Native.naturalEncoder ⟨"minimum"⟩)
+  (by simp [insertionSortEncoder, Native.Encoder.hide, Native.arrayEncoder, insertionSortLayout,
+    Native.ArrayLayout.footprint,
+    insertionSortScratch, Native.Encoder.sep, Native.naturalEncoder, Finset.disjoint_left])
 
-private instance (n : Nat) : Linked 24 (minimumEncoder n).representation
+private instance (n : Nat) : Native.Linked 24 (minimumEncoder n).representation
     minimumAfterSortProcedure.body (minimumEncoder n).representation := by ram_link
 
 /-- Calls the sorter, then executes a scalar read through the same owned array interface. -/
 def minimum (xs : List Nat) (nonempty : 0 < xs.length) :=
-  runEncoded (rate := 24) (Q := (minimumEncoder xs.length).representation)
+  Native.runEncoded (rate := 24) (Q := (minimumEncoder xs.length).representation)
     minimumAfterSortProcedure (minimumEncoder xs.length) (xs.toArray, 0)
     ⟨by simpa using nonempty, trivial⟩
-    (by simp [Encoder.sep, Encoder.hide, arrayEncoder, scalarEncoder, insertionSortLayout])
+    (by simp [Native.Encoder.sep, Native.Encoder.hide, Native.arrayEncoder, Native.naturalEncoder, insertionSortLayout])
 
 set_option linter.hashCommand false in
 #eval show IO Unit from do

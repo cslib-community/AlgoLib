@@ -21,11 +21,11 @@ open Authoring Prototype Prototype.ArraySubstitution
 example (s : Mutable.State) (budget : Nat) (post : Mutable.State → Prop)
     (p : Program Mutable.State) (supported : Supported IndirectArrays.model p)
     (h : _root_.wp (denote p) (fun _ t _ => post t) s budget)
-    (machine : Checked.State) (rep : IndirectArrays.model.Represents s
-      (Checked.Language.observe machine)) :
-    ∃ steps final t, Checked.Exec supported.compile.source.compile machine steps final ∧
-      IndirectArrays.model.Represents t (Checked.Language.observe final) ∧ post t ∧
-      steps ≤ IndirectArrays.model.overhead * budget :=
+    (machine : Checked.Language.Store) (rep : IndirectArrays.model.Represents s machine) :
+    ∃ steps final t, Integer.Exec (Native.Natural.command supported.compile.source).compile
+      (Checked.Language.integerEncode machine) steps final ∧
+      IndirectArrays.model.Represents t (Checked.Language.integerObserve final) ∧ post t ∧
+      steps ≤ 2 * (IndirectArrays.model.overhead * budget) :=
   loom_to_supported_ram supported post s budget h machine rep
 
 /-- A complete matrix of source constructors, independent of a terminating input. -/

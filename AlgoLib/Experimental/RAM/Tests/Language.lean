@@ -120,25 +120,25 @@ set_option linter.hashCommand false in
 #eval show IO Unit from do
   for n in List.range 51 do
     let r := countFunction.run n
-    unless r.output == n && r.steps == 11 * n + 5 do
+    unless r.output == n && r.steps == 15 * n + 6 do
       throw (IO.userError s!"count regression at {n}")
     let s : Store := ⟨fun _ _ => n, fun i => i + 3⟩
     let scopeResult := nestedMethod.run s trivial
-    unless scopeResult.1 == 14 && scopeResult.2.vars .word counter.name == n &&
+    unless scopeResult.1 == 17 && scopeResult.2.vars .word counter.name == n &&
         scopeResult.2.vars .word answer.name == n + 2 do
       throw (IO.userError s!"nested scope regression at {n}")
     let called := twiceMethod.run s trivial
-    unless called.1 == 10 && called.2.vars .word counter.name == n &&
+    unless called.1 == 12 && called.2.vars .word counter.name == n &&
         called.2.vars .word answer.name == 2 * n + 1 do
       throw (IO.userError s!"procedure regression at {n}")
     for e in expressions do
       unless evaluate e s == (e.eval s, e.cost) do
         throw (IO.userError s!"expression regression at {n}")
   let dequeue := dequeueMethod.run initial initial_queue
-  unless dequeue.1 == 9 && dequeue.2.vars .word result.name == 7 do
+  unless dequeue.1 == 13 && dequeue.2.vars .word result.name == 7 do
     throw (IO.userError "FIFO regression")
   let pop := popMethod.run popInitial initial_stack
-  unless pop.1 == 9 && pop.2.vars .word result.name == 9 do
+  unless pop.1 == 14 && pop.2.vars .word result.name == 9 do
     throw (IO.userError "LIFO regression")
 
 end AlgoLib.Experimental.RAM.Checked.Language.Tests
