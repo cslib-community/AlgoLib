@@ -57,8 +57,9 @@ where
   call (active : Array Name) (target : Ident) (proc : Term) : TermElabM Fragment := do
     let i ← resource rs active target
     checkStatic rs proc.raw
+    let amount ← if inferBudget then `(allowance% ($proc) on $(rs[i]!.name))
+      else `(($proc).credits $(rs[i]!.name))
     let proc ← if inferBudget then `(contract% ($proc)) else pure proc
-    let amount ← `(($proc).credits $(rs[i]!.name))
     focus rs i ⟨← `(Program.call ($proc).body),
       ← `(Plan.callAt $(← sourceSite target) $proc), some amount, #[i], pure, some amount⟩
   receiver (active : Array Name) (f : Ident) (args : Array Term) : TermElabM Fragment := do
@@ -75,8 +76,10 @@ where
     let prepare ← assignment rs active j args.back!
     let config := args.pop
     let proc ← `($(mkIdent (Name.mkSimple (field ++ "From"))) $config*)
+    let amount ← if inferBudget then
+        `(allowance% ($proc) on ($(rs[i]!.name), $(rs[j]!.name)))
+      else `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
     let proc ← if inferBudget then `(contract% ($proc)) else pure proc
-    let amount ← `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
     let part : Fragment := ⟨← `(Program.call ($proc).body),
       ← `(Plan.callAt $(← sourceSite f) $proc),
       some amount, #[i,j], pure, some amount⟩
@@ -180,8 +183,10 @@ where
       unless rs[i]!.mutable && rs[j]!.mutable do
         throwErrorAt stx "Procedure outputs require mutable resources"
       checkStatic rs proc
+      let amount ← if inferBudget then
+          `(allowance% ($proc) on ($(rs[i]!.name), $(rs[j]!.name)))
+        else `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
       let proc ← if inferBudget then `(contract% ($proc)) else pure proc
-      let amount ← `(($proc).credits ($(rs[i]!.name), $(rs[j]!.name)))
       let part : Fragment := ⟨← `(Program.call ($proc).body),
         ← `(Plan.callAt $(← sourceSite stx) $proc),
         some amount, #[i,j], pure, some amount⟩

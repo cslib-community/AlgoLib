@@ -48,4 +48,17 @@ elab_rules : term
     else pure p
 
 
+/-- A uniform allowance must not evaluate an irrelevant runtime argument.
+Dependent allowances retain their input and are checked by the generated VCs. -/
+syntax "allowance% " term:max " on " term:max : term
+elab_rules : term
+  | `(allowance% $proc:term on $input:term) => do
+    let p ← elabTerm proc none
+    let type ← mkAppM ``UniformCredits #[p]
+    if let some _ ← synthInstance? type then
+      elabTerm (← `(UniformCredits.amount (proc := $proc))) none
+    else
+      elabTerm (← `(($proc).credits $input)) none
+
+
 end AlgoLib.Experimental.RAM.Prototype.Composition.Frontend

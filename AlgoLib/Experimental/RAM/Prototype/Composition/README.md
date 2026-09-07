@@ -1,5 +1,9 @@
 # Modularity under composition
 
+See [interface status and migration policy](API-POLICY.md) before extending the
+frontend, and [frontend conformance tests](../../Tests/Conformance/README.md) for
+independent source-to-RAM regression coverage.
+
 The current command interface uses a [generated Lean obligation API](OBLIGATION-API.md).
 Program specifications, mathematical proofs, and expensive backend certificates live in
 separate modules so proof edits can reuse generation and compilation work.

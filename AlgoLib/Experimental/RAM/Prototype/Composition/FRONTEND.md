@@ -70,10 +70,11 @@ in both positions is rejected.
    `amortized_potential`; the allowance is inferred. `done_with` adds a checked exit
    assertion. The explicit `remaining`/`credits` interface is retained for custom
    resource proofs. Invariants are supplied by the author, not discovered.
-5. **Prove the generated obligations.** `prove_algorithm name by ...` exports
-   `nameProcedure`. Use `paper_vc` for named mathematical conditions or
-   `paper_solve [your_lemmas]` for automation. `#paper_goals name` previews open goals.
-   This is the same procedure used for Loom reasoning and RAM compilation.
+5. **Prove the generated obligations.** Run `generate_obligations name`, inspect
+   `#explain_obligation name`, and use `#proof_template name` to obtain separate
+   `prove_obligation` blocks. `complete_algorithm name` exports `nameProcedure`
+   after all evidence is checked. This is the same procedure used for Loom reasoning
+   and RAM compilation. See [the generated API tutorial](OBLIGATION-API.md).
 6. **Use the supplied runner.** For insertion sort:
 
    ```lean

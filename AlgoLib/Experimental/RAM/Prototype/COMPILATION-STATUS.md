@@ -205,7 +205,7 @@ this is not an unrestricted ordinary-Velvet compiler.
 
 `iterations_at_most` and `amortized_potential` generate checked loop obligations
 and infer logical allowances, including dependent nested bounds. `paper_vc` and
-`paper_solve` preserve source labels; `#paper_goals` previews mathematical goals.
+`paper_solve` are retained internal tactics; `#named_goals` previews generated obligations.
 The default array backend assembles a list runner and joint correctness/cost theorem
 with `compile_array_method` (or `verify_array_method` for a combined proof command).
 See [the tutorial and exact scope](Composition/PAPER-LOOPS.md). This does not extend

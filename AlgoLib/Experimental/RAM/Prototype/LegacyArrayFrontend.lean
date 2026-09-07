@@ -10,6 +10,10 @@ import AlgoLib.Experimental.RAM.Authoring.MultipleArrays
 import AlgoLib.Experimental.RAM.Prototype.Procedures
 
 /-!
+Deprecated regression interface: retained for historical semantic/substitution tests.
+New algorithms use LogicalFrontend and the generated obligation API.
+See Composition/API-POLICY.md for migration and maintenance status.
+
 # Frozen compatibility frontend for earlier array proofs
 
 The public frontend is LogicalFrontend.lean; it always produces owned composition

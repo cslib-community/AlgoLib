@@ -1,5 +1,8 @@
 # Proofs as a generated Lean API
 
+The [API evolution policy](API-POLICY.md) distinguishes stable responsibility names
+from changeable context names, snapshots, automation, and inferred cost constants.
+
 A method now generates proposition declarations **before mathematical simplification**.
 A named proof is an ordinary Lean theorem against that API. You can import the API
 and edit a proof without running symbolic execution or compiling the program again.
@@ -317,8 +320,8 @@ statement.
 
 `Tests/ObligationAPI` checks reuse across imports and an added simplification lemma.
 `check_elaboration.py` measures specification, proof, and backend checks separately.
-The legacy tactic `named_proof_blocks` remains only for compatibility regressions;
-new command-based authoring consumes generated declarations.
+The normalization-first proof-block engine has been removed. All named authoring
+commands consume generated declarations and require typed source-shape metadata.
 
 
 ## Measured checking costs

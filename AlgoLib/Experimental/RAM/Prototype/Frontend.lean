@@ -9,6 +9,10 @@ import AlgoLib.Experimental.RAM.Prototype.MultipleArrays
 import AlgoLib.Experimental.RAM.Prototype.Verification
 
 /-!
+Deprecated regression interface: retained for historical semantic/substitution tests.
+New algorithms use LogicalFrontend and the generated obligation API.
+See Composition/API-POLICY.md for migration and maintenance status.
+
 # Compatibility backend for historical array methods
 
 `prove_ram` attaches the old array backend to an explicitly declared `legacy_ram`

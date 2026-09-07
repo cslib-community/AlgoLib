@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check RAM abstraction boundaries
+      - name: Check RAM boundaries and conformance fixtures
         run: python3 AlgoLib/Experimental/RAM/Tests/check_layers.py
 
       - name: Don't 'import Mathlib', use precise imports

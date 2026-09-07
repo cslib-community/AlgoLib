@@ -98,8 +98,8 @@ on the inner loop. Names are based on explicitly named loops and invariants;
 source locations are separate. See [the complete named-block tutorial](NAMED-PROOFS.md)
 for the checked syntax, failure behavior, and BFS example.
 
-The older `prove_algorithm ... by`, `paper_vc`, `paper_solve`, and `#paper_goals`
-entry points remain available for compatibility. New algorithm proofs need not
+The `prove_algorithm ... by`, `paper_vc`, and `paper_solve` entry points remain
+maintained internal tools for library proofs and regression fixtures. New algorithm proofs need not
 use positional goals or broad goal-search scripts.
 
 For example, annotating an active loop with `iterations_at_most 0` leaves an

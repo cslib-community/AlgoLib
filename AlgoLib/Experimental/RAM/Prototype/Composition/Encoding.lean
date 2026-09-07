@@ -72,8 +72,8 @@ def arrayEncoder (l : Storage.ArrayLayout) : Encoder (Storage.array l) where
   footprint := l.footprint
   requires a := a.size ≤ l.capacity
   saved _ := 0
-  store a := { vars := fun _ _ => a.size, heap := fun i => a[i-l.base]! }
-  correct a h := ⟨rfl, h, rfl, fun i _ => by simp, rfl⟩
+  store a := { vars := fun _ _ => a.size, heap := fun i => a.getD (i-l.base) 0 }
+  correct a h := ⟨rfl, h, rfl, fun i _ => by simp [Array.getElem!_eq_getD], rfl⟩
 
 /-- Library runners need only ordinary inputs and their advertised preconditions. -/
 def runEncoded (proc : Procedure A B) (encoder : Encoder P)

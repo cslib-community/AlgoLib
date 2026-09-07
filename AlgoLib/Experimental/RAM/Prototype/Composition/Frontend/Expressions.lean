@@ -126,9 +126,16 @@ def guardSlots (rs : Array Resource) (q : Term) : TermElabM (Nat × Nat) := do
     | throwErrorAt q "Missing compiler guard slots"
   return (i, i + 1)
 
+/-- Parentheses change parsing, not the source position used to reserve guard slots. -/
+private partial def comparisonSyntax (q : Term) : Term :=
+  match q with
+  | `(($inner:term)) => comparisonSyntax inner
+  | _ => q
+
 def condition (rs : Array Resource) (active : Array Name) (q : Term) :
     TermElabM (Fragment × Term × Term) := do
-  let comparison ← match q with
+  let parsed := comparisonSyntax q
+  let comparison ← match parsed with
     | `($a:term < $b:term) => pure (some (a, b, ← `(Relation.lt), false))
     | `($a:term ≤ $b:term) =>
       pure (some (a, b, ← `(Relation.le), false))
@@ -161,7 +168,7 @@ def condition (rs : Array Resource) (active : Array Name) (q : Term) :
         $(← project rs j (← `($s))) = 1)
       return (before, ← `(Composition.compare .eq $(← path rs i) $(← path rs j)), fact)
     return (before, test, fact)
-  let .str receiver field := q.raw.getId
+  let .str receiver field := parsed.raw.getId
     | throwErrorAt q "Use a scalar comparison or a certified receiver query"
   let i ← resource rs active (mkIdent receiver)
   return (← skip, ← liftQuery rs i (mkIdent (Name.mkSimple field)), ← `(fun _ => True))

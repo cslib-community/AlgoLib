@@ -25,9 +25,13 @@ partial def collect (rs : Array Resource) (body : Syntax) : TermElabM (Array Res
     match stx with
     | `(doElem| let mut $x:ident := $_:term)
     | `(doElem| let mut $x:ident : Nat := $_:term) =>
+      if rs.any (fun r => r.name.getId == x.getId) then
+        throwErrorAt x "Local name already used; shadowing is not supported"
       rs := rs.push ⟨x, ← `(Nat), true, true, false⟩
     | `(doElem| let $x:ident := $_:term)
     | `(doElem| let $x:ident : Nat := $_:term) =>
+      if rs.any (fun r => r.name.getId == x.getId) then
+        throwErrorAt x "Local name already used; shadowing is not supported"
       rs := rs.push ⟨x, ← `(Nat), true, false, false⟩
     | `(doElem| if $q:term then $yes:doSeq else $no:doSeq) =>
       rs ← guards rs q
@@ -193,13 +197,6 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
     let scratchType ← Command.runTermElabM fun _ => stateType (rs.extract inputs.size rs.size)
     let scratchName := mkIdent (name.getId.appendAfter "Locals")
     elabCommand (← `(command| abbrev $scratchName : Type := $scratchType))
-  let views := mkIdent (name.getId.appendAfter "ProofViews")
-  let viewNames := rs.toList.map (fun r =>
-    if r.compilerGenerated then "__proof_guard" else r.name.getId.toString)
-  elabCommand (← `(command| def $views : List String := $(quote viewNames)))
-  let inputViews := mkIdent (name.getId.appendAfter "ProofInputViews")
-  elabCommand (← `(command| def $inputViews : List String :=
-    $(quote (inputs.toList.map (·.name.getId.toString)))))
   let shape := mkIdent (name.getId.appendAfter "ProofShape")
   let inputShape := mkIdent (name.getId.appendAfter "ProofInputShape")
   let fullShape ← Command.runTermElabM fun _ => sourceShape rs

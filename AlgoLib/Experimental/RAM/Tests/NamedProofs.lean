@@ -65,40 +65,51 @@ prove_algorithm movedCountdown where
   case count.account => by first | omega | (simp only [rank_eq] at *; omega)
   case count.exit => by first | omega | trivial
 
-/- Missing mathematical proofs, unknown names, overlapping blocks, and invalid evidence fail. -/
-set_option linter.unreachableTactic false in
-example : countdownObligations := by
-  unfold countdownObligations countdown
-  fail_if_success named_proof_blocks countdown
-    case count.preserve.known => by apply known
-    case count.terminate => by simp only [rank_eq]; omega
-    case count.account => by first | omega | (simp only [rank_eq] at *; omega)
-  fail_if_success named_proof_blocks countdown
-    case count.initialize.known => by apply known
-    case count.terminate => by simp only [rank_eq]; omega
-    case count.account => by first | omega | (simp only [rank_eq] at *; omega)
-  fail_if_success named_proof_blocks countdown
-    case count.initialize.known => by apply known
-    case count.preserve.known => by apply known
-    case count.account => by first | omega | (simp only [rank_eq] at *; omega)
-  fail_if_success named_proof_blocks countdown
-    case count.initialize.known => by apply known
-    case count.preserve.known => by apply known
-    case count.terminate => by simp only [rank_eq]; omega
-  fail_if_success named_proof_blocks countdown
-    case count.initialize.known => by skip
-  fail_if_success named_proof_blocks countdown
-    case typo.initialize => by trivial
-  fail_if_success named_proof_blocks countdown
-    case count.initialize => by apply known
-    case count.initialize.known => by apply known
-  fail_if_success named_proof_blocks countdown
-    case count.terminate => by exact Nat.zero_le 0
-  named_proof_blocks countdown
-    case count.initialize.known => by apply known
-    case count.preserve.known => by apply known
-    case count.terminate => by simp only [rank_eq]; omega
-    case count.account => by first | omega | (simp only [rank_eq] at *; omega)
+/- Negative evidence checks target the generated API, not a second normalization engine. -/
+example : countdown.ObligationAPI.count.initialize.known := by
+  fail_if_success obligation_proof by skip
+  fail_if_success obligation_proof by exact Nat.zero_le 0
+  obligation_proof by apply known
+
+example : countdown.ObligationAPI.count.account.initial := by
+  fail_if_success obligation_proof by omega
+  obligation_proof by simp only [rank_eq] at *; omega
+
+/-- error: Unknown generated obligation typo.initialize -/
+#guard_msgs in
+prove_algorithm countdown where
+  case typo.initialize => by trivial
+
+ram method unfinished (mut x : Nat) return (result : Nat)
+  ensures Known x
+  do
+    x := x
+
+generate_obligations unfinished
+
+-- A missing mathematical argument must prevent a completed procedure.
+#guard_msgs (drop error) in
+complete_algorithm unfinished
+
+open Lean Elab Command in
+run_cmd do
+  if (← getEnv).contains ((``unfinished).appendAfter "Verification") then
+    throwError "Missing proof unexpectedly produced verification"
+  let entries ← liftCoreM <| explorerEntries ``unfinished ""
+  for entry in entries do
+    if (← getEnv).contains entry.proofName then
+      throwError "A failed proof left a placeholder declaration"
+
+ram method overlapping (mut x : Nat) return (result : Nat)
+  ensures Known x
+  do
+    x := x
+
+/-- error: Overlapping obligation block result -/
+#guard_msgs in
+prove_algorithm overlapping where
+  case result => by apply known
+  case result => by apply known
 
 /-- error: Duplicate named proof scope 'same' -/
 #guard_msgs in

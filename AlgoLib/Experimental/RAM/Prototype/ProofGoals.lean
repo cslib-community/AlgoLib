@@ -9,8 +9,8 @@ import AlgoLib.Experimental.RAM.Prototype.Composition.Frontend
 # Mathematical verification-goal normalization
 
 This module removes source-language plumbing while preserving labelled propositions.
-Legacy positional tactics remain available for compatibility. NamedProofs builds a
-stable proof-block interface on the same checked normalization rules.
+Positional tactics are maintained internal machinery for library proofs and regression
+fixtures. New author-facing commands consume the generated obligation API.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Frontend
 open Lean Elab Command Term Parser
@@ -53,11 +53,6 @@ macro "paper_unfold" : tactic =>
 /-- Simplification for the legacy positional interface. -/
 macro "paper_normalize" : tactic =>
   `(tactic| (paper_unfold; simp (config := { maxSteps := 1000000 }) at *))
-
-/-- Preserve product binders until source names can be restored. -/
-macro "named_normalize" : tactic =>
-  `(tactic| (paper_unfold; simp (config := { maxSteps := 1000000 }) [-Prod.forall] at *))
-
 
 open Meta Tactic in
 private partial def splitPaperGoal (goal : MVarId) : TacticM (List MVarId) :=
@@ -110,25 +105,5 @@ macro "paper_solve" "[" rules:Lean.Parser.Tactic.grindParam,* "]" : tactic =>
     paper_vc
     all_goals (try (first | omega | grind only [Array.set!_eq_setIfInBounds,
       Array.toList_setIfInBounds, Array.size_setIfInBounds, $rules,*]))))
-
-/-- Preview open mathematical obligations without creating a theorem or admitting a proof. -/
-syntax "#paper_goals " ident : command
-elab_rules : command
-  | `(command| #paper_goals $name:ident) => Command.runTermElabM fun _ => do
-    let obligations := mkIdent (name.getId.appendAfter "Obligations")
-    let type ← Term.elabType (← `($obligations))
-    let goal ← Meta.mkFreshExprSyntheticOpaqueMVar type
-    let goals ← Lean.Elab.Tactic.run goal.mvarId! do
-      Lean.Elab.Tactic.evalTactic (← `(tactic| unfold $obligations $name; paper_vc))
-    for goal in goals do
-      let tag := (← goal.getTag).toString (escape := false)
-      let parts := tag.splitOn ":"
-      let mut ref := name.raw
-      if tag.contains (← getFileName) && parts.length ≥ 3 then
-        if let some line := parts[parts.length - 2]!.toNat? then
-          if let some column := parts.getLast!.toNat? then
-            let pos := (← getFileMap).ofPosition ⟨line, column - 1⟩
-            ref := .atom (.synthetic pos pos true) ""
-      logInfoAt ref (MessageData.ofGoal goal)
 
 end AlgoLib.Experimental.RAM.Prototype.Frontend

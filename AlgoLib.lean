@@ -117,6 +117,8 @@ import AlgoLib.Experimental.RAM.Tests.ObligationAPI.Regression
 import AlgoLib.Experimental.RAM.Tests.ObligationAPI.SourceContext
 import AlgoLib.Experimental.RAM.Tests.ObligationAPI.Explorer
 import AlgoLib.Experimental.RAM.Tests.ObligationAPI.ExplorerExamples
+import AlgoLib.Experimental.RAM.Tests.Conformance.Generated
+import AlgoLib.Experimental.RAM.Tests.Conformance.Rejections
 import AlgoLib.Experimental.RAM.Tests.PaperLoops
 import AlgoLib.Experimental.RAM.Tests.PaperLoopAxioms
 

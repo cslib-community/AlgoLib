@@ -120,8 +120,7 @@ elab_rules : command
         let inputShape ← Term.elabTerm (← `($inputShapeName)) none
         let mut leaves := #[]
         for goal in ← getGoals do
-          leaves := leaves ++ (← splitNamed goal (← methodViews alg)
-            (← methodViews alg "ProofInputViews") "result" "" true (some (fullShape, inputShape)))
+          leaves := leaves ++ (← splitNamed goal (fullShape, inputShape))
         leaves ← leaves.mapM fun leaf => do
           let goal ← splitHypotheses leaf.goal
           let goal ← hideGuards goal
@@ -253,14 +252,15 @@ private def proveEntry (entry : ObligationEntry) (proof : TSyntax ``Parser.Tacti
     CommandElabM Unit := do
   if (← getEnv).contains entry.proofName then
     throwError "Obligation {entry.key} already has a proof"
-  let name := mkIdent (`_root_ ++ entry.proofName)
-  let type := mkIdent entry.typeName
-  if automatic then
-    elabCommand (← `(command| theorem $name : $type := by automatic_obligation_proof by $proof))
-  else
-    elabCommand (← `(command| theorem $name : $type := by obligation_proof by $proof))
-  let info ← liftCoreM <| getConstInfo entry.proofName
-  if info.value?.any Expr.hasSorry then throwError "Obligation proofs must be admission-free"
+  -- Elaborate into a fresh proof goal and install only complete evidence. Command-level
+  -- theorem recovery must not manufacture a placeholder for later completion to consume.
+  runTermElabM fun _ => do
+    let type : Expr := Lean.mkConst entry.typeName
+    let root ← mkFreshExprSyntheticOpaqueMVar type
+    discard <| Tactic.run root.mvarId! do
+      withRef proof <| runObligation proof (!automatic)
+      checkedDecl entry.proofName type (← instantiateMVars root) true
+      setGoals []
 
 /-- Cache routine evidence without dropping its proposition from the API. -/
 private def cacheAutomatic (entry : ObligationEntry) : CommandElabM Unit :=
@@ -304,6 +304,11 @@ elab_rules : command
       unless (← getEnv).contains entry.proofName ||
           (← getEnv).contains (entry.typeName.appendAfter "_automatic") do
         proveEntry entry (← `(tacticSeq| first | omega | assumption | rfl | simp)) true
+    for entry in entries do
+      let chosen := if (← getEnv).contains entry.proofName then entry.proofName
+        else entry.typeName.appendAfter "_automatic"
+      if (← liftCoreM <| getConstInfo chosen).value?.any Expr.hasSorry then
+        throwError "Obligation {entry.key} contains unfinished evidence"
     let verification := mkIdent (`_root_ ++ name.appendAfter "Verification")
     let obligations := mkIdent (name.appendAfter "Obligations")
     let assembly := mkIdent (apiName name ++ `assemble)

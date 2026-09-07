@@ -4,7 +4,10 @@ Run from any directory with Python 3. No Lean installation is needed for this
 structural check; the Lean test modules separately check semantics and costs.
 """
 from pathlib import Path
+import os
 import re
+import subprocess
+import sys
 
 root = Path(__file__).resolve().parents[1]
 prefix = "AlgoLib.Experimental.RAM."
@@ -145,4 +148,14 @@ assert prefix + "Prototype.Composition.SortingSpec" not in dependencies(
     prefix + "Prototype.Composition.SortingBackend"
 ), "sorting backend imports obligation generation"
 
+# The generated API is the only supported named-obligation engine.
+removed = ("named_proof_blocks", "namedTree", "ProofViews", "ProofInputViews", "#paper_goals", "#legacy_named_goals")
+for path in root.rglob("*.lean"):
+    text = path.read_text()
+    for obsolete in removed:
+        assert obsolete not in text, (path, "removed proof API", obsolete)
+
+# Regeneration is cheap and independent of Lean's cached artifacts.
+subprocess.run([sys.executable, str(root / "Tests/Conformance/generate.py"), "--check"],
+               check=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
 print(f"Checked {len(modules)} documented modules: boundaries and import DAG OK")
