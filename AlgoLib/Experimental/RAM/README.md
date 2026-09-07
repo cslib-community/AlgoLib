@@ -7,6 +7,8 @@ Start with **[insertion sort](Examples/InsertionSort/README.md)** or
 
 For the supported imports and preferred declaration names, see [the public API](docs/PUBLIC-API.md).
 The [generated dependency map](docs/DEPENDENCIES.md) explains actual imports.
+For the design, core theorem statements, and human-review obligations, read the
+[draft exposition](docs/DESIGN-AND-REVIEW-DRAFT.md).
 
 ## The six layers and the proof-authoring interface
 
