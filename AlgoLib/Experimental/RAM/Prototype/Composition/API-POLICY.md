@@ -70,8 +70,9 @@ without using the removed proof engine.
 
 ## Backend migration in progress
 
-`Machine.Integer` is the checked foundation for replacing the Nat backend. It is
-currently an internal migration API, not the default assembly or signed source
-frontend. See [the exact milestone and remaining work](../../Machine/Integer/README.md).
-Source `Nat` subtraction will remain saturating; backend replacement must not alter
-its mathematical meaning. Machine costs may change and display lemmas must be rechecked.
+`Machine.Integer` is now the default execution target for the supported owned
+frontend, including generated array runners and BFS assembly. The Nat machine is a
+temporary compiler intermediate and historical regression reference, not a public
+backend selector. Signed `Int` source types are pending. See [the migration status](../../Machine/Integer/README.md).
+Source `Nat` subtraction remains saturating. Machine bounds now include the verified
+integer-lowering overhead; polynomial-display lemmas have been regenerated.

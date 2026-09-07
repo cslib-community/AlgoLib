@@ -48,3 +48,11 @@ in that case. Dependent allowances are unchanged and remain subject to their VCs
 The array encoder additionally uses a total defaulting heap accessor. `#guard_msgs`
 requires silent execution, so host bounds diagnostics cannot count as a pass even
 when Lean returns a default value and all output comparisons happen to match.
+
+## Default integer target
+
+The generated methods now execute through the shared Int-RAM runner. The reference
+evaluator still implements Nat source subtraction, so underflow tests check that
+integer lowering preserves saturation. Inferred bounds include lowering overhead.
+`Tests/IntegerFrontend.lean` additionally pins an 11-instruction source example
+(10 Nat-IR instructions plus one clamp), detecting accidental fallback to Nat-RAM.

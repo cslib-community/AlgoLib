@@ -52,7 +52,7 @@ def twoStacks (xs : List Nat) (nonempty : xs ≠ []) : Result (List Nat × Nat) 
 
 theorem ring_correct (xs : List Nat) (nonempty : xs ≠ []) :
     (ring xs nonempty).value = (xs.tail ++ [xs.headD 0], xs.headD 0) ∧
-      (ring xs nonempty).steps ≤ 480 := by
+      (ring xs nonempty).steps ≤ 960 := by
   have h := runEncoded_correct (rate := 24) (QueueAlgorithms.rotateProcedure xs.length)
     (ringEncoder xs.length) (xs, 0) ⟨nonempty, Nat.le_refl _, trivial⟩
     (by simp [ringEncoder, Encoder.sep, QueueRing.encoder, scalarEncoder])
@@ -60,7 +60,7 @@ theorem ring_correct (xs : List Nat) (nonempty : xs ≠ []) :
 
 theorem stacks_correct (xs : List Nat) (nonempty : xs ≠ []) :
     (twoStacks xs nonempty).value = (xs.tail ++ [xs.headD 0], xs.headD 0) ∧
-      (twoStacks xs nonempty).steps ≤ 480 + 120 * xs.length := by
+      (twoStacks xs nonempty).steps ≤ 2 * (480 + 120 * xs.length) := by
   have h := runEncoded_correct (rate := 24) (QueueAlgorithms.rotateProcedure xs.length)
     (stacksEncoder xs.length) (xs, 0) ⟨nonempty, Nat.le_refl _, trivial⟩
     (by simp [stacksEncoder, Encoder.sep, QueueStacksImplementation.encoder, scalarEncoder])
@@ -79,7 +79,7 @@ set_option linter.hashCommand false in
       let b := twoStacks xs (by simp [xs])
       unless a.value == b.value && a.value.1 == xs.tail ++ [7] && a.value.2 == 7 do
         throw <| IO.userError s!"FIFO substitution: {xs}"
-      unless a.steps ≤ 480 && b.steps ≤ 480 + 120 * xs.length do
+      unless a.steps ≤ 960 && b.steps ≤ 2 * (480 + 120 * xs.length) do
         throw <| IO.userError s!"FIFO amortized bound: {xs}"
 
 end AlgoLib.Experimental.RAM.Tests.OwnedQueues

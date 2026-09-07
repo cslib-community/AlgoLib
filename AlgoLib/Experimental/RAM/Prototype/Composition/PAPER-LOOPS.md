@@ -152,7 +152,7 @@ unit-cost RAM execution on resident inputs, not Lean wall-clock time or bit comp
 
 ## 6. Display the inferred polynomial without guessing coefficients
 
-You do not need to know `912`, `384`, or `648` in advance. The framework has
+You do not need to know `1824`, `768`, or `1296` in advance. The framework has
 already constructed `insertionSortBound` from the program, its checked loop
 annotations, and the verified backend. Ask Lean to normalize that expression:
 
@@ -169,7 +169,7 @@ variable (xs : List Nat)
 #conv
   (simp [insertionSortBound, Value.credits, Locals.credits]; ring_nf) =>
   insertionSortBound xs
--- 648 + xs.length * 384 + xs.length ^ 2 * 912
+-- 1296 + xs.length * 768 + xs.length ^ 2 * 1824
 ```
 
 This is a complete example for a new Lean file. `simp` unfolds the cost
@@ -185,7 +185,7 @@ you can copy the displayed coefficients into a lemma:
 
 ```lean
 theorem displayed_bound (xs : List Nat) :
-    insertionSortBound xs = 912 * xs.length ^ 2 + 384 * xs.length + 648 := by
+    insertionSortBound xs = 1824 * xs.length ^ 2 + 768 * xs.length + 1296 := by
   simp [insertionSortBound, Value.credits, Locals.credits]
   ring
 ```
@@ -201,7 +201,7 @@ slack.
 ## What is checked
 
 - The source sorting proof uses dependent nested bounds and no manual payments.
-- Its inferred RAM bound simplifies to `912*n^2 + 384*n + 648`.
+- Its inferred RAM bound simplifies to `1824*n^2 + 768*n + 1296`.
 - The assembled runner is compared with Lean sorting on all lists of length below
   six over `{0,1,2}`, including empty inputs and duplicates.
 - Weighted-work execution is checked for a grid of starting counter values.

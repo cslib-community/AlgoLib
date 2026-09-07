@@ -129,3 +129,4 @@ import AlgoLib.Experimental.RAM.Tests.OwnedBFSAxioms
 
 import AlgoLib.Experimental.RAM.Tests.IntegerRAM
 import AlgoLib.Experimental.RAM.Prototype.Composition.IntegerExecution
+import AlgoLib.Experimental.RAM.Tests.IntegerFrontend

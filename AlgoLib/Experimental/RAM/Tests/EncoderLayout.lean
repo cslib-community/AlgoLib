@@ -31,7 +31,7 @@ theorem relocated_same_result (input : EdgeInput) (s : Fin input.n) :
 
 /-- The unchanged resource proof applies to the changed private layout. -/
 example (input : EdgeInput) (s : Fin input.n) :
-    (BreadthFirst.search .relocated input s).steps ≤ 2448 * (input.n + input.edges.length) :=
+    (BreadthFirst.search .relocated input s).steps ≤ 4896 * (input.n + input.edges.length) :=
   BreadthFirst.linear .relocated input s
 
 /-- A public region contract cannot make overlapping ownership disjoint. -/
@@ -46,14 +46,14 @@ set_option linter.hashCommand false in
       let r := BreadthFirst.search .relocated graph s
       unless r.value == (reference graph s.val).toFinset do
         throw <| IO.userError s!"relocated queue BFS: mask={mask}, source={s.val}"
-      unless r.steps ≤ 2448 * (graph.n + graph.edges.length) do
+      unless r.steps ≤ 4896 * (graph.n + graph.edges.length) do
         throw <| IO.userError "relocated queue BFS: RAM bound"
   for graph in [Legacy.Examples.singleton, Legacy.Examples.splitGraph,
       Legacy.Examples.diamond, Legacy.Examples.multigraph] do
     for s in List.finRange graph.n do
       let r := BreadthFirst.search .relocated graph s
       unless r.value == (reference graph s.val).toFinset &&
-          r.steps ≤ 2448 * (graph.n + graph.edges.length) do
+          r.steps ≤ 4896 * (graph.n + graph.edges.length) do
         throw <| IO.userError "relocated queue BFS: loops/parallel edges/isolated vertices"
 
 end AlgoLib.Experimental.RAM.Tests.EncoderLayout

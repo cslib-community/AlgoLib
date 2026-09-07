@@ -76,8 +76,8 @@ set_option linter.hashCommand false in
         for eagerRight in [false, true] do
           let result := Demo.execute eagerLeft eagerRight (n + m + 2) xs ys (by simp [xs])
             (by simp [ys])
-          let expected := 44 + (if eagerLeft then 12 * (n + 2) + 3 else 2) +
-            (if eagerRight then 12 * (m + 2) + 3 else 2)
+          let expected := 44 + (if eagerLeft then 13 * (n + 2) + 3 else 2) +
+            (if eagerRight then 13 * (m + 2) + 3 else 2)
           let framed := Demo.executeFramed eagerLeft eagerRight (n + m + 2) xs ys
             (by simp [xs]) (by simp [ys]; omega)
           unless framed.value == ([], ys) do
@@ -86,14 +86,14 @@ set_option linter.hashCommand false in
           unless pushed.value == xs ++ [42] && pushed.steps == 11 do
             throw <| IO.userError "typed append did not preserve its payload"
           let drained := Demo.executeDrain eagerLeft n xs (by simp [xs])
-          let drainCost := if n == 0 then 3 else 6 + (if eagerLeft then 12 * n + 3 else 2)
+          let drainCost := if n == 0 then 3 else 6 + (if eagerLeft then 13 * n + 3 else 2)
           unless drained.value == [] && drained.steps == drainCost do
             throw <| IO.userError "nested client/implementation loop failed"
           unless result.value == ([], []) do
             throw <| IO.userError "composed buffers: wrong mathematical output"
           unless result.steps == expected do
             throw <| IO.userError s!"buffers: expected {expected}, got {result.steps}"
-          unless result.steps ≤ 240 + potential eagerLeft n + potential eagerRight m do
+          unless result.steps ≤ 2 * (240 + potential eagerLeft n + potential eagerRight m) do
             throw <| IO.userError "composed buffers: resource bound violated"
 
 end AlgoLib.Experimental.RAM.Tests.Composition

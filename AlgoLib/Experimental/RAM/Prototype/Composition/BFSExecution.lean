@@ -93,7 +93,7 @@ def runIn (kind : FIFO) (a : Adjacency) (base capacity : Nat)
 /-- Computed from source annotations; no RAM constant is supplied by the BFS author. -/
 def bound (β : Type) (a : Adjacency) (G : Graph Nat β) (rep : Represents a G)
     (capacity source : Nat) : Nat :=
-  24 * (bfsProcedure β a G rep capacity).credits ([], Array.replicate a.n 97, [], source)
+  2 * (24 * (bfsProcedure β a G rep capacity).credits ([], Array.replicate a.n 97, [], source))
 
 /-- The exact RAM runner satisfies the graph specification and inferred bound together. -/
 theorem runIn_correct (kind : FIFO) (a : Adjacency) (base capacity : Nat)
@@ -118,7 +118,7 @@ theorem runIn_correct (kind : FIFO) (a : Adjacency) (base capacity : Nat)
 /-- Normalizing the inferred expression exposes the linear polynomial. -/
 theorem bound_eq (β : Type) (a : Adjacency) (G : Graph Nat β) (rep : Represents a G)
     (capacity source : Nat) :
-    bound β a G rep capacity source = 1224 * a.n + 888 * a.entries + 1224 := by
+    bound β a G rep capacity source = 2448 * a.n + 1776 * a.entries + 2448 := by
   simp [bound, UniformCredits.amount, Value.credits, Locals.credits]
   ring
 
@@ -155,7 +155,7 @@ theorem connected (kind : FIFO) (input : EdgeInput) (s : Fin input.n) :
 
 /-- Linear in vertices plus labelled edges, including loops and parallel edges. -/
 theorem linear (kind : FIFO) (input : EdgeInput) (s : Fin input.n) :
-    (search kind input s).steps ≤ 2448 * (input.n + input.edges.length) := by
+    (search kind input s).steps ≤ 4896 * (input.n + input.edges.length) := by
   have h := (runIn_correct kind input.adjacency
     (GraphCursorImplementation.extent input.adjacency) input.n
     (Nat.le_refl _) (Nat.le_refl _) EdgeData input.graph input.represents s).2
@@ -164,8 +164,8 @@ theorem linear (kind : FIFO) (input : EdgeInput) (s : Fin input.n) :
   have positive : 0 < input.n := Nat.zero_lt_of_lt s.isLt
   simp only [EdgeInput.represents, Finset.card_image_of_injective _ labelled_injective,
     List.toFinset_card_of_nodup input.distinct] at incidence
-  change (search kind input s).steps ≤ 1224 * input.n +
-    888 * input.adjacency.entries + 1224 at h
+  change (search kind input s).steps ≤ 2448 * input.n +
+    1776 * input.adjacency.entries + 2448 at h
   omega
 
 /-- The representation-independent result is a genuine substitution theorem. -/

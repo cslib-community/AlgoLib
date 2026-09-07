@@ -1,10 +1,10 @@
-# Int-RAM replacement: first checked migration milestone
+# Int-RAM: default owned-frontend execution
 
-The destination is one supported Int-RAM backend with both `Nat` and `Int` source
-types. This directory establishes the machine and migration foundation. The current
-frontend and default assembly still use the old Nat implementation while their
-representations are ported. This is an intermediate migration state, not a promise
-to maintain two public backends indefinitely.
+The supported owned frontend now executes on Int-RAM by default. Existing `Nat`
+source programs keep their meanings and their Lean input/output interfaces. Source
+proofs and logical credits are unchanged; assembly derives the integer instruction
+bound automatically. The old Nat machine remains a compiler intermediate and a
+regression reference until direct integer lowering replaces it.
 
 ## What is checked
 
@@ -54,17 +54,30 @@ aliasing, and a three-iteration countdown whose translated count is 10. Axiom gu
 reject changes to the current trusted dependencies. The full repository build also
 retains the existing frontend conformance and algorithm regressions.
 
+## Default assembly and theorem transport
+
+`Backend.Language.IntegerExecution` gives each certified Method an `integerCode`,
+a fuel-free `integerRun`, and `integerCorrect`. The shared owned `run`,
+`runProcedure`, and `runEncoded` use this runner. Thus `compile_array_method`,
+`CertifiedExecutable.run`, insertion sort, and all BFS queue choices execute integer
+instructions. No user-written migration theorem or backend selector is needed.
+
+Decoding natural source values uses an observation justified by the embedding
+proof; this is not silent coercion of a negative address. Runtime addresses are still
+checked by the integer instruction semantics.
+
+The inferred bound is `2 * (rate * credits + initialPotential)`. This is a conservative
+simulation bound, not a promise that every execution doubles in length. The runner
+counts its actual instructions. Sorting's displayed polynomial is now
+`1824*n^2 + 768*n + 1296`; BFS has the linear bound `4896*(n+m)`.
+
 ## Remaining replacement work
 
-1. Port compiler/storage interfaces to the integer machine, using this simulation
-   as the migration specification and accounting explicitly for Nat subtraction.
-2. Add typed `Int` locals, arrays, calls, and explicit conversions to the frontend;
-   preserve current `Nat` source meaning and generate signed-index safety obligations.
-3. Migrate executable assembly, sorting and BFS, regenerate affected bounds, and
-   extend independent conformance testing to signed source programs.
-4. Switch the sole public backend and remove the old machine after its regression
-   evidence has replacements.
+1. Add typed `Int` locals, arrays, calls, and explicit conversions to the frontend;
+   preserve current `Nat` meaning and generate signed-index safety obligations.
+2. Replace the temporary Nat compiler intermediate with direct integer lowering,
+   then remove the old machine after its regression evidence has replacements.
 
-No signed `ram method` syntax or completed backend replacement is claimed by this
-first milestone. The direct machine demo is for framework development; final users
-should continue to work through the generated proof API.
+Signed `Int` source syntax is not implemented yet. The direct machine demo is for
+framework development; users continue through the generated proof API. Default
+execution is integer-valued, while the compiler intermediate is still Nat-valued.

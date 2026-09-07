@@ -11,7 +11,7 @@ import AlgoLib.Experimental.RAM.Prototype.Composition.Encoding
 
 A certified backend determines the machine model, representation and conversion rate.
 `CertifiedExecutable.ofEncoded` packages those choices for any typed procedure.
-The `compile_array_method` command selects the existing resident Nat-array backend:
+The `compile_array_method` command selects resident Nat arrays executed on Int-RAM:
 it reconstructs local storage and linking, then emits a fuel-free ordinary-list runner,
 an inferred bound, and their joint theorem. No simulation proof is requested from the
 algorithm author. Array encoding and output observation remain host-side conventions.
@@ -53,7 +53,7 @@ def CertifiedExecutable.run {proc : Procedure A B} (e : CertifiedExecutable proc
 
 /-- The selected backend supplies the conversion rate and any initial private potential. -/
 def CertifiedExecutable.bound {proc : Procedure A B} (e : CertifiedExecutable proc) (a : A) : Nat :=
-  e.rate * proc.credits a + (e.encoder a).saved a
+  2 * (e.rate * proc.credits a + (e.encoder a).saved a)
 
 /-- Functional correctness and the RAM bound refer to this exact executable. -/
 theorem CertifiedExecutable.correct {proc : Procedure A B} (e : CertifiedExecutable proc)
@@ -127,7 +127,7 @@ elab_rules : command
         (by simp [Encoder.hide, arrayEncoder, $layout:term])
       ⟨r.value.toList, r.steps⟩))
     elabCommand (← `(command| def $bound (xs : List Nat) : Nat :=
-      24 * ($proc).credits xs.toArray))
+      2 * (24 * ($proc).credits xs.toArray)))
     elabCommand (← `(command| theorem $correct (xs : List Nat)
         (valid : ($proc).requires xs.toArray) :
         ($proc).ensures xs.toArray (($run xs valid).value.toArray) ∧

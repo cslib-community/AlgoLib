@@ -87,7 +87,7 @@ theorem runEncoded_correct (proc : Procedure A B) (encoder : Encoder P)
     (valid : proc.requires a) (resident : encoder.requires a) :
     proc.ensures a (runEncoded (rate := rate) proc encoder a valid resident).value ∧
       (runEncoded (rate := rate) proc encoder a valid resident).steps ≤
-        rate * proc.credits a + encoder.saved a :=
+        2 * (rate * proc.credits a + encoder.saved a) :=
   runProcedure_correct (rate := rate) (P := P) proc a valid encoder.footprint
     (encoder.store a) (encoder.saved a) (encoder.correct a resident)
 

@@ -38,7 +38,7 @@ The public theorems are:
 - `search_correct`: membership in the result is equivalent to graph reachability
   from the source, using the repository's `Graph` definition.
 - `connected`: the graph is connected iff the result equals `Finset.range input.n`.
-- `linear`: the actual runner takes at most `2448 * (input.n + input.edges.length)`
+- `linear`: the actual runner takes at most `4896 * (input.n + input.edges.length)`
   RAM steps.
 - `same_result`: changing the FIFO backend preserves the result for every valid
   graph and source, not just the test examples.

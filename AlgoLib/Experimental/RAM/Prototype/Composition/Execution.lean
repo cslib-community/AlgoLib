@@ -5,14 +5,16 @@ Authors: Sorrachai Yingchareonthawornchai
 -/
 import AlgoLib.Experimental.RAM.Prototype.Composition.Linking
 import AlgoLib.Experimental.RAM.Prototype.Composition.Loom
+import AlgoLib.Experimental.RAM.Backend.Language.IntegerExecution
 
 /-!
 # Link once, execute actual RAM, recover ordinary mathematical outputs
 
-The existing verified Method runner supplies execution without fuel. A decoder is
+The verified integer Method runner supplies execution without fuel. A decoder is
 an observation of resident output storage; it cannot manufacture an output unrelated
 to the final represented value. Product decoders compose automatically.
-Initial potential is explicitly included in the derived bound. Encoding and decoding
+Initial potential is included in the bound and scaled with integer-lowering overhead.
+Encoding and decoding
 are host-side views, as in the existing RAM interfaces, not charged conversion code.
 -/
 set_option autoImplicit true
@@ -86,7 +88,7 @@ def run {A B : Type} {rate : Nat} {P : Representation A} {Q : Representation B}
     (a : A) (budget : Nat) (post : B → Prop) (proof : VC p (fun b _ => post b) a budget)
     (r : Footprint) (s : Store) (saved : Nat) (initial : P.holds a r s saved) : Result B :=
   let result := (executable (rate := rate) (P := P) (Q := Q) (p := p)
-    a budget post proof r saved).run s initial
+    a budget post proof r saved).integerRun s initial
   ⟨decoder.decode result.2, result.1⟩
 
 theorem run_correct {A B : Type} {rate : Nat} {P : Representation A} {Q : Representation B}
@@ -96,13 +98,13 @@ theorem run_correct {A B : Type} {rate : Nat} {P : Representation A} {Q : Repres
     post (run (rate := rate) (P := P) (Q := Q) (p := p)
       a budget post proof r s saved initial).value ∧
       (run (rate := rate) (P := P) (Q := Q) (p := p)
-        a budget post proof r s saved initial).steps ≤ rate * budget + saved := by
+        a budget post proof r s saved initial).steps ≤ 2 * (rate * budget + saved) := by
   have h := (executable (rate := rate) (P := P) (Q := Q) (p := p)
-    a budget post proof r saved).correct s initial
+    a budget post proof r saved).integerCorrect s initial
   obtain ⟨b, left, hQ, hb, _⟩ := h.2.1
   constructor
   · change post (decoder.decode ((executable (rate := rate) (P := P) (Q := Q)
-      (p := p) a budget post proof r saved).run s initial).2)
+      (p := p) a budget post proof r saved).integerRun s initial).2)
     rw [decoder.correct _ _ _ _ hQ]
     exact hb
   · exact h.2.2
@@ -123,7 +125,8 @@ def Procedure.executable (proc : Procedure A B) [linked : Linked rate P proc.bod
 def runProcedure (proc : Procedure A B) [Linked rate P proc.body Q] [decoder : Decoder Q]
     (a : A) (valid : proc.requires a) (r : Footprint) (s : Store) (saved : Nat)
     (initial : P.holds a r s saved) : Result B :=
-  let result := (proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved).run s initial
+  let method := proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved
+  let result := method.integerRun s initial
   ⟨decoder.decode result.2, result.1⟩
 
 theorem runProcedure_correct (proc : Procedure A B) [Linked rate P proc.body Q]
@@ -132,8 +135,9 @@ theorem runProcedure_correct (proc : Procedure A B) [Linked rate P proc.body Q]
     proc.ensures a (runProcedure (rate := rate) (P := P) (Q := Q)
       proc a valid r s saved initial).value ∧
     (runProcedure (rate := rate) (P := P) (Q := Q)
-      proc a valid r s saved initial).steps ≤ rate * proc.credits a + saved := by
-  have h := (proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved).correct s initial
+      proc a valid r s saved initial).steps ≤ 2 * (rate * proc.credits a + saved) := by
+  have h := (proc.executable (rate := rate) (P := P) (Q := Q) a valid r saved).integerCorrect
+    s initial
   obtain ⟨b, left, rep, post⟩ := h.2.1
   constructor
   · change proc.ensures a (decoder.decode _)

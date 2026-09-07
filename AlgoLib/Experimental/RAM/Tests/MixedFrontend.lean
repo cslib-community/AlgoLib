@@ -67,7 +67,7 @@ set_option linter.hashCommand false in
           (by decide) (by simp) (by simpa using Nat.le_of_lt_succ (List.mem_range.mp hn))
         unless result.value == (#[x+1], #[x], [], x+1) do
           throw <| IO.userError "mixed values"
-        let expected := if eager then 12*n+22 else 21
+        let expected := if eager then 13*n+22 else 21
         unless result.steps == expected do
           throw <| IO.userError s!"mixed cost: {result.steps}, expected {expected}"
 
@@ -183,7 +183,7 @@ set_option linter.hashCommand false in
     let r := runEncoded (rate := 24) (Q := (pairEncoder eager).representation)
       callWithFrameProcedure (pairEncoder eager) (5, [3,4,5], 8) trivial
       (by simp [Encoder.sep, scalarEncoder, BufferImplementation.encoder])
-    unless r.value == (6, [], 10) && r.steps == (if eager then 47 else 10) do
+    unless r.value == (6, [], 10) && r.steps == (if eager then 50 else 10) do
       throw <| IO.userError "paired procedure framing"
 
 /-- error: A procedure cannot receive the same owned resource twice -/

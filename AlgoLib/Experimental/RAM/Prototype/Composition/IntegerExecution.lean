@@ -12,7 +12,8 @@ import AlgoLib.Experimental.RAM.Machine.Integer.NatEmbedding
 Every currently linked procedure inherits integer execution and a derived bound
 without changing its client proof. The old natural-valued representation is an
 intermediate migration witness, embedded in the actual integer machine state.
-This is not yet a signed source frontend or the default executable assembly.
+Default assembly uses Backend.Language.IntegerExecution. This theorem exposes
+whole-contract transport for backend authors; signed source types are still pending.
 -/
 namespace AlgoLib.Experimental.RAM.Prototype.Composition
 open Checked.Language

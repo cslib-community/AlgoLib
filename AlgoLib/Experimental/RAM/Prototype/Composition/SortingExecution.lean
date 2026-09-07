@@ -29,12 +29,12 @@ theorem main (xs : List Nat) : SortedPermutation xs (run xs).value ∧
 
 /-- A readable polynomial form of the automatically generated bound. -/
 theorem bound_eq (xs : List Nat) :
-    insertionSortBound xs = 912 * xs.length ^ 2 + 384 * xs.length + 648 := by
+    insertionSortBound xs = 1824 * xs.length ^ 2 + 768 * xs.length + 1296 := by
   simp [insertionSortBound, Value.credits, Locals.credits]
   ring
 
 /-- The inferred bound establishes quadratic RAM time. -/
-theorem quadratic (xs : List Nat) : (run xs).steps ≤ 1944 * (xs.length + 1)^2 := by
+theorem quadratic (xs : List Nat) : (run xs).steps ≤ 3888 * (xs.length + 1)^2 := by
   have h := (main xs).2
   rw [bound_eq] at h
   nlinarith

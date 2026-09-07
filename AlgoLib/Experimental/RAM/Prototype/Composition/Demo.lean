@@ -94,7 +94,7 @@ def execute (eagerLeft eagerRight : Bool) (capacity : Nat) (xs ys : List Nat)
 
 /-- The backend derives the public time bound; clients do not specify one. -/
 def «time» (eagerLeft eagerRight : Bool) (xs ys : List Nat) : Nat :=
-  240 + potential eagerLeft xs.length + potential eagerRight ys.length
+  2 * (240 + potential eagerLeft xs.length + potential eagerRight ys.length)
 
 theorem correct (eagerLeft eagerRight : Bool) (capacity : Nat) (xs ys : List Nat)
     (hx : xs.length + 2 ≤ capacity) (hy : ys.length + 2 ≤ capacity) :

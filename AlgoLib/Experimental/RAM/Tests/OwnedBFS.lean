@@ -30,8 +30,8 @@ set_option linter.hashCommand false in
       let expected := (reference graph s.val).toFinset
       unless ring.value == expected && twoStacks.value == expected do
         throw <| IO.userError s!"owned BFS reachability: mask={mask}, source={s.val}"
-      unless ring.steps ≤ 2448 * (graph.n + graph.edges.length) &&
-          twoStacks.steps ≤ 2448 * (graph.n + graph.edges.length) do
+      unless ring.steps ≤ 4896 * (graph.n + graph.edges.length) &&
+          twoStacks.steps ≤ 4896 * (graph.n + graph.edges.length) do
         throw <| IO.userError s!"owned BFS linear RAM bound: mask={mask}, source={s.val}"
       differentCosts := differentCosts || ring.steps != twoStacks.steps
   unless differentCosts do
@@ -43,7 +43,7 @@ set_option linter.hashCommand false in
         let r := BreadthFirst.search backend graph s
         unless r.value == (reference graph s.val).toFinset do
           throw <| IO.userError "owned BFS isolated/loops/parallel edges"
-        unless r.steps ≤ 2448 * (graph.n + graph.edges.length) do
+        unless r.steps ≤ 4896 * (graph.n + graph.edges.length) do
           throw <| IO.userError "owned BFS multigraph bound"
 
 /-- Both instantiations refer to the exact same source certificate. -/
