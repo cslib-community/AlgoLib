@@ -67,3 +67,11 @@ installed only after complete evidence has been reconstructed and checked; comma
 error recovery must not leave a placeholder for completion to consume. The modern
 negative tests check missing proofs, invalid evidence, unknown names, and overlap
 without using the removed proof engine.
+
+## Backend migration in progress
+
+`Machine.Integer` is the checked foundation for replacing the Nat backend. It is
+currently an internal migration API, not the default assembly or signed source
+frontend. See [the exact milestone and remaining work](../../Machine/Integer/README.md).
+Source `Nat` subtraction will remain saturating; backend replacement must not alter
+its mathematical meaning. Machine costs may change and display lemmas must be rechecked.

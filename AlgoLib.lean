@@ -126,3 +126,6 @@ import AlgoLib.Experimental.RAM.Tests.OwnedQueues
 import AlgoLib.Experimental.RAM.Tests.OwnedBFS
 import AlgoLib.Experimental.RAM.Tests.EncoderLayout
 import AlgoLib.Experimental.RAM.Tests.OwnedBFSAxioms
+
+import AlgoLib.Experimental.RAM.Tests.IntegerRAM
+import AlgoLib.Experimental.RAM.Prototype.Composition.IntegerExecution
