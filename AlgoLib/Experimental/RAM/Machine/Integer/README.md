@@ -71,13 +71,22 @@ simulation bound, not a promise that every execution doubles in length. The runn
 counts its actual instructions. Sorting's displayed polynomial is now
 `1824*n^2 + 768*n + 1296`; BFS has the linear bound `4896*(n+m)`.
 
+## Signed source interface
+
+The owned frontend now supports `Int` locals, arithmetic, comparisons, arrays,
+procedure composition, and explicit `Int.ofNat`/`Int.toNat` conversions. Nat
+subtraction remains saturating. Signed indices generate nonnegativity and bounds
+obligations. See [the signed source tutorial](../../Prototype/Composition/SIGNED-INTEGERS.md).
+
+`compile_scalar_method` assembles ordinary Nat/Int inputs and outputs;
+`compile_array_method` assembles lists of Nat or Int. Both use the existing
+obligation API, actual Int-RAM execution, and inferred instruction bounds.
+
 ## Remaining replacement work
 
-1. Add typed `Int` locals, arrays, calls, and explicit conversions to the frontend;
-   preserve current `Nat` meaning and generate signed-index safety obligations.
-2. Replace the temporary Nat compiler intermediate with direct integer lowering,
-   then remove the old machine after its regression evidence has replacements.
-
-Signed `Int` source syntax is not implemented yet. The direct machine demo is for
-framework development; users continue through the generated proof API. Default
-execution is integer-valued, while the compiler intermediate is still Nat-valued.
+Replace the temporary Nat compiler intermediate with direct integer lowering,
+then remove the old machine after its regression evidence has replacements.
+Signed source values currently use certified private positive/negative lanes
+through that intermediate. This preserves integer semantics and charges for the
+expanded code, but is not yet single-register native signed lowering. Source
+algorithm proofs do not expose these lanes.

@@ -33,6 +33,9 @@ def Path.set : Path A B → A → B → A
   | .left p, a, b => (p.set a.1 b, a.2)
   | .right p, a, b => (a.1, p.set a.2 b)
 
+@[simp] theorem Path.set_get (p : Path S A) (s : S) : p.set s (p.get s) = s := by
+  induction p <;> simp_all [Path.set, Path.get]
+
 inductive Arithmetic where
   | add | sub | mul
   deriving DecidableEq
@@ -40,29 +43,99 @@ inductive Arithmetic where
 def Arithmetic.eval : Arithmetic → Nat → Nat → Nat
   | .add => Nat.add | .sub => Nat.sub | .mul => Nat.mul
 
+/- Numeric source expressions retain their type independently of machine representation. -/
+mutual
 inductive Value (S : Type) where
   | literal : Nat → Value S
   | scalar : Path S Nat → Value S
   | size : Path S (Array Nat) → Value S
   | index : Path S (Array Nat) → Value S → Value S
   | binary : Arithmetic → Value S → Value S → Value S
+  | intSize : Path S (Array Int) → Value S
+  | toNat : SignedValue S → Value S
+  | checkedToNat : SignedValue S → Value S
 
-def Value.eval : Value S → S → Nat
+inductive SignedValue (S : Type) where
+  | literal : Int → SignedValue S
+  | scalar : Path S Int → SignedValue S
+  | index : Path S (Array Int) → Value S → SignedValue S
+  | binary : Arithmetic → SignedValue S → SignedValue S → SignedValue S
+  | neg : SignedValue S → SignedValue S
+  | ofNat : Value S → SignedValue S
+end
+
+def Arithmetic.evalInt : Arithmetic → Int → Int → Int
+  | .add => (· + ·) | .sub => (· - ·) | .mul => (· * ·)
+
+mutual
+ def Value.eval : Value S → S → Nat
   | .literal n, _ => n
   | .scalar p, s => p.get s
   | .size p, s => (p.get s).size
   | .index p i, s => (p.get s)[i.eval s]!
   | .binary op a b, s => op.eval (a.eval s) (b.eval s)
+  | .intSize p, s => (p.get s).size
+  | .toNat e, s | .checkedToNat e, s => (e.eval s).toNat
+ def SignedValue.eval : SignedValue S → S → Int
+  | .literal n, _ => n
+  | .scalar p, s => p.get s
+  | .index p i, s => (p.get s)[i.eval s]!
+  | .binary op a b, s => op.evalInt (a.eval s) (b.eval s)
+  | .neg e, s => -(e.eval s)
+  | .ofNat e, s => e.eval s
+end
 
-def Value.Safe : Value S → S → Prop
-  | .literal _, _ | .scalar _, _ | .size _, _ => True
+mutual
+ def Value.Safe : Value S → S → Prop
+  | .literal _, _ | .scalar _, _ | .size _, _ | .intSize _, _ => True
   | .index p i, s => i.Safe s ∧ i.eval s < (p.get s).size
   | .binary _ a b, s => a.Safe s ∧ b.Safe s
+  | .toNat e, s => e.Safe s
+  | .checkedToNat e, s => e.Safe s ∧ 0 ≤ e.eval s
+ def SignedValue.Safe : SignedValue S → S → Prop
+  | .literal _, _ | .scalar _, _ => True
+  | .index p i, s => i.Safe s ∧ i.eval s < (p.get s).size
+  | .binary _ a b, s => a.Safe s ∧ b.Safe s
+  | .neg e, s => e.Safe s
+  | .ofNat e, s => e.Safe s
+end
 
-def Value.credits : Value S → Nat
-  | .literal _ | .scalar _ | .size _ => 1
+mutual
+ def Value.credits : Value S → Nat
+  | .literal _ | .scalar _ | .size _ | .intSize _ => 1
   | .index _ i => i.credits + 3
   | .binary _ a b => a.credits + b.credits + 1
+  | .toNat e | .checkedToNat e => e.costs.1
+ def SignedValue.costs : SignedValue S → Nat × Nat
+  | .literal _ | .scalar _ => (1, 1)
+  | .index _ i => (i.credits + 5, i.credits + 5)
+  | .binary op a b =>
+    let (ap, an) := a.costs
+    let (bp, bn) := b.costs
+    match op with
+    | .add => (ap + bp + 1 + (an + bn + 1) + 1,
+        an + bn + 1 + (ap + bp + 1) + 1)
+    | .sub => (ap + bn + 1 + (an + bp + 1) + 1,
+        an + bp + 1 + (ap + bn + 1) + 1)
+    | .mul => (2 * (ap + an + bp + bn) + 7, 2 * (ap + an + bp + bn) + 7)
+  | .neg e => (e.costs.2, e.costs.1)
+  | .ofNat e => (e.credits, 1)
+end
+
+/-- Structural logical allowance for the checked signed representation implementation. -/
+def SignedValue.credits (e : SignedValue S) : Nat := e.costs.1 + e.costs.2
+
+/-- Signed assignments expose integer semantics and ordinary expression safety. -/
+def signedAssign (p : Path S Int) (e : SignedValue S) : Operation S S where
+  requires := e.Safe
+  effect s := p.set s (e.eval s)
+  charge _ := e.credits + 8
+
+/-- Signed arrays retain natural, bounds-checked indices. -/
+def signedWrite (p : Path S (Array Int)) (i : Value S) (e : SignedValue S) : Operation S S where
+  requires s := i.Safe s ∧ e.Safe s ∧ i.eval s < (p.get s).size
+  effect s := p.set s ((p.get s).set! (i.eval s) (e.eval s))
+  charge _ := i.credits + e.credits + 16
 
 /-- Updating one scalar leaves every other component mathematically unchanged. -/
 def assign (p : Path S Nat) (e : Value S) : Operation S S where
@@ -88,12 +161,21 @@ def Relation.eval : Relation → Nat → Nat → Bool
 def compare (op : Relation) (a b : Path S Nat) (s : S) : Bool :=
   op.eval (a.get s) (b.get s)
 
+def Relation.evalInt : Relation → Int → Int → Bool
+  | .lt => fun a b => decide (a < b)
+  | .le => fun a b => decide (a ≤ b)
+  | .eq => fun a b => decide (a = b)
+
+def compareSigned (op : Relation) (a b : Path S Int) (s : S) : Bool :=
+  op.evalInt (a.get s) (b.get s)
+
 /-- Compiler-reserved locals have a finite structural initialization allowance. -/
 class Locals (L : Type) where
   initial : L
   credits : Nat
 
 instance : Locals Nat := ⟨0, 2⟩
+instance : Locals Int := ⟨0, 8⟩
 instance [a : Locals A] [b : Locals B] : Locals (A × B) :=
   ⟨(a.initial, b.initial), a.credits + b.credits⟩
 

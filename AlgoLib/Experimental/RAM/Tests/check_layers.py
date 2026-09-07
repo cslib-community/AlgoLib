@@ -158,4 +158,6 @@ for path in root.rglob("*.lean"):
 # Regeneration is cheap and independent of Lean's cached artifacts.
 subprocess.run([sys.executable, str(root / "Tests/Conformance/generate.py"), "--check"],
                check=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+subprocess.run([sys.executable, str(root / "Tests/Conformance/generate_signed.py"), "--check"],
+               check=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
 print(f"Checked {len(modules)} documented modules: boundaries and import DAG OK")

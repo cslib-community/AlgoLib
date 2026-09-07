@@ -1,5 +1,7 @@
 # Modularity under composition
 
+For signed arithmetic, see [Nat and Int source types](SIGNED-INTEGERS.md).
+
 See [interface status and migration policy](API-POLICY.md) before extending the
 frontend, and [frontend conformance tests](../../Tests/Conformance/README.md) for
 independent source-to-RAM regression coverage.

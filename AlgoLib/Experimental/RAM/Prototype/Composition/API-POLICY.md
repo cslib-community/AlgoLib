@@ -11,7 +11,7 @@ not an alternative public API.
 | --- | --- | --- |
 | Supported author interface | `LogicalFrontend`, `GeneratedObligations`, `ObligationExplorer`; `ram method`, `generate_obligations`, `prove_obligation`, `complete_algorithm`, `#named_goals`, `#explain_obligation`, `#proof_template` | Source programs and mathematical proofs |
 | Supported convenience interface | `prove_algorithm … where`, `verify_array_method … where` | Sugar over the generated API; separate commands are preferred for editing |
-| Supported backend interface | `Composition.Assembly`, `Encoding`, `EncoderLayout`, `Linking` | Reusable certified implementations and executable assembly |
+| Supported backend interface | `Composition.Assembly` (`compile_array_method`, `compile_scalar_method`), `Encoding`, `EncoderLayout`, `Linking` | Reusable certified implementations and executable assembly |
 | Maintained internal machinery | `Composition.Frontend/{Syntax,Resources,Expressions,Statements,Method}`, `NamedProofs`, `ProofGoals`, `contract_vc`, `contract_solve`, `paper_vc`, `paper_solve`, `prove_algorithm … by` | Elaboration, structural VC processing, and framework/library proofs; not the student authoring route |
 | Deprecated regression interfaces | `LegacyArrayFrontend`, `Prototype.Frontend` (`legacy_ram`, `prove_ram`), earlier array/graph adapters | Preserve historical substitution/translation evidence; no new algorithm examples or features |
 | Separate semantic research fixtures | `VelvetSemantics`, `ExecutableTranslation`, `RecursiveTranslation`, nondeterministic target modules | Keep independent semantic results; they are not interchangeable public frontends |
@@ -73,6 +73,7 @@ without using the removed proof engine.
 `Machine.Integer` is now the default execution target for the supported owned
 frontend, including generated array runners and BFS assembly. The Nat machine is a
 temporary compiler intermediate and historical regression reference, not a public
-backend selector. Signed `Int` source types are pending. See [the migration status](../../Machine/Integer/README.md).
+backend selector. Signed `Int` locals, arrays, arithmetic, comparisons, calls, and explicit conversions
+are supported by the owned frontend. See [signed source types](SIGNED-INTEGERS.md). See [the migration status](../../Machine/Integer/README.md).
 Source `Nat` subtraction remains saturating. Machine bounds now include the verified
 integer-lowering overhead; polynomial-display lemmas have been regenerated.

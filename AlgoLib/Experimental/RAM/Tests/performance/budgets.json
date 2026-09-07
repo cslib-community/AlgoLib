@@ -40,6 +40,11 @@
       "name": "generated-api-import",
       "module": "AlgoLib.Experimental.RAM.Tests.ObligationAPI.Proofs",
       "seconds": 30
+    },
+    {
+      "name": "signed-frontend",
+      "module": "AlgoLib.Experimental.RAM.Tests.SignedFrontend",
+      "seconds": 60
     }
   ]
 }

@@ -16,6 +16,14 @@ set_option relaxedAutoImplicit true
 namespace AlgoLib.Experimental.RAM.Prototype.Composition.Frontend
 open Lean Elab Command Term Meta Parser
 
+private def scalarType (rs : Array Resource) (ty : Option Term) (e : Term) : TermElabM Term := do
+  if let some ty := ty then
+    unless ty.raw.isIdent &&
+        (ty.raw.getId.eraseMacroScopes == `Nat || ty.raw.getId.eraseMacroScopes == `Int) do
+      throwErrorAt ty "Scalar locals support Nat or Int"
+    return ty
+  if signedSyntax rs e then `(Int) else `(Nat)
+
 /-- Reserve local and guard registers before elaborating paths. Names are lexical;
 slots are method scratch and never specialize executable code. -/
 partial def collect (rs : Array Resource) (body : Syntax) : TermElabM (Array Resource) := do
@@ -23,16 +31,16 @@ partial def collect (rs : Array Resource) (body : Syntax) : TermElabM (Array Res
   for raw in items body do
     let stx : TSyntax `doElem := ⟨raw⟩
     match stx with
-    | `(doElem| let mut $x:ident := $_:term)
-    | `(doElem| let mut $x:ident : Nat := $_:term) =>
+    | `(doElem| let mut $x:ident $[: $ty:term]? := $e:term) =>
       if rs.any (fun r => r.name.getId == x.getId) then
         throwErrorAt x "Local name already used; shadowing is not supported"
-      rs := rs.push ⟨x, ← `(Nat), true, true, false⟩
-    | `(doElem| let $x:ident := $_:term)
-    | `(doElem| let $x:ident : Nat := $_:term) =>
+      let ty ← scalarType rs ty e
+      rs := rs.push ⟨x, ty, true, true, false⟩
+    | `(doElem| let $x:ident $[: $ty:term]? := $e:term) =>
       if rs.any (fun r => r.name.getId == x.getId) then
         throwErrorAt x "Local name already used; shadowing is not supported"
-      rs := rs.push ⟨x, ← `(Nat), true, false, false⟩
+      let ty ← scalarType rs ty e
+      rs := rs.push ⟨x, ty, true, false, false⟩
     | `(doElem| if $q:term then $yes:doSeq else $no:doSeq) =>
       rs ← guards rs q
       rs ← collect (← collect rs yes) no
@@ -55,8 +63,9 @@ where
   guards (rs : Array Resource) (q : Term) : TermElabM (Array Resource) := do
     if q.raw.isIdent then return rs
     let key := "_guard" ++ toString (q.raw.getPos?.getD 0)
-    return rs ++ #[⟨mkIdent (Name.mkSimple (key ++ "a")), ← `(Nat), true, true, true⟩,
-      ⟨mkIdent (Name.mkSimple (key ++ "b")), ← `(Nat), true, true, true⟩]
+    let ty ← if signedSyntax rs q then `(Int) else `(Nat)
+    return rs ++ #[⟨mkIdent (Name.mkSimple (key ++ "a")), ty, true, true, true⟩,
+      ⟨mkIdent (Name.mkSimple (key ++ "b")), ty, true, true, true⟩]
 
 partial def collectArguments (known rs : Array Resource) (body : Syntax) :
     TermElabM (Array Resource) := do
@@ -67,7 +76,8 @@ partial def collectArguments (known rs : Array Resource) (body : Syntax) :
     | `(doElem| $f:ident($args:term,*)) =>
       if args.getElems.any (fun a => mentions known a.raw) then
         let key := "_argument" ++ toString (f.raw.getPos?.getD 0)
-        rs := rs.push ⟨mkIdent (Name.mkSimple key), ← `(Nat), true, true, true⟩
+        let ty ← if signedSyntax known stx then `(Int) else `(Nat)
+        rs := rs.push ⟨mkIdent (Name.mkSimple key), ty, true, true, true⟩
     | `(doElem| if $_:term then $yes:doSeq else $no:doSeq) =>
       rs ← collectArguments known (← collectArguments known rs yes) no
     | `(doElem| if $_:term then $yes:doSeq) => rs ← collectArguments known rs yes
@@ -86,7 +96,8 @@ partial def collectArguments (known rs : Array Resource) (body : Syntax) :
       let (f, args) ← receiverApplication e
       if args.any (fun a => mentions known a.raw) then
         let key := "_argument" ++ toString (f.raw.getPos?.getD 0)
-        rs := rs.push ⟨mkIdent (Name.mkSimple key), ← `(Nat), true, true, true⟩
+        let ty ← if signedSyntax known stx then `(Int) else `(Nat)
+        rs := rs.push ⟨mkIdent (Name.mkSimple key), ty, true, true, true⟩
     | _ => pure ()
   return rs
 
@@ -181,7 +192,8 @@ def declareMethod (name : Ident) (binders : Array (TSyntax `leafny_binder))
       let initializeCost := fun t => do
         let mut result := t
         for r in rs.extract inputs.size rs.size do
-          result ← substitute r.name.getId (⟨Syntax.mkNumLit "0"⟩) result
+          let zero ← if isInt r then `((0 : Int)) else `(0)
+          result ← substitute r.name.getId zero result
         return result
       let enter : Fragment := { enter with transfer := initializeCost }
       let leave ← operation (← `(leaveLocals $state $scratch)) #[] (← `(0))

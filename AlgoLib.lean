@@ -130,3 +130,8 @@ import AlgoLib.Experimental.RAM.Tests.OwnedBFSAxioms
 import AlgoLib.Experimental.RAM.Tests.IntegerRAM
 import AlgoLib.Experimental.RAM.Prototype.Composition.IntegerExecution
 import AlgoLib.Experimental.RAM.Tests.IntegerFrontend
+import AlgoLib.Experimental.RAM.Tests.SignedFrontend
+import AlgoLib.Experimental.RAM.Tests.SignedRejections
+import AlgoLib.Experimental.RAM.Tests.Conformance.Signed
+import AlgoLib.Experimental.RAM.Tests.SignedAxioms
+import AlgoLib.Experimental.RAM.Tests.SignedOwnership

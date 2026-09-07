@@ -56,3 +56,16 @@ evaluator still implements Nat source subtraction, so underflow tests check that
 integer lowering preserves saturation. Inferred bounds include lowering overhead.
 `Tests/IntegerFrontend.lean` additionally pins an 11-instruction source example
 (10 Nat-IR instructions plus one clamp), detecting accidental fallback to Nat-RAM.
+
+## Signed source corpus
+
+`generate_signed.py` adds four ordinary frontend programs and 160 comparisons
+against the independent evaluator. It combines signed array values, signed
+subtraction, multiplication, negative branches, modular calls, and nested loops
+with Nat counters. The oracle distinguishes `int-` from saturating Nat `-`.
+
+Run `python3 generate_signed.py --check` to check the committed fixture.
+`SignedRejections.lean` separately rejects implicit mixed arithmetic/narrowing and
+proves that negative checked indices and out-of-bounds writes cannot be certified.
+`SignedFrontend.lean` checks explicit conversion, signed countdowns, self-referential
+writes, ordinary list/scalar runners, and their generated bounds.

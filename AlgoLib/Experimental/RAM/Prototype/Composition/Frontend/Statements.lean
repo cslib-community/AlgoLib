@@ -174,8 +174,10 @@ where
     match stx with
     | `(doElem| let mut $x:ident := $e:term)
     | `(doElem| let mut $x:ident : Nat := $e:term)
+    | `(doElem| let mut $x:ident : Int := $e:term)
     | `(doElem| let $x:ident := $e:term)
-    | `(doElem| let $x:ident : Nat := $e:term) => declare active x e
+    | `(doElem| let $x:ident : Nat := $e:term)
+    | `(doElem| let $x:ident : Int := $e:term) => declare active x e
     | `(doElem| ($left:ident, $right:ident) := $proc:term) =>
       let i ← resource rs active left
       let j ← resource rs active right
@@ -194,16 +196,26 @@ where
     | `(doElem| $target:ident := $value:term) =>
       let i ← resource rs active target
       unless rs[i]!.mutable do throwErrorAt target "Immutable local; use 'let mut'"
-      let part ← if isNat rs[i]! then assignment rs active i value else call active target value
+      let part ← if isNat rs[i]! || isInt rs[i]! then assignment rs active i value
+        else call active target value
       return (part, active)
     | `(doElem| $a:ident[$i:term] := $e:term) =>
       let slot ← resource rs active a
-      let index ← expression rs active i
+      let index ← indexExpression rs active i
+      if isIntArray rs[slot]! then
+        let value ← signedExpression rs active e
+        let part ← operation (← `(Composition.signedWrite $(← path rs slot) $index $value)) #[slot]
+          (← `(Value.credits (S := $(← stateType rs)) $index +
+            SignedValue.credits (S := $(← stateType rs)) $value + 16))
+        let sourceIndex ← if signedSyntax rs i then `(Int.toNat $i) else pure i
+        let updated ← `(($a).set! $sourceIndex $e)
+        return ({ part with transfer := fun t => substitute a.getId updated t }, active)
       let value ← expression rs active e
       let part ← operation (← `(Composition.write $(← path rs slot) $index $value)) #[slot]
         (← `(Value.credits (S := $(← stateType rs)) $index +
           Value.credits (S := $(← stateType rs)) $value + 3))
-      let updated ← `(($a).set! $i $e)
+      let sourceIndex ← if signedSyntax rs i then `(Int.toNat $i) else pure i
+      let updated ← `(($a).set! $sourceIndex $e)
       return ({ part with transfer := fun t => substitute a.getId updated t }, active)
     | `(doElem| $f:ident($args:term,*)) =>
       return (← receiver active f args, active)

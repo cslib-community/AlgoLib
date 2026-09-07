@@ -32,9 +32,13 @@ class Machine:
             if not 0 <= i < len(self.array):
                 raise ValueError("reference read out of bounds")
             return self.array[i]
+        if tag == "neg":
+            return -self.expr(args[0])
         a, b = map(self.expr, args)
         if tag == "+":
             return a + b
+        if tag == "int-":
+            return a - b
         if tag == "-":
             return max(0, a - b)
         if tag == "*":
@@ -96,6 +100,7 @@ def evaluate(program, values):
 
 def self_test():
     assert evaluate([("store", 0, ("-", 1, 3))], [9]) == [0]
+    assert evaluate([("store", 0, ("int-", 1, 3))], [9]) == [-2]
     assert evaluate([("local", "x", 4), ("call", "x"),
                      ("store", 0, ("var", "x"))], [0]) == [5]
     assert evaluate([("store", 0, ("read", 1)), ("store", 1, ("read", 0))], [2, 7]) == [7, 7]

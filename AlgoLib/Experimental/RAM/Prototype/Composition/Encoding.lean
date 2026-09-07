@@ -98,11 +98,15 @@ private partial def localStorage (stem : String) (ty : Lean.Expr) (index : Nat) 
   if ty.isConstOf ``Nat then
     let name := quote (stem ++ "." ++ toString index)
     return (← `(scalarEncoder ⟨$name⟩), index + 1)
+  if ty.isConstOf ``Int then
+    let name := quote (stem ++ "." ++ toString index)
+    let constructor := mkIdent `AlgoLib.Experimental.RAM.Prototype.Composition.signedEncoder
+    return (← `($constructor $name), index + 1)
   if ty.isAppOfArity ``Prod 2 then
     let (left, next) ← localStorage stem ty.getAppArgs[0]! index
     let (right, next) ← localStorage stem ty.getAppArgs[1]! next
     return (← `(Encoder.sep $left $right (by decide)), next)
-  throwError "Private local storage supports finite products of Nat"
+  throwError "Private local storage supports finite products of Nat and Int"
 
 /-- Reconstruct the finite register layout from the generated local type. -/
 syntax "local_storage%" str ":" term : term
