@@ -197,7 +197,7 @@ private lemma φ_transfer_mirror
 /-! #### Short‐hands for `logb 2` arithmetic (used in zig‐zig / zig‐zag) -/
 
 /-- Monotonicity of `logb 2`. -/
-private lemma logb_mono {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+lemma logb_mono {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     Real.logb 2 a ≤ Real.logb 2 b :=
   Real.logb_le_logb_of_le (by norm_num) ha hab
 
