@@ -7,6 +7,7 @@ Authors: Anton Kovsharov, Antoine du Fresne von Hohenesche,
 
 import AlgoLib.DataStructures.SplayTree.Complexity
 import AlgoLib.DataStructures.SplayTree.Correctness
+import AlgoLib.DataStructures.SplayTree.StaticOptimality
 
 /-!
 # Splay Tree API for BST
@@ -69,11 +70,13 @@ theorem splay_amortized_bound (t : BST α) (q : α) :
   SplayTree.splay_amortized_bound t.tree q
 
 
-/-! ### Sequence Cost and Total Complexity Bound -/
+/-! ### Sequence Cost -/
 
 /-- The total cost of a sequence of `m` splays, defined directly on the initial BST. -/
 noncomputable def sequenceCost {m : ℕ} (init : BST α) (X : Fin m → α) : ℝ :=
   SplayTree.splay.sequence_cost init.tree X
+
+/-! ### Total Worst-Case Complexity Bound -/
 
 /--
 The classical total sequence cost bound for `m` operations on a BST of size `n`.
@@ -83,5 +86,22 @@ theorem nlogn_cost (n m : ℕ) (X : Fin m → α)
     (init : BST α) (h_size : init.tree.num_nodes = n) :
     sequenceCost init X ≤ m * (3 * Real.logb 2 n + 1) + n * Real.logb 2 n :=
   SplayTree.nlogn_cost n m X init.tree h_size
+
+/-! ### Static optimality -/
+
+/-- Total cost of a sequence of accesses in the given static tree. -/
+def staticCost {m : ℕ} [LinearOrder α] (t : BST α) (X : Fin m → α) : ℕ :=
+  ∑ i, search_path_len t.tree (X i)
+
+/--
+Splay performs as well as any static tree `s`, with any initial tree `init`, up to constant factors
+and an O(n²) additive term. Assumes that all queries are successful.
+-/
+theorem splay_tree_static_optimality (m : ℕ)
+    (init s : BST α) (hkeys : s.tree.toKeyList = init.tree.toKeyList)
+    (X : Fin m → α) (hX : ∀ i, X i ∈ init.tree) :
+    let n := s.tree.num_nodes
+    sequenceCost init X ≤ m + (Real.logb 2 3) * (3 * staticCost s X + n ^ 2) :=
+  SplayTree.Weighted.splay_tree_static_optimality m init.tree s.tree hkeys init.hBST X hX
 
 end SplayTree.BSTAPI

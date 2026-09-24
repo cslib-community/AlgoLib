@@ -45,6 +45,9 @@ def Dir.bringUp : Dir → Tree α → Tree α
   | .L => rotateRight
   | .R => rotateLeft
 
+lemma Dir.bringUp_ne_nil_of_ne_nil (d : Dir) (t : Tree α) (ht : t ≠ nil) : d.bringUp t ≠ nil := by
+  cases d <;> all_goals simp only [Dir.bringUp, rotateLeft, rotateRight]; split; simp; apply ht
+
 /-- Apply `op` to the `d`-child of the root, leaving everything else fixed. -/
 def applyChild (d : Dir) (op : Tree α → Tree α) : Tree α → Tree α
   | l △[k] r =>
@@ -52,6 +55,12 @@ def applyChild (d : Dir) (op : Tree α → Tree α) : Tree α → Tree α
     | .L => (op l) △[k] r
     | .R => l △[k] (op r)
   | .nil => .nil
+
+lemma Dir.applyChild_ne_nil_of_ne_nil (d : Dir) (op : Tree α → Tree α) (t : Tree α) (ht : t ≠ nil) :
+    applyChild d op t ≠ nil := by
+  unfold applyChild; split
+  · split; all_goals simp
+  · contradiction
 
 /-- One frame of the search path: the direction we took from this ancestor,
 its key, and the subtree we did *not* descend into. -/
@@ -89,6 +98,9 @@ def Frame.flip (f : Frame α) : Frame α :=
       simp only [applyChild, Dir.flip, Dir.bringUp,
         mirror_node] <;> congr 1 <;>
       first | exact mirror_rotateRight _ | exact mirror_rotateLeft _
+
+lemma Frame.attach_ne_nil (c : Tree α) (f : Frame α) : f.attach c ≠ nil := by
+  simp [attach]; cases f.dir; all_goals simp
 
 /-- Descend from `t` toward `q`, returning the subtree reached (either the
 matching node or `.nil` if `q` is absent) and the path above it. The head
