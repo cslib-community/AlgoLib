@@ -1,26 +1,31 @@
-import GraphLib.Theory.Spectral.Expansion
 import GraphLib.Theory.Spectral.Coarea
 import GraphLib.Theory.Spectral.Fiedler
 
 -- Cheeger upper bound, main proof
 -- Authors: Weixuan Yuan, Yuchen Zhong
--- LLM: Gemini, GPT-5.6 on codex
+-- LLM: Gemini, GPT-5.6, 6.1 Sol on codex
+
+/-!
+The main steps follow Luca Trevisan's Lecture 2, §4 (Lemmas 3–5), and Lecture 3, §1:
+https://lucatrevisan.github.io/41000-22/lecture02.pdf
+https://lucatrevisan.github.io/41000-22/lecture03.pdf
+-/
 
 namespace GraphLib
 namespace Spectral
 
-open Finset ProbabilityTheory MeasureTheory Cuts
+open Finset Cuts
 
 variable {α : Type*} (G : SimpleGraph α)
   [Fintype G.vertexSet] [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)]
 
 omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
-/-- A median value for `x` whose strict upper and lower level sets both have
-cardinality at most half of `G.vertexFinset`. -/
+/-- Lecture 2, Lemma 5, p. 7: choose a median with at most |V|/2 entries strictly on each side. -/
 lemma exists_balanced_median (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card) : ∃ m : ℝ,
     (G.vertexFinset.filter (fun v => x v > m)).card ≤ (G.vertexFinset).card / 2 ∧
     (G.vertexFinset.filter (fun v => x v < m)).card ≤ (G.vertexFinset).card / 2 := by
   classical
+  -- Formal support for the median choice in Lemma 5: select the middle sorted entry.
   let sortedV := (G.vertexFinset.toList).mergeSort (fun u v => x u ≤ x v)
   let n := (G.vertexFinset).card
   let k := n / 2
@@ -35,10 +40,9 @@ lemma exists_balanced_median (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card)
           decide_eq_true (le_trans (of_decide_eq_true hab) (of_decide_eq_true hbc))))
         (fun a b => by grind)
         (G.vertexFinset.toList))
-  have h_nodup : sortedV.Nodup := by
-    simpa [sortedV] using (G.vertexFinset.nodup_toList.mergeSort (le := fun u v => x u ≤ x v))
   have h_mem_sorted_iff : ∀ v, v ∈ sortedV ↔ v ∈ G.vertexFinset := by
     intro v; simp [sortedV]
+  -- Lemma 5, p. 7: count the entries strictly above and strictly below this median.
   constructor
   · let upper := G.vertexFinset.filter (fun v => x v > m)
     let toTailIndex : α → ℕ := fun v => sortedV.length - 1 - sortedV.idxOf v
@@ -76,153 +80,73 @@ lemma exists_balanced_median (x : α → ℝ) (hV : 2 ≤ (G.vertexFinset).card)
     simpa [lower, k, n] using
       Finset.card_le_card_of_injOn (fun v => sortedV.idxOf v) h_maps h_inj
 
-/-- Shifting by a balanced median does not increase the Rayleigh quotient for a
-degree-regular graph when `x` is degree-orthogonal to constants. -/
+/-- Lecture 2, Lemma 5, pp. 6–7: R(x + c1) ≤ R(x) when x is orthogonal to constants. -/
 lemma median_shift_rayleigh_le (x : α → ℝ) (d : ℕ) (m : ℝ) (h_d_pos : d ≠ 0)
     (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
     (h_orth : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     SimpleGraph.rayleighQuotient G (fun v => x v - m) ≤ SimpleGraph.rayleighQuotient G x := by
+  -- Regularity converts degree-orthogonality to the x ⊥ 1 condition used in Lemma 5.
   have h_weight : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) =
       (d : ℝ) * G.vertexFinset.sum (fun v => x v) := by
     rw [Finset.mul_sum]; apply Finset.sum_congr rfl; grind
   have hd_ne : (d : ℝ) ≠ 0 := by exact_mod_cast h_d_pos
+  -- Lemma 5, p. 6: orthogonality makes the cross term in the shifted norm vanish.
   have h_cross : G.vertexFinset.sum (fun v => 2 * x v * m) = 0 := by
     rw [← Finset.sum_mul]; rw [← Finset.mul_sum]; grind
+  -- Lemma 5, p. 6: ||x + c1||² = ||x||² + ||c1||², so the denominator grows.
   have h_den : G.deg_norm x ≤ G.deg_norm (fun v => x v - m) := by
     rw [deg_norm_eq_sum_reg G x d h_reg, deg_norm_eq_sum_reg G (fun v => x v - m) d h_reg]
     rw [← Finset.mul_sum, ← Finset.mul_sum]; apply mul_le_mul_of_nonneg_left ?_ (by positivity)
-    calc
-      G.vertexFinset.sum (fun v => x v ^ 2) ≤ G.vertexFinset.sum (fun v => (x v - m) ^ 2) := by
-        simp only [sub_sq]; rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, h_cross]
-        simp only [sub_zero, sum_const, nsmul_eq_mul, le_add_iff_nonneg_right]; positivity
-      _ = G.vertexFinset.sum (fun v => (x v - m) ^ 2) := rfl
+    simp only [sub_sq]
+    rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, h_cross]
+    simp only [sub_zero, le_add_iff_nonneg_right]
+    positivity
+  -- Lemma 5, p. 6: translating every coordinate leaves each edge difference unchanged.
   have h_num : G.energy (fun v => x v - m) = G.energy x := by
     unfold SimpleGraph.energy; apply Finset.sum_congr rfl; grind
   rw [rQ_eq_energy_div_norm, rQ_eq_energy_div_norm, h_num]
   apply div_le_div_of_nonneg_left
   · exact energy_nonneg G x
-  · rw [deg_norm_eq_sum_reg G x d h_reg, ← Finset.mul_sum]
-    apply mul_pos
-    · grind
-    · exact sum_sq_pos G x h_x_ne
+  · exact deg_norm_pos_of_regular G d h_d_pos h_reg h_x_ne
   · exact h_den
 
-omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
-lemma exists_pos_of_deg_norm_pos (y : α → ℝ) (hy_nonneg : ∀ v, 0 ≤ y v)
-    (h_norm_pos : 0 < G.deg_norm y) :
-    ∃ v ∈ G.vertexFinset, 0 < y v := by
-  unfold SimpleGraph.deg_norm at h_norm_pos
-  have h_term_nonneg : ∀ v ∈ G.vertexFinset, 0 ≤ (↑(G.degree v) : ℝ) * y v ^ 2 := by
-    intro v hv; exact mul_nonneg (by positivity) (sq_nonneg (y v))
-  obtain ⟨v, hv, hv_pos⟩ := (Finset.sum_pos_iff_of_nonneg h_term_nonneg).1 h_norm_pos
-  have hdeg_nonneg : (0 : ℝ) ≤ (G.degree v : ℝ) := by positivity
-  have hy_sq_pos : 0 < y v ^ 2 := by nlinarith [hdeg_nonneg, sq_nonneg (y v), hv_pos]
-  have hy_ne : y v ≠ 0 := by exact sq_pos_iff.mp hy_sq_pos
-  grind
-
-/-- From the positive and negative parts of a shifted vector, choose a nonzero
-nonnegative side whose Rayleigh quotient is no larger than that of the shift. -/
+/-- Lecture 2, Lemma 5, p. 7: at least one of x⁺ and x⁻ has R no larger than R(x′). -/
 lemma shifted_part_rayleigh_le (x : α → ℝ) (m : ℝ)
     (h_shift_norm_pos : 0 < G.deg_norm (fun v => x v - m)) :
     ∃ y : α → ℝ, (y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0)) ∧
     (∀ v, 0 ≤ y v) ∧ (∃ v ∈ G.vertexFinset, 0 < y v) ∧
     SimpleGraph.rayleighQuotient G y ≤ SimpleGraph.rayleighQuotient G (fun v => x v - m) := by
-  let z : α → ℝ := fun v => x v - m; let p : α → ℝ := fun v => max (z v) 0
-  let n : α → ℝ := fun v => max (-(z v)) 0
-  let Ez := G.energy z; let Ep := G.energy p; let En := G.energy n
-  let Cz := G.deg_norm z; let Cp := G.deg_norm p; let Cn := G.deg_norm n
-  let Rz := Ez / Cz
-  have hp_nonneg : ∀ v, 0 ≤ p v := by intro v; exact le_max_right _ _
-  have hn_nonneg : ∀ v, 0 ≤ n v := by intro v; exact le_max_right _ _
-  have hEp_nonneg : 0 ≤ Ep := by exact energy_nonneg G p
-  have hEn_nonneg : 0 ≤ En := by exact energy_nonneg G n
-  have hCn_nonneg : 0 ≤ Cn := by exact deg_norm_nonneg G n
-  have hCz_pos : 0 < Cz := by simpa [Cz, z] using h_shift_norm_pos
-  have h_norm_add : Cp + Cn = Cz := by
-    simpa [Cp, Cn, Cz, p, n] using deg_norm_shifted_parts_add G z
-  have h_energy_add : Ep + En ≤ Ez := by
-    simpa [Ep, En, Ez, p, n] using energy_shifted_parts_add_le G z
-  have h_avg : (Ep + En) / (Cp + Cn) ≤ Ez / Cz := by
-    rw [h_norm_add]; exact div_le_div_of_nonneg_right h_energy_add (le_of_lt hCz_pos)
-  have h_sum_le : Ep + En ≤ Rz * (Cp + Cn) := by
-    have hCpCn_pos : 0 < Cp + Cn := by simpa [h_norm_add] using hCz_pos
-    have := (div_le_iff₀ hCpCn_pos).1 h_avg
-    simpa [Rz, mul_comm] using this
-  have h_choose_p (hCp_pos : 0 < Cp) (hp_le : Ep / Cp ≤ Rz) :
-      ∃ y : α → ℝ, (y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0)) ∧
-      (∀ v, 0 ≤ y v) ∧ (∃ v ∈ G.vertexFinset, 0 < y v) ∧
-      SimpleGraph.rayleighQuotient G y ≤ SimpleGraph.rayleighQuotient G (fun v => x v - m) := by
-    refine ⟨p, ?_, hp_nonneg, exists_pos_of_deg_norm_pos G p hp_nonneg hCp_pos, ?_⟩
-    all_goals grind
-  have h_choose_n (hCn_pos : 0 < Cn) (hn_le : En / Cn ≤ Rz) : ∃ y : α → ℝ,
-      (y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0)) ∧
-      (∀ v, 0 ≤ y v) ∧ (∃ v ∈ G.vertexFinset, 0 < y v) ∧
-      SimpleGraph.rayleighQuotient G y ≤ SimpleGraph.rayleighQuotient G (fun v => x v - m) := by
-    refine ⟨n, ?_, hn_nonneg, exists_pos_of_deg_norm_pos G n hn_nonneg hCn_pos, ?_⟩
-    all_goals grind
-  by_cases hCp_pos : 0 < Cp
-  · by_cases hp_le : Ep / Cp ≤ Rz
-    · exact h_choose_p hCp_pos hp_le
-    · have hp_gt : Rz < Ep / Cp := lt_of_not_ge hp_le
-      have hCn_pos : 0 < Cn := by
-        by_contra hCn_not
-        have hCn_zero : Cn = 0 := by grind
-        have hp_mul : Rz * Cp < Ep := (lt_div_iff₀ hCp_pos).1 hp_gt
-        rw [hCn_zero, add_zero] at h_sum_le
-        nlinarith
-      have hn_le : En / Cn ≤ Rz := by
-        by_contra hn_not
-        have hn_gt : Rz < En / Cn := lt_of_not_ge hn_not
-        have hp_mul : Rz * Cp < Ep := (lt_div_iff₀ hCp_pos).1 hp_gt
-        have hn_mul : Rz * Cn < En := (lt_div_iff₀ hCn_pos).1 hn_gt
-        nlinarith
-      grind
-  · have hCn_pos : 0 < Cn := by nlinarith [h_norm_add, hCz_pos]
-    have hn_le : En / Cn ≤ Rz := by rw [div_le_iff₀ hCn_pos]; nlinarith
-    grind
+  let z : α → ℝ := fun v => x v - m
+  -- Lemma 5, p. 7: write the centered vector as x′ = x⁺ - x⁻.
+  let parts : Bool → α → ℝ := fun b v => max (if b then z v else -(z v)) 0
+  have hnonneg : ∀ b v, 0 ≤ parts b v := fun _ _ => le_max_right _ _
+  -- Disjoint positive/negative supports give ||x′||² = ||x⁺||² + ||x⁻||².
+  have hnorm : ∑ b : Bool, G.deg_norm (parts b) = G.deg_norm z := by
+    simpa [parts, add_comm] using deg_norm_shifted_parts_add G z
+  -- Lemma 5, p. 7: sum the edgewise inequality to bound the two parts' energies.
+  have henergy : ∑ b : Bool, G.energy (parts b) ≤ G.energy z := by
+    simpa [parts, add_comm] using energy_shifted_parts_add_le G z
+  -- Lemma 5, p. 7: one ratio is at most the weighted average, hence at most R(x′).
+  obtain ⟨b, _, hb_pos, hb_le⟩ := exists_ratio_le_of_sum_le Finset.univ
+    (fun b => G.energy (parts b)) (fun b => G.deg_norm (parts b))
+    (G.rayleighQuotient z) (fun b _ => energy_nonneg G (parts b))
+    (fun b _ => deg_norm_nonneg G (parts b)) (by rwa [hnorm]) (by
+      rw [hnorm, rQ_eq_energy_div_norm, div_mul_cancel₀ _ h_shift_norm_pos.ne']
+      exact henergy)
+  refine ⟨parts b, ?_, hnonneg b, ?_, hb_le⟩
+  · cases b <;> simp [parts, z, neg_sub]
+  -- Formal support: the chosen positive denominator ensures this part is nonzero.
+  · obtain ⟨v, hv, hterm⟩ := (Finset.sum_pos_iff_of_nonneg
+      (fun v (_ : v ∈ G.vertexFinset) =>
+        mul_nonneg (Nat.cast_nonneg (G.degree v)) (sq_nonneg (parts b v)))).1 hb_pos
+    refine ⟨v, hv, ?_⟩
+    by_contra h
+    have : parts b v = 0 := le_antisymm (le_of_not_gt h) (hnonneg b v)
+    simp [this] at hterm
 
-omit [DecidableEq α] [DecidablePred (· ∈ G.edgeSet)] in
-/-- A chosen positive or negative shifted part inherits the median support bound. -/
-lemma shifted_part_support_le_half (x : α → ℝ) (m : ℝ)
-    (y : α → ℝ) (hy_side : y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0))
-    (h_upper : (G.vertexFinset.filter (fun v => x v > m)).card ≤ (G.vertexFinset).card / 2)
-    (h_lower : (G.vertexFinset.filter (fun v => x v < m)).card ≤ (G.vertexFinset).card / 2) :
-    2 * (G.vertexFinset.filter (fun v => y v > 0)).card ≤ (G.vertexFinset).card := by
-  rcases hy_side with rfl | rfl
-  · have h_set : G.vertexFinset.filter (fun v => max (x v - m) 0 > 0) =
-      G.vertexFinset.filter (fun v => x v > m) := by grind
-    rw [h_set]; omega
-  · have h_set : G.vertexFinset.filter (fun v => max (m - x v) 0 > 0) =
-      G.vertexFinset.filter (fun v => x v < m) := by grind
-    rw [h_set]; omega
-
-omit [DecidablePred (· ∈ G.edgeSet)] in
-/-- Nonempty level sets of a chosen shifted part are bounded prefix/suffix sweep cuts. -/
-lemma shifted_part_level_mem_sweepCuts (x : α → ℝ) (m : ℝ) (y : α → ℝ)
-    (hy_side : y = (fun v => max (x v - m) 0) ∨ y = (fun v => max (m - x v) 0))
-    (h_support : 2 * (G.vertexFinset.filter (fun v => y v > 0)).card ≤ (G.vertexFinset).card) :
-    ∀ t > 0, ({v ∈ G.vertexFinset | y v ≥ t} : Finset α).Nonempty →
-      {v ∈ G.vertexFinset | y v ≥ t} ∈ sweepCuts G x := by
-  intro t ht h_nonempty
-  have h_subset : ({v ∈ G.vertexFinset | y v ≥ t} : Finset α) ⊆
-      G.vertexFinset.filter (fun v => y v > 0) := by grind
-  have h_card_le : ({v ∈ G.vertexFinset | y v ≥ t} : Finset α).card ≤
-      (G.vertexFinset.filter (fun v => y v > 0)).card := Finset.card_le_card h_subset
-  have h_card : 2 * ({v ∈ G.vertexFinset | y v ≥ t} : Finset α).card ≤ (G.vertexFinset).card := by
-    grind
-  rcases hy_side with rfl | rfl
-  · unfold sweepCuts; simp only [Finset.mem_union]; right; right
-    simp only [Finset.mem_filter, Finset.mem_powerset]
-    exact ⟨by grind, h_nonempty, h_card, ⟨m + t, by grind⟩⟩
-  · unfold sweepCuts; simp only [Finset.mem_union]; right; left
-    simp only [Finset.mem_filter, Finset.mem_powerset]
-    exact ⟨by grind, h_nonempty, h_card, ⟨m - t, by grind⟩⟩
-
-/-- Median-splitting lemma used by the sweep proof.
-It produces a nonzero nonnegative vector with small support, no larger Rayleigh quotient,
-and level sets that are valid sweep cuts of `x`. -/
--- exists_median_split_witness
+/-- Lecture 2, Lemma 5, pp. 6–7: median splitting gives a nonnegative small-support vector
+with R(y) ≤ R(x), whose threshold cuts are considered by Fiedler's algorithm on x. -/
 lemma lemma_5_exists_median_split_witness (x : α → ℝ) (d : ℕ) (hV : 2 ≤ (G.vertexFinset).card)
     (h_d_pos : d ≠ 0) (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
     (h_orth : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0)
@@ -232,7 +156,9 @@ lemma lemma_5_exists_median_split_witness (x : α → ℝ) (d : ℕ) (hV : 2 ≤
       SimpleGraph.rayleighQuotient G y ≤ SimpleGraph.rayleighQuotient G x ∧
       (∀ t > 0, ({v ∈ G.vertexFinset | y v ≥ t} : Finset α).Nonempty →
         {v ∈ G.vertexFinset | y v ≥ t} ∈ sweepCuts G x) := by
+  -- Lemma 5, p. 7: center at a median so both strict sign supports have size ≤ |V|/2.
   obtain ⟨m, h_upper, h_lower⟩ := exists_balanced_median G x hV
+  -- Formal support: a nonzero vector orthogonal to constants cannot become identically zero.
   have h_shift_ne : ∃ v ∈ G.vertexFinset, x v - m ≠ 0 := by
     by_contra h_no; push Not at h_no
     have h_sum_weight : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) =
@@ -245,179 +171,306 @@ lemma lemma_5_exists_median_split_witness (x : α → ℝ) (d : ℕ) (hV : 2 ≤
         (by omega : 0 < G.vertexFinset.card)
     have hV_ne : ((G.vertexFinset.card : ℝ) ≠ 0) := ne_of_gt hV_pos
     grind
+  -- Lemma 5, p. 7: choose the positive or negative part with the better Rayleigh quotient.
   obtain ⟨y, hy_side, hy_nonneg, hy_pos, hy_ray_shift⟩ :=
-    shifted_part_rayleigh_le G x m (by
-      rw [deg_norm_eq_sum_reg G (fun v => x v - m) d h_reg, ← Finset.mul_sum]
-      apply mul_pos
-      · exact_mod_cast Nat.pos_of_ne_zero h_d_pos
-      · exact sum_sq_pos G (fun v => x v - m) h_shift_ne)
-  have hy_support : 2 * (G.vertexFinset.filter (fun v => y v > 0)).card ≤ G.vertexFinset.card :=
-    shifted_part_support_le_half G x m y hy_side h_upper h_lower
+    shifted_part_rayleigh_le G x m (deg_norm_pos_of_regular G d h_d_pos h_reg h_shift_ne)
+  -- Lemma 5, p. 7: the chosen part inherits the median's support bound.
+  have hy_support : 2 * (G.vertexFinset.filter (fun v => y v > 0)).card ≤ G.vertexFinset.card := by
+    rcases hy_side with rfl | rfl
+    · have h_set : G.vertexFinset.filter (fun v => max (x v - m) 0 > 0) =
+          G.vertexFinset.filter (fun v => x v > m) := by grind
+      rw [h_set]
+      omega
+    · have h_set : G.vertexFinset.filter (fun v => max (m - x v) 0 > 0) =
+          G.vertexFinset.filter (fun v => x v < m) := by grind
+      rw [h_set]
+      omega
+  -- Lemma 5: combine R(y) ≤ R(x′) with the translation bound R(x′) ≤ R(x).
   have hy_ray_x : SimpleGraph.rayleighQuotient G y ≤ SimpleGraph.rayleighQuotient G x :=
     hy_ray_shift.trans (median_shift_rayleigh_le G x d m h_d_pos h_x_ne h_orth h_reg)
-  exact ⟨y, hy_nonneg, hy_pos, hy_support, hy_ray_x,
-    shifted_part_level_mem_sweepCuts G x m y hy_side hy_support⟩
+  refine ⟨y, hy_nonneg, hy_pos, hy_support, hy_ray_x, ?_⟩
+  -- Lemma 5's furthermore clause, p. 7: recover a threshold of the original vector x.
+  intro t ht h_nonempty
+  have h_subset : ({v ∈ G.vertexFinset | y v ≥ t} : Finset α) ⊆
+      G.vertexFinset.filter (fun v => y v > 0) := by grind
+  have h_card_le := Finset.card_le_card h_subset
+  have h_card : 2 * ({v ∈ G.vertexFinset | y v ≥ t} : Finset α).card ≤
+      G.vertexFinset.card := by omega
+  rcases hy_side with rfl | rfl
+  · -- Lemma 5, p. 7: a positive-part threshold corresponds to x ≥ m + t.
+    unfold sweepCuts
+    simp only [Finset.mem_union]
+    right; right
+    simp only [Finset.mem_filter, Finset.mem_powerset]
+    refine ⟨Finset.filter_subset _ _, h_nonempty, h_card, m + t, ?_⟩
+    ext v
+    simp only [Finset.mem_filter, ge_iff_le, le_max_iff, not_le.mpr ht, or_false]
+    constructor <;> rintro ⟨hv, h⟩ <;> exact ⟨hv, by linarith⟩
+  · -- Lemma 5, p. 7: a negative-part threshold corresponds to x ≤ m - t.
+    unfold sweepCuts
+    simp only [Finset.mem_union]
+    right; left
+    simp only [Finset.mem_filter, Finset.mem_powerset]
+    refine ⟨Finset.filter_subset _ _, h_nonempty, h_card, m - t, ?_⟩
+    ext v
+    simp only [Finset.mem_filter, ge_iff_le, le_max_iff, not_le.mpr ht, or_false]
+    constructor <;> rintro ⟨hv, h⟩ <;> exact ⟨hv, by linarith⟩
 
-/-- Lemma 4: For a non-negative vector y, there exists a threshold t such that
-    the expansion of the set S_t = {v : y_v ≥ t} is at most sqrt(2 * R_L(y)). -/
+/-- Lecture 2, Lemma 4, p. 6, proved as Lecture 3, Lemma 1, pp. 1–2:
+there is a nonempty positive threshold cut with expansion at most sqrt(2 R(y)). -/
 lemma lemma_4_sweep_threshold_expansion_bound (d : ℕ) (y : α → ℝ) (h_d_pos : d ≠ 0)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     (h_pos : ∀ v, 0 ≤ y v) (h_y_pos : ∃ v ∈ G.vertexFinset, 0 < y v) :
     ∃ t > 0, let S_t := G.vertexFinset.filter (fun v => y v ≥ t)
       S_t.Nonempty ∧ edgeExpansion G d S_t ≤ Real.sqrt (2 * SimpleGraph.rayleighQuotient G y) := by
-  obtain ⟨levels, w, hlevels_ne, hlevels_pos, hw_pos, hlevel_sets_ne, hlevel_bound, hvolume_raw⟩ :=
-    level_coarea_counting G d y h_reg h_pos h_y_pos
-  have h_norm_pos : 0 < G.deg_norm y := by
-    rw [deg_norm_eq_sum_reg G y d h_reg, ← Finset.mul_sum]
-    apply mul_pos
-    · exact_mod_cast Nat.pos_of_ne_zero h_d_pos
-    · exact sum_sq_pos G y (by grind)
-  have h_sum_bound : ∑ t ∈ levels, w t * (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card ≤
+  -- Lecture 3, Lemma 1, p. 1: discretize the law in which t² is uniform.
+  let levels := (G.vertexFinset.image y).filter (fun t => 0 < t)
+  let w := coareaWeight levels
+  -- Finite bookkeeping: distinct positive levels give strictly positive interval masses.
+  have hw_pos : ∀ t ∈ levels, 0 < w t := by
+    intro t ht
+    have ht_pos := (Finset.mem_filter.mp ht).2
+    unfold w coareaWeight previousLevel
+    split_ifs with h
+    · have hmem := Finset.max'_mem _ h
+      have hpred_pos := (Finset.mem_filter.mp (Finset.mem_filter.mp hmem).1).2
+      have hpred_lt := (Finset.mem_filter.mp hmem).2
+      nlinarith
+    · simpa using sq_pos_of_pos ht_pos
+  have h_norm_pos : 0 < G.deg_norm y :=
+    deg_norm_pos_of_regular G d h_d_pos h_reg (by grind)
+  -- Lecture 3, p. 2: compute the expected denominator d|S_t|.
+  have hvolume : ∑ t ∈ levels, w t * ((d * (G.vertexFinset.filter (y · ≥ t)).card : ℕ) : ℝ) =
+      G.deg_norm y := level_coarea_volume_identity G d y h_reg h_pos
+  -- Lecture 3, equation (1), pp. 1–2: the ratio of expectations is at most sqrt(2 R(y)).
+  have h_sum_bound : ∑ t ∈ levels, w t * (Cut G (G.vertexFinset.filter (y · ≥ t))).card ≤
       Real.sqrt (2 * G.rayleighQuotient y) *
-        ∑ t ∈ levels, w t * ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ) :=
-    coarea_bound_to_rayleigh G y d levels w h_norm_pos hlevel_bound hvolume_raw
-  obtain ⟨t, ht_mem, ht_denom_pos, ht_ratio⟩ :=
-    exists_ratio_le_of_sum_le levels
-      (fun t => w t * (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card)
-      (fun t => w t * ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ))
-      (Real.sqrt (2 * G.rayleighQuotient y))
-      hlevels_ne
-      (by intro t ht; apply mul_pos (hw_pos t ht)
-          exact_mod_cast Nat.mul_pos (Nat.pos_of_ne_zero h_d_pos)
-            (Finset.card_pos.mpr (hlevel_sets_ne t ht)))
-      h_sum_bound
-  have hw_ne : w t ≠ 0 := ne_of_gt (hw_pos t ht_mem)
-  have hdcard_pos : 0 < ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ) :=
-    mod_cast Nat.mul_pos (Nat.pos_of_ne_zero h_d_pos)
-      (Finset.card_pos.mpr (hlevel_sets_ne t ht_mem))
-  have hdcard_ne : ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ) ≠ 0 :=
-    ne_of_gt hdcard_pos
-  have hratio_eq : (w t * (Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card) /
-      (w t * ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ)) =
-      ((Cut G (G.vertexFinset.filter (fun v => y v ≥ t))).card : ℝ) /
-      ((d * (G.vertexFinset.filter (fun v => y v ≥ t)).card : ℕ) : ℝ) := by
-    field_simp [hw_ne, hdcard_ne]
-  grind
+        ∑ t ∈ levels, w t * ((d * (G.vertexFinset.filter (y · ≥ t)).card : ℕ) : ℝ) := by
+    rw [hvolume, rQ_eq_energy_div_norm]
+    calc
+      ∑ t ∈ levels, w t * (Cut G (G.vertexFinset.filter (y · ≥ t))).card
+        ≤ Real.sqrt (2 * G.energy y * G.deg_norm y) :=
+          (level_cut_sum_le_edge_abs_sq_diff_sum G y h_pos).trans
+            (edge_abs_sq_diff_sum_le_sqrt_energy_deg_norm G y h_pos)
+      -- The final algebra in Lecture 3, p. 2: divide the boundary bound by the degree norm.
+      _ = Real.sqrt (2 * (G.energy y / G.deg_norm y)) * G.deg_norm y := by
+        symm
+        calc
+          Real.sqrt (2 * (G.energy y / G.deg_norm y)) * G.deg_norm y =
+              Real.sqrt (2 * (G.energy y / G.deg_norm y)) * Real.sqrt (G.deg_norm y ^ 2) := by
+            rw [Real.sqrt_sq h_norm_pos.le]
+          _ = Real.sqrt ((2 * (G.energy y / G.deg_norm y)) * G.deg_norm y ^ 2) :=
+            (Real.sqrt_mul (mul_nonneg (by norm_num)
+              (div_nonneg (energy_nonneg G y) h_norm_pos.le)) _).symm
+          _ = Real.sqrt (2 * G.energy y * G.deg_norm y) := by
+            congr 1
+            field_simp
+  -- Lecture 3, Fact 2, pp. 1–2: some threshold ratio is at most the ratio of expectations.
+  obtain ⟨t, ht_mem, _, ht_ratio⟩ := exists_ratio_le_of_sum_le levels
+    (fun t => w t * (Cut G (G.vertexFinset.filter (y · ≥ t))).card)
+    (fun t => w t * ((d * (G.vertexFinset.filter (y · ≥ t)).card : ℕ) : ℝ))
+    (Real.sqrt (2 * G.rayleighQuotient y))
+    (by intro t ht; exact mul_nonneg (hw_pos t ht).le (Nat.cast_nonneg _))
+    (by intro t ht; exact mul_nonneg (hw_pos t ht).le (Nat.cast_nonneg _))
+    (by rwa [hvolume]) h_sum_bound
+  -- Lecture 3, Lemma 1, p. 1: the selected threshold is positive and its cut is nonempty.
+  refine ⟨t, (Finset.mem_filter.mp ht_mem).2, ?_, ?_⟩
+  · obtain ⟨v, hv, rfl⟩ := Finset.mem_image.mp (Finset.mem_filter.mp ht_mem).1
+    exact ⟨v, by simp [hv]⟩
+  · simpa only [edgeExpansion, Nat.cast_mul,
+      mul_div_mul_left _ _ (hw_pos t ht_mem).ne'] using ht_ratio
 
+/-- Lecture 2, Lemma 3, pp. 5–6: Fiedler's cut on x ⊥ 1 has expansion ≤ sqrt(2 R(x)). -/
 lemma lemma3 (d : ℕ) (x : α → ℝ) (h_d_pos : d ≠ 0) (h_x_ne : ∃ v ∈ G.vertexFinset, x v ≠ 0)
     (hV : 2 ≤ (G.vertexFinset).card) (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d)
     (h_orth : G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0) :
     let S_f := fiedlerCut G d x hV
     S_f.Nonempty ∧ S_f ⊆ G.vertexFinset ∧ 2 * S_f.card ≤ (G.vertexFinset).card ∧
       edgeExpansion G d S_f ≤ Real.sqrt (2 * G.rayleighQuotient x) := by
-  intro S_f; let R_x := G.rayleighQuotient x
-  obtain ⟨y, h_pos, h_y_pos, h_supp, h_rayleigh, h_sweep_subset⟩ :=
+  intro S_f
+  -- Proof of Lemma 3, p. 6: use Lemma 5 to obtain y with R(y) ≤ R(x).
+  obtain ⟨y, hy_nonneg, hy_pos, _, hy_rayleigh, hy_sweep⟩ :=
     lemma_5_exists_median_split_witness G x d hV h_d_pos h_x_ne h_orth h_reg
-  obtain ⟨t, ht_pos, hSt_ne, h_lem_4⟩ :=
-    lemma_4_sweep_threshold_expansion_bound G d y h_d_pos h_reg h_pos h_y_pos
-  let S_t := G.vertexFinset.filter (fun v => y v ≥ t)
-  let expansion_vals := (sweepCuts G x).image (fun S => edgeExpansion G d S)
-  let h_nonempty := sweepCuts_expansion_nonempty G d x hV
-  have h_Sf_is_min : edgeExpansion G d (fiedlerCut G d x hV) = expansion_vals.min' h_nonempty := by
-    grind
-  have h_exp_bound : edgeExpansion G d S_f ≤ edgeExpansion G d S_t := by
-    unfold S_f; rw [h_Sf_is_min]; apply Finset.min'_le; grind
-  -- Algebraic Chain: ϕ(S_f)² ≤ ϕ(S_t)² ≤ 2R(y) ≤ 2R(x)
-  have h_alg : edgeExpansion G d S_f ≤ Real.sqrt (2 * G.rayleighQuotient x) := by
-    calc edgeExpansion G d S_f
-      _ ≤ edgeExpansion G d S_t := by grind
-      _ ≤ Real.sqrt (2 * G.rayleighQuotient y) := by grind
-      _ ≤ Real.sqrt (2 * G.rayleighQuotient x) := by apply Real.sqrt_le_sqrt (by grind)
-  exact ⟨fiedlerCut_nonempty G d x hV, fiedlerCut_is_subset G d x hV,
-    fiedlerCut_card_le_half G d x hV, h_alg⟩
+  -- Apply Lemma 4 to choose a threshold cut of y with expansion ≤ sqrt(2 R(y)).
+  obtain ⟨t, ht, hSt, hbound⟩ :=
+    lemma_4_sweep_threshold_expansion_bound G d y h_d_pos h_reg hy_nonneg hy_pos
+  -- Proof of Lemma 3, p. 6: Fiedler's minimum beats this same sweep cut of x.
+  obtain ⟨h_ne, h_sub, h_card, h_min⟩ := fiedlerCut_spec G d x hV
+  refine ⟨h_ne, h_sub, h_card, ?_⟩
+  exact (h_min _ (hy_sweep t ht hSt)).trans
+    (hbound.trans (Real.sqrt_le_sqrt (mul_le_mul_of_nonneg_left hy_rayleigh (by norm_num))))
 
-/-- Lemma: There exists a non-zero vector x orthogonal to the constant vector
-    such that its Rayleigh quotient achieves λ₂. -/
-lemma R_values_nonempty_of_regular_two_vertices [Finite α] (d : ℕ)
-    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
-    (R_values G).Nonempty := by
-  have hcard : 1 < (G.vertexFinset).card := by omega
-  obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp hcard
-  let x : α → ℝ := fun v => if v = a then (1 : ℝ) else if v = b then (-1 : ℝ) else 0
-  refine ⟨G.rayleighQuotient x, ?_⟩; refine ⟨x, ?_, rfl⟩
-  constructor
-  · rw [show G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) =
-      ∑ v ∈ G.vertexFinset, (d : ℝ) * x v by grind]
-    rw [show (∑ v ∈ G.vertexFinset, (d : ℝ) * x v) = (d : ℝ) * ∑ v ∈ G.vertexFinset, x v by
-      rw [Finset.mul_sum]]
-    have hV_eq : G.vertexFinset = insert a (insert b ((G.vertexFinset.erase a).erase b)) := by grind
-    have hrest : ∑ v ∈ (G.vertexFinset.erase a).erase b, x v = 0 := by
-      apply Finset.sum_eq_zero; grind
-    grind
-  · grind
-
-lemma R_values_bddBelow :
-    BddBelow (R_values G) := by
-  refine ⟨0, ?_⟩; intro r hr; rcases hr with ⟨x, hx, rfl⟩; exact rayleighQuotient_nonneg G x
-
-/-- Compactness/closedness interface for the Rayleigh values on nonzero vectors
-orthogonal to constants.  The proof is by normalizing to `deg_norm = 1`,
-using finite-dimensional compactness of the normalized feasible set, and then
-projecting the continuous SimpleGraph.energy function to `ℝ`. -/
-lemma R_values_isClosed_of_regular_two_vertices [Finite α] (d : ℕ)
-    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
-    IsClosed (R_values G) := by
-  by_cases h_d_pos : d = 0
-  · have hreg0 : ∀ v ∈ G.vertexFinset, G.degree v = 0 := by grind
-    rw [R_values_eq_singleton_zero_of_regular_zero G hreg0 hV]
-    exact isClosed_singleton
-  · rw [R_values_eq_rayleigh_image_normalizedSupportedOrthogonal G d h_d_pos h_reg]
-    exact ((normalizedSupportedOrthogonal_isCompact G d h_d_pos h_reg).image_of_continuousOn
-      (continuous_rayleighQuotient_on_normalizedSupportedOrthogonal G)).isClosed
-
-lemma lambda2_mem_R_values_of_regular_two_vertices [Finite α] (d : ℕ)
-    (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
-    lambda2 G ∈ R_values G := by
-  unfold lambda2
-  exact (R_values_isClosed_of_regular_two_vertices G d h_reg hV).csInf_mem
-    (R_values_nonempty_of_regular_two_vertices G d h_reg hV) (R_values_bddBelow G)
-
+/-- Lecture 2, §4, p. 5: attain λ₂ = min_{x ⊥ 1} R(x).
+The compactness argument below supplies the attainment implicit in that characterization. -/
 lemma exists_eigenvector_lambda2 [Finite α] (d : ℕ)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) (hV : 2 ≤ #G.vertexFinset) :
     ∃ x : α → ℝ, (∃ v ∈ G.vertexFinset, x v ≠ 0) ∧
       (∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * x v = 0) ∧
       G.rayleighQuotient x = lambda2 G := by
-  obtain ⟨x, hx_orth, hx_rayleigh⟩ :=
-    lambda2_mem_R_values_of_regular_two_vertices G d h_reg hV
-  grind
+  -- Formal support for the variational minimum: the feasible set contains a nonzero vector.
+  have hnonempty : (R_values G).Nonempty := by
+    obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp (by omega : 1 < G.vertexFinset.card)
+    let x : α → ℝ := fun v => (if v = a then 1 else 0) - (if v = b then 1 else 0)
+    refine ⟨G.rayleighQuotient x, x, ⟨?_, a, ha, ?_⟩, rfl⟩
+    · calc
+        ∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * x v =
+            (d : ℝ) * ∑ v ∈ G.vertexFinset, x v := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl (fun v hv => by rw [h_reg v hv])
+        _ = 0 := by simp [x, Finset.sum_sub_distrib, ha, hb]
+    · simp [x, hab]
+  -- Formal support for Lecture 2, p. 5: show that the feasible Rayleigh values are closed.
+  have hclosed : IsClosed (R_values G) := by
+    -- Formal support: handle d = 0 separately before normalizing the degree norm.
+    by_cases h_d_pos : d = 0
+    · have hzero : ∀ x : α → ℝ, G.rayleighQuotient x = 0 := by
+        intro x
+        rw [rQ_eq_energy_div_norm, deg_norm_eq_sum_reg G x 0 (by simpa [h_d_pos] using h_reg)]
+        simp
+      have hvalues : R_values G = {0} := by
+        obtain ⟨r, hr⟩ := hnonempty
+        ext s
+        simp only [R_values, Set.mem_setOf_eq, Set.mem_singleton_iff, hzero] at hr ⊢
+        grind
+      rw [hvalues]
+      exact isClosed_singleton
+    -- Formal support for attainment: work with vectors of degree norm one.
+    · let K : Set (α → ℝ) := {x | (∀ v, v ∉ G.vertexFinset → x v = 0) ∧
+        x ∈ orthogonalVectors G ∧ G.deg_norm x = 1}
+      -- Formal support: closedness and boundedness make the normalized feasible set compact.
+      have hcompact : IsCompact K := by
+        haveI := Fintype.ofFinite α
+        haveI : ProperSpace (α → ℝ) := FiniteDimensional.proper ℝ (α → ℝ)
+        have hsupport : IsClosed {x : α → ℝ | ∀ v, v ∉ G.vertexFinset → x v = 0} := by
+          simp only [Set.setOf_forall]
+          exact isClosed_iInter fun v => isClosed_iInter fun _ =>
+            isClosed_eq (continuous_apply v) continuous_const
+        have horthClosed :
+            IsClosed {x : α → ℝ | G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0} := by
+          apply isClosed_eq _ continuous_const; apply continuous_finsetSum
+          intro v hv; exact continuous_const.mul (continuous_apply v)
+        have hnormClosed : IsClosed {x : α → ℝ | G.deg_norm x = 1} := by
+          apply isClosed_eq _ continuous_const
+          unfold SimpleGraph.deg_norm
+          apply continuous_finsetSum
+          intro v hv; exact continuous_const.mul ((continuous_apply v).pow 2)
+        -- Norm one implies nonzeroness, so the remaining constraints are closed equalities.
+        have hK_eq : K = {x : α → ℝ | (∀ v, v ∉ G.vertexFinset → x v = 0)} ∩
+            {x : α → ℝ | G.vertexFinset.sum (fun v => (G.degree v : ℝ) * x v) = 0} ∩
+            {x : α → ℝ | G.deg_norm x = 1} := by
+          ext x; constructor
+          · intro hx; rcases hx with ⟨hsupp, ⟨horth, hne⟩, hnorm⟩; exact ⟨⟨hsupp, horth⟩, hnorm⟩
+          · intro hx; rcases hx with ⟨⟨hsupp, horth⟩, hnorm⟩; refine ⟨hsupp, ⟨horth, ?_⟩, hnorm⟩
+            by_contra hnone
+            have hzero_norm : G.deg_norm x = 0 := by
+              unfold SimpleGraph.deg_norm; apply Finset.sum_eq_zero; grind
+            grind
+        have hclosed : IsClosed K := by
+          rw [hK_eq]; exact (hsupport.inter horthClosed).inter hnormClosed
+        -- Positive regular degree bounds each coordinate of a norm-one feasible vector.
+        have hbounded : Bornology.IsBounded K := by
+          rw [Metric.isBounded_iff_subset_closedBall (0 : α → ℝ)]; refine ⟨1, ?_⟩; intro x hx
+          rw [Metric.mem_closedBall, dist_zero_right, Pi.norm_def]
+          change (Finset.univ.sup fun b => ‖x b‖₊) ≤ (1 : NNReal)
+          apply Finset.sup_le_iff.mpr; intro v hv
+          by_cases hvV : v ∈ G.vertexFinset
+          · have hterm : (d : ℝ) * x v ^ 2 ≤ 1 := by
+              have := Finset.single_le_sum
+                (fun u (_ : u ∈ G.vertexFinset) =>
+                  mul_nonneg (Nat.cast_nonneg (G.degree u)) (sq_nonneg (x u))) hvV
+              change (G.degree v : ℝ) * x v ^ 2 ≤ G.deg_norm x at this
+              simpa only [hx.2.2, h_reg v hvV] using this
+            have hd : (1 : ℝ) ≤ d := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr h_d_pos
+            have hsq : x v ^ 2 ≤ 1 :=
+              (le_mul_of_one_le_left (sq_nonneg _) hd).trans hterm
+            exact NNReal.coe_le_coe.mp (by
+              simpa only [coe_nnnorm, Real.norm_eq_abs, NNReal.coe_one] using
+                (sq_le_one_iff_abs_le_one (x v)).1 hsq)
+          · exact NNReal.coe_le_coe.mp (by simp [hx.1 v hvV])
+        exact Metric.isCompact_iff_isClosed_bounded.2 ⟨hclosed, hbounded⟩
+      -- Formal support for Lecture 2, p. 5: normalization preserves all Rayleigh values.
+      have himage : R_values G = (fun x : α → ℝ => G.rayleighQuotient x) '' K := by
+        ext r; constructor
+        · intro hr; rcases hr with ⟨x, hxorth, rfl⟩
+          -- Restrict to graph vertices to match the lecture's ambient space ℝ^V.
+          let y0 := restrictToVertexSet G x
+          let n := G.deg_norm y0
+          -- Scalar invariance of R (also used in Lecture 3, Lemma 1, p. 1) permits scaling.
+          let c : ℝ := (Real.sqrt n)⁻¹
+          let y : α → ℝ := fun v => c * y0 v
+          have hn_pos : 0 < n := by
+            dsimp [n, y0]
+            rw [deg_norm_restrictToVertexSet]
+            exact deg_norm_pos_of_regular G d h_d_pos h_reg hxorth.2
+          have hy0orth : y0 ∈ orthogonalVectors G :=
+            orthogonalVectors_restrictToVertexSet G x hxorth
+          refine ⟨y, ?_, ?_⟩
+          · refine ⟨?_, ?_, ?_⟩
+            · grind
+            · rcases hy0orth with ⟨hy0_sum, hy0_ne⟩
+              constructor
+              · unfold y
+                calc
+                  ∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * (c * y0 v)
+                    = c * ∑ v ∈ G.vertexFinset, (G.degree v : ℝ) * y0 v := by
+                      rw [Finset.mul_sum]
+                      grind
+                  _ = 0 := by rw [hy0_sum, mul_zero]
+              · grind
+            · grind [deg_norm_mul G y0 c]
+          · calc
+              G.rayleighQuotient y = G.rayleighQuotient (fun v => c * y0 v) := rfl
+              _ = G.rayleighQuotient y0 := rayleighQuotient_mul G y0 (by grind)
+              _ = G.rayleighQuotient x := rayleighQuotient_restrictToVertexSet G x
+        · rintro ⟨x, hx, rfl⟩
+          exact ⟨x, hx.2.1, rfl⟩
+      -- Formal support: R is continuous where its denominator is fixed to one.
+      have hcont : ContinuousOn (fun x : α → ℝ => G.rayleighQuotient x) K := by
+        unfold SimpleGraph.rayleighQuotient
+        apply ContinuousOn.div
+        · apply Continuous.continuousOn
+          apply continuous_finsetSum
+          intro e he
+          induction e using Sym2.ind with
+          | h u v => simpa using ((continuous_apply u).sub (continuous_apply v)).pow 2
+        · apply Continuous.continuousOn
+          apply continuous_finsetSum
+          intro v hv
+          exact continuous_const.mul ((continuous_apply v).pow 2)
+        · intro x hx
+          change G.deg_norm x ≠ 0
+          rw [hx.2.2]
+          norm_num
+      rw [himage]
+      exact (hcompact.image_of_continuousOn hcont).isClosed
+  -- Formal support for Lecture 2, p. 5: the closed nonempty value set contains its infimum.
+  obtain ⟨x, hx, hvalue⟩ := hclosed.csInf_mem hnonempty
+    (by simpa [R_values, orthogonalVectors, and_assoc] using lambda2_bounded_below G)
+  exact ⟨x, hx.2, hx.1, hvalue.symm⟩
 
-/-- `graphExpansion` is no larger than the expansion of any valid nonempty subset. -/
-lemma graphExpansion_le_of_valid (d : ℕ) (S : Finset α)
-    (hS_ne : S.Nonempty) (hS_sub : S ⊆ G.vertexFinset)
-    (hS_size : 2 * S.card ≤ (G.vertexFinset).card) :
-    graphExpansion G d ≤ edgeExpansion G d S := by
-  unfold graphExpansion; dsimp only
-  rw [dif_pos (by
-    simpa only [graphExpansionValidSubsets] using
-      graphExpansionValidSubsets_nonempty_of_valid G S hS_ne hS_sub hS_size)]
-  exact Finset.min'_le _ _
-    (edgeExpansion_mem_graphExpansion_image_of_valid G d S hS_ne hS_sub hS_size)
-
-/-- The Hard Direction of Cheeger's Inequality: h(G) ≤ √(2 * λ₂) -/
+/-- Lecture 2, Theorem 1, p. 4 (hard direction): φ(G) ≤ sqrt(2 λ₂), using Lemma 3. -/
 theorem cheeger_hard_direction [Finite α] (d : ℕ)
     (hV : 2 ≤ #G.vertexFinset)
     (h_reg : ∀ v ∈ G.vertexFinset, G.degree v = d) :
     graphExpansion G d ≤ Real.sqrt (2 * lambda2 G) := by
-  -- 1. Obtain the second eigenvector x with R(x) = λ₂
-  obtain ⟨x, h_x_ne, h_orth, h_lambda2⟩ := exists_eigenvector_lambda2 G d h_reg hV
-  -- 3. Handle the d = 0 case (isolated vertices)
-  by_cases h_d_pos : d = 0
-  · -- If d = 0, expansion is 0 and lambda2 is 0.
-    rw [h_d_pos, graphExpansion_zero_degree]
+  -- Formal support: the zero-degree case has zero expansion.
+  by_cases hd : d = 0
+  · rw [hd, graphExpansion_zero_degree]
     exact Real.sqrt_nonneg _
-  -- 4. Apply Lemma 3 (The Sweep Cut Lemma)
-  -- This provides a cut S_f (the Fiedler cut) from the level sets of x
-  let S_f := fiedlerCut G d x hV
-  obtain ⟨hS_ne, hS_sub, hS_size, hS_phi⟩ := lemma3 G d x h_d_pos h_x_ne hV h_reg  h_orth
-  -- 5. Relate h(G) to the expansion of this specific Fiedler cut
-  -- Since h(G) = min_{|S|≤n/2} ϕ(S), and Lemma 3 guarantees S_f is valid:
-  have h_cheeger_le : graphExpansion G d ≤ edgeExpansion G d S_f := by
-    exact graphExpansion_le_of_valid G d S_f hS_ne hS_sub hS_size
-  -- 6. Final Chain of Inequalities
-  calc
-    graphExpansion G d ≤ edgeExpansion G d S_f := h_cheeger_le
-    _ ≤ Real.sqrt (2 * G.rayleighQuotient x) := hS_phi
-    _ = Real.sqrt (2 * lambda2 G) := by rw [h_lambda2]
+  -- Lecture 2, §4, p. 5: choose x ⊥ 1 with R(x) = λ₂.
+  obtain ⟨x, hx, horth, h_lambda⟩ := exists_eigenvector_lambda2 G d h_reg hV
+  -- Lecture 2, Lemma 3: Fiedler's cut then has expansion at most sqrt(2 λ₂).
+  obtain ⟨hS_ne, hS_sub, hS_size, hS_phi⟩ := lemma3 G d x hd hx hV h_reg horth
+  rw [← h_lambda]
+  -- Theorem 1: graph expansion is bounded by the expansion of this valid cut.
+  apply le_trans ?_ hS_phi
+  unfold graphExpansion
+  dsimp only
+  rw [dif_pos (by
+    simpa only [graphExpansionValidSubsets] using
+      graphExpansionValidSubsets_nonempty_of_valid G _ hS_ne hS_sub hS_size)]
+  exact Finset.min'_le _ _
+    (edgeExpansion_mem_graphExpansion_image_of_valid G d _ hS_ne hS_sub hS_size)
 
 end Spectral
 end GraphLib
