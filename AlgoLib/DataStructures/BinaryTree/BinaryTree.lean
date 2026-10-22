@@ -54,6 +54,12 @@ def toKeyList : Tree α → List α
 @[simp] lemma toKeyList_node (l : Tree α) (k : α) (r : Tree α) :
     (l △[k] r).toKeyList = l.toKeyList ++ [k] ++ r.toKeyList := rfl
 
+lemma eq_nil_of_toKeyList_eq_nil {t : Tree α} (h : toKeyList t = []) : t = nil := by
+  cases t <;> simp_all
+
+lemma num_nodes_eq_length_toKeyList (t : Tree α) : t.num_nodes = t.toKeyList.length := by
+  induction t <;> simp_all; omega
+
 /-- Number of nodes on the search path for `q` in `t`. Zero on the empty
 tree; on a node this counts the root plus (if `q ≠ k`) the search path
 length in the appropriate subtree. -/
@@ -67,6 +73,10 @@ def search_path_len [LinearOrder α] (t : Tree α) (q : α) : ℕ :=
       1 + r.search_path_len q
     else
       1
+
+lemma search_path_len_le_num_nodes [LinearOrder α] (t : Tree α) (q : α) :
+    search_path_len t q ≤ t.num_nodes := by
+  induction t <;> simp [search_path_len]; split_ifs <;> omega
 
 /--
 Remark:
@@ -181,6 +191,9 @@ def mirror : Tree α → Tree α
 @[simp] lemma num_nodes_mirror (t : Tree α) : t.mirror.num_nodes = t.num_nodes := by
   induction t <;> simp_all [num_nodes]; omega
 
+@[simp] lemma toKeyList_mirror (t : Tree α) : t.mirror.toKeyList = t.toKeyList.reverse := by
+  induction t <;> simp_all [toKeyList]
+
 @[simp] lemma mirror_rotateRight (t : Tree α) :
     (rotateRight t).mirror = rotateLeft t.mirror := by
   rcases t with _ | ⟨k, (_ | ⟨lk, ll, lr⟩), r⟩ <;>
@@ -267,6 +280,18 @@ section IsBSTAccessors
     IsBST (l △[k] r) ↔ IsBSTAux l none (some k) ∧ IsBSTAux r (some k) none := by
   simp [IsBST, IsBSTAux_node]
 
+private lemma IsBSTAux_children_none [LinearOrder α] {t : Tree α} {x y : Option α}
+    (h : IsBSTAux t x y) : IsBSTAux t none y ∧ IsBSTAux t x none := by
+  induction h <;> simp_all
+
+theorem IsBST_left_of_IsBST [LinearOrder α] {k : α} {l r : Tree α}
+    (hbst : IsBST (l △[k] r)) : IsBST l :=
+  (IsBSTAux_children_none ((IsBST_node l k r).mp hbst).1).2
+
+theorem IsBST_right_of_IsBST [LinearOrder α] {k : α} {l r : Tree α}
+    (hbst : IsBST (l △[k] r)) : IsBST r :=
+  (IsBSTAux_children_none ((IsBST_node l k r).mp hbst).2).1
+
 end IsBSTAccessors
 
 
@@ -324,6 +349,20 @@ theorem mem_imp_contains [LinearOrder α] {t : Tree α} (hbst : IsBST t)
 theorem contains_iff_mem [LinearOrder α] {t : Tree α} (hbst : IsBST t) {q : α} :
     t.BST_contains q ↔ q ∈ t :=
   ⟨contains_imp_mem, mem_imp_contains hbst⟩
+
+/-- For BSTs, all keys in the left subtree are smaller than the root key. -/
+theorem lt_of_IsBST_left [LinearOrder α] (l : Tree α) (k : α) (r : Tree α)
+    (hbst : IsBST (l △[k] r)) {q : α} (hql : q ∈ l) : q < k :=
+  IsBSTAux.lt_of_mem_ub ((IsBST_node l k r).mp hbst).1 hql
+
+/-- For BSTs, all keys in the right subtree are greater than the root key. -/
+theorem gt_of_IsBST_right [LinearOrder α] (l : Tree α) (k : α) (r : Tree α)
+    (hbst : IsBST (l △[k] r)) {q : α} (hqr : q ∈ r) : k < q :=
+  IsBSTAux.gt_of_mem_lb ((IsBST_node l k r).mp hbst).2 hqr
+
+/-- A tree that contains something is not nil. -/
+theorem ne_nil_of_mem {t : Tree α} (q : α) (hq : q ∈ t) : t ≠ nil := by
+  rintro rfl; exact not_mem_nil q hq
 
 end BSTMembership
 
