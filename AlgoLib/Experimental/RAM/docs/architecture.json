@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "allowed_imports": {
+    "Language": ["Language", "Verification"],
+    "Verification": ["Language", "Verification"],
+    "Library": ["Language", "Library"],
+    "Implementations": ["Language", "Library", "Implementations", "Compiler", "Machine"],
+    "Compiler": ["Language", "Verification", "Implementations", "Compiler", "Machine"],
+    "Machine": ["Machine"],
+    "Examples": ["Language", "Verification", "Library", "Implementations", "Compiler", "Machine", "Examples"],
+    "Historical": ["Language", "Verification", "Library", "Implementations", "Compiler", "Machine", "Examples", "Historical", "Research", "Tests"],
+    "Research": ["Language", "Verification", "Library", "Implementations", "Compiler", "Machine", "Examples", "Historical", "Research", "Tests"],
+    "Tests": ["Language", "Verification", "Library", "Implementations", "Compiler", "Machine", "Examples", "Historical", "Research", "Tests"]
+  },
+  "backend_free_layers": ["Language", "Verification", "Library"],
+  "additional_logical_roots": {
+    "Historical/Prototype/LegacyArrayFrontend.lean": "Retain the historical source adapter's backend independence.",
+    "Historical/Prototype/SortingAlgorithm.lean": "Retain the historical abstract sorting proof's independence.",
+    "Historical/Prototype/ZeroAlgorithm.lean": "Retain the historical scalar algorithm's independence.",
+    "Historical/Adapters/CreditCompatibility.lean": "Compatibility credit reasoning must remain backend-independent.",
+    "Tests/CreditLogic.lean": "The credit-logic client demonstrates reasoning with no backend dependency."
+  },
+  "no_verification_roots": {
+    "Language/Contracts.lean": "Mathematical contracts do not depend on proof generation.",
+    "Language/Expressions.lean": "Expression semantics do not depend on proof generation.",
+    "Implementations/Contracts/ResourceRefinement.lean": "Implementation refinement is independent of proof-authoring machinery.",
+    "Compiler/Assembly/Native/Linking.lean": "The linker consumes semantic certificates, not generated proof commands."
+  },
+  "isolated_modules": {
+    "Verification/SourceMetadata.lean": "Source metadata has no local RAM-stack dependencies.",
+    "Compiler/Assembly/Tactics.lean": "Shared assembly tactics have no local RAM-stack dependencies.",
+    "Compiler/Assembly/Result.lean": "The result type has no local RAM-stack dependencies."
+  },
+  "native_only_roots": {
+    "Compiler/Assembly.lean": "Standard source assembly selects the native integer path.",
+    "Compiler/Assembly/Native/Execution.lean": "Native execution must not load natural implementation adapters.",
+    "Examples/InsertionSort/Backend.lean": "The standard sorting backend demonstrates native source compilation."
+  }
+}

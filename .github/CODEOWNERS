@@ -1,0 +1,58 @@
+# BEGIN RAM REVIEW OWNERS (generated)
+# Source: AlgoLib/Experimental/RAM/docs/reviewers.json
+# Regenerate: python3 AlgoLib/Experimental/RAM/Tests/check_reviewers.py --write
+# Fallback first; more specific area rules follow (last matching rule wins).
+
+# infrastructure
+/AlgoLib/Experimental/RAM/ @sorrachai
+
+# frontend
+/AlgoLib/Experimental/RAM/Language.lean @sorrachai
+/AlgoLib/Experimental/RAM/Language/ @sorrachai
+
+# verification
+/AlgoLib/Experimental/RAM/Verification.lean @sorrachai
+/AlgoLib/Experimental/RAM/Verification/ @sorrachai
+
+# library
+/AlgoLib/Experimental/RAM/Library.lean @sorrachai
+/AlgoLib/Experimental/RAM/Library/ @sorrachai
+
+# implementations
+/AlgoLib/Experimental/RAM/Implementations.lean @sorrachai
+/AlgoLib/Experimental/RAM/Implementations/ @sorrachai
+
+# compiler
+/AlgoLib/Experimental/RAM/Compiler.lean @sorrachai
+/AlgoLib/Experimental/RAM/Compiler/ @sorrachai
+
+# machine
+/AlgoLib/Experimental/RAM/Machine.lean @sorrachai
+/AlgoLib/Experimental/RAM/Machine/ @sorrachai
+
+# algorithms
+/AlgoLib/Experimental/RAM/Examples.lean @sorrachai
+/AlgoLib/Experimental/RAM/Examples/ @sorrachai
+
+# infrastructure
+/.github/CODEOWNERS @sorrachai
+/.github/CONTRIBUTING.md @sorrachai
+/.github/PULL_REQUEST_TEMPLATE.md @sorrachai
+/.github/workflows/ @sorrachai
+/AlgoLib.lean @sorrachai
+/AlgoLib/Experimental/RAM.lean @sorrachai
+/AlgoLib/Experimental/RAM/README.md @sorrachai
+/AlgoLib/Experimental/RAM/Tests/ @sorrachai
+/AlgoLib/Experimental/RAM/docs/ @sorrachai
+/README.md @sorrachai
+/lake-manifest.json @sorrachai
+/lakefile.toml @sorrachai
+/lean-toolchain @sorrachai
+/vendor/README.md @sorrachai
+/vendor/loom/ @sorrachai
+/vendor/velvet/ @sorrachai
+
+# experiments
+/AlgoLib/Experimental/RAM/Historical/ @sorrachai
+/AlgoLib/Experimental/RAM/Research/ @sorrachai
+# END RAM REVIEW OWNERS (generated)

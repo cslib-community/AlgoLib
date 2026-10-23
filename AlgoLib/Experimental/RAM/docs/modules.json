@@ -910,6 +910,11 @@
       "layer": "Tests",
       "status": "test"
     },
+    "Tests/GettingStarted.lean": {
+      "entrypoint": false,
+      "layer": "Tests",
+      "status": "test"
+    },
     "Tests/IntegerFrontend.lean": {
       "entrypoint": false,
       "layer": "Tests",

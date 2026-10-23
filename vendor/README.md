@@ -41,7 +41,9 @@ not included. Original sources can be recovered from the pinned commits above.
 The full Velvet frontend permits more programs than the current RAM compiler.
 `ram method` accepts the documented RAM subset and rejects unsupported executable
 constructs. Using ordinary `method` does **not** by itself prove a RAM cost bound.
-See `AlgoLib/Experimental/RAM/Prototype/README.md` for that boundary and the demo.
+See the [RAM stack](../AlgoLib/Experimental/RAM/README.md) and its
+[checked tutorial](../AlgoLib/Experimental/RAM/docs/GETTING-STARTED.md) for that
+boundary and a demo.
 
 ## Executable specialization
 
@@ -65,7 +67,8 @@ are rejected with an error until this elaborator supports them.
 
 ## Additional refinement/resource-design attribution
 
-The owned composition layer in `AlgoLib/Experimental/RAM/Prototype/Composition` is inspired
+The [owned implementation contracts](../AlgoLib/Experimental/RAM/Implementations/README.md)
+and [certified linking](../AlgoLib/Experimental/RAM/Compiler/README.md) are inspired
 by Peter Lammich's Sepref / Imperative Refinement Framework, especially abstract operation
 interfaces, implementation substitution, and automatic refinement-proof reconstruction:
 [Refinement Based Verification of Imperative Data Structures, CPP 2016](https://www21.in.tum.de/~lammich/pub/cpp2016_impds.pdf).

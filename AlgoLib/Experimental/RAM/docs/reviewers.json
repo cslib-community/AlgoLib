@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "fallback_area": "infrastructure",
+  "fallback_paths": ["/AlgoLib/Experimental/RAM/"],
+  "areas": {
+    "frontend": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Source syntax, elaboration, expressions, and public language contracts.",
+      "paths": ["/AlgoLib/Experimental/RAM/Language.lean", "/AlgoLib/Experimental/RAM/Language/"]
+    },
+    "verification": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Verification conditions, generated obligation API, proof commands, and Loom interpretation.",
+      "paths": ["/AlgoLib/Experimental/RAM/Verification.lean", "/AlgoLib/Experimental/RAM/Verification/"]
+    },
+    "library": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Reusable mathematical models, procedure contracts, and library-level algorithm proofs.",
+      "paths": ["/AlgoLib/Experimental/RAM/Library.lean", "/AlgoLib/Experimental/RAM/Library/"]
+    },
+    "implementations": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Storage encodings, ownership, data-structure refinement, and operation implementation certificates.",
+      "paths": ["/AlgoLib/Experimental/RAM/Implementations.lean", "/AlgoLib/Experimental/RAM/Implementations/"]
+    },
+    "compiler": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Instruction lowering, linking, executable assembly, and compiler correctness and cost certificates.",
+      "paths": ["/AlgoLib/Experimental/RAM/Compiler.lean", "/AlgoLib/Experimental/RAM/Compiler/"]
+    },
+    "machine": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Integer RAM instructions, operational semantics, runners, and machine-level correctness.",
+      "paths": ["/AlgoLib/Experimental/RAM/Machine.lean", "/AlgoLib/Experimental/RAM/Machine/"]
+    },
+    "algorithms": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Maintained example algorithms, invariants, mathematical proofs, execution interfaces, and advertised bounds.",
+      "paths": ["/AlgoLib/Experimental/RAM/Examples.lean", "/AlgoLib/Experimental/RAM/Examples/"]
+    },
+    "infrastructure": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Documentation, metadata, validation and CI, review policy, dependency pins, vendored foundations, and uncategorized RAM files.",
+      "paths": [
+        "/AlgoLib/Experimental/RAM/Tests/",
+        "/AlgoLib/Experimental/RAM/docs/",
+        "/AlgoLib/Experimental/RAM/README.md",
+        "/AlgoLib/Experimental/RAM.lean",
+        "/AlgoLib.lean",
+        "/.github/CODEOWNERS",
+        "/.github/PULL_REQUEST_TEMPLATE.md",
+        "/.github/CONTRIBUTING.md",
+        "/.github/workflows/",
+        "/README.md",
+        "/lean-toolchain",
+        "/lakefile.toml",
+        "/lake-manifest.json",
+        "/vendor/README.md",
+        "/vendor/loom/",
+        "/vendor/velvet/"
+      ]
+    },
+    "experiments": {
+      "primary": ["@sorrachai"],
+      "backup": [],
+      "responsibility": "Historical adapters and separately scoped research; changes must preserve the supported stack's boundaries.",
+      "paths": ["/AlgoLib/Experimental/RAM/Historical/", "/AlgoLib/Experimental/RAM/Research/"]
+    }
+  }
+}

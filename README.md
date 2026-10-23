@@ -50,5 +50,7 @@ Requires the Lean toolchain pinned in `lean-toolchain`. `elan` will install it a
 
 The [`experimental-RAM-model` stack](AlgoLib/Experimental/RAM/README.md) provides a typed DSL,
 verified compiler, correctness/time VCs, and fuel-free insertion sort and BFS.
-Start with its [executable examples](AlgoLib/Experimental/RAM/Algorithms/Examples.lean) or
-[architecture guide](AlgoLib/Experimental/RAM/docs/ARCHITECTURE.md).
+Start with the [checked tutorial](AlgoLib/Experimental/RAM/docs/GETTING-STARTED.md),
+then follow the [contributor guide](AlgoLib/Experimental/RAM/docs/CONTRIBUTING.md).
+The [example index](AlgoLib/Experimental/RAM/Examples/README.md) links complete
+algorithm proofs and executable interfaces.

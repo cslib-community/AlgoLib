@@ -3,6 +3,9 @@
 **Preferred public import:** `AlgoLib.Experimental.RAM.Examples`.
 See [public names and stability](../docs/PUBLIC-API.md); narrower module links below explain internals.
 
+For a first small program, use the [checked tutorial](../docs/GETTING-STARTED.md).
+For a new contribution, follow the [contributor guide](../docs/CONTRIBUTING.md).
+
 | Example | What to learn |
 | --- | --- |
 | [Insertion sort](InsertionSort/README.md) | Nested loops, generated obligations, quadratic RAM bound, execution, and procedure calling |

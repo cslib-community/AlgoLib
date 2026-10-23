@@ -2,13 +2,17 @@
 
 Write a typed, paper-style algorithm, prove its named mathematical obligations,
 and obtain an executable with a correctness theorem and an inferred RAM upper bound.
-Start with **[insertion sort](Examples/InsertionSort/README.md)** or
-**[BFS connectivity](Examples/BFS/README.md)**. These are the supported examples.
+**New here?** Follow the [checked getting-started tutorial](docs/GETTING-STARTED.md),
+then use the [contributor guide](docs/CONTRIBUTING.md) to choose a task and validate a patch.
+Continue with **[insertion sort](Examples/InsertionSort/README.md)** or
+**[BFS connectivity](Examples/BFS/README.md)** for complete algorithm examples.
 
 For the supported imports and preferred declaration names, see [the public API](docs/PUBLIC-API.md).
 The [generated dependency map](docs/DEPENDENCIES.md) explains actual imports.
 For the design, core theorem statements, and human-review obligations, read the
 [draft exposition](docs/DESIGN-AND-REVIEW-DRAFT.md).
+For development at scale, follow the [checked architecture policy](docs/ARCHITECTURE-POLICY.md)
+and [review ownership](docs/REVIEW-OWNERSHIP.md).
 
 ## The six layers and the proof-authoring interface
 

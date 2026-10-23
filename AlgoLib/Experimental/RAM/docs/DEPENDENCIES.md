@@ -31,14 +31,14 @@ flowchart LR
   Library -->|"5"| Language
   Research -->|"4"| Historical
   Research -->|"1"| Machine
-  Tests -->|"14"| Compiler
-  Tests -->|"10"| Examples
+  Tests -->|"15"| Compiler
+  Tests -->|"11"| Examples
   Tests -->|"12"| Historical
   Tests -->|"9"| Implementations
-  Tests -->|"6"| Language
+  Tests -->|"7"| Language
   Tests -->|"1"| Library
   Tests -->|"1"| Machine
-  Tests -->|"1"| Verification
+  Tests -->|"2"| Verification
   Verification -->|"5"| Language
 ```
 
@@ -240,6 +240,7 @@ flowchart LR
 | [Tests/CreditLogic.lean](../Tests/CreditLogic.lean) | [Language/Model/Semantics.lean](../Language/Model/Semantics.lean) |
 | [Tests/EncoderLayout.lean](../Tests/EncoderLayout.lean) | [Tests/OwnedBFS.lean](../Tests/OwnedBFS.lean) |
 | [Tests/GeneralityAxioms.lean](../Tests/GeneralityAxioms.lean) | [Tests/ArraySubstitution.lean](../Tests/ArraySubstitution.lean) |
+| [Tests/GettingStarted.lean](../Tests/GettingStarted.lean) | [Language.lean](../Language.lean), [Verification.lean](../Verification.lean), [Compiler.lean](../Compiler.lean), [Examples.lean](../Examples.lean) |
 | [Tests/IntegerFrontend.lean](../Tests/IntegerFrontend.lean) | [Compiler/Assembly.lean](../Compiler/Assembly.lean) |
 | [Tests/IntegerRAM.lean](../Tests/IntegerRAM.lean) | [Historical/Adapters/NatEmbedding.lean](../Historical/Adapters/NatEmbedding.lean) |
 | [Tests/Language.lean](../Tests/Language.lean) | [Historical/Legacy/LanguageExamples.lean](../Historical/Legacy/LanguageExamples.lean), [Historical/NatCompiler/Compiler.lean](../Historical/NatCompiler/Compiler.lean) |

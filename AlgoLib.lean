@@ -102,6 +102,7 @@ import AlgoLib.Experimental.RAM.Tests.BackendReuse
 import AlgoLib.Experimental.RAM.Tests.CreditAxioms
 import AlgoLib.Experimental.RAM.Tests.ArraySubstitution
 import AlgoLib.Experimental.RAM.Tests.GeneralityAxioms
+import AlgoLib.Experimental.RAM.Tests.GettingStarted
 import AlgoLib.Experimental.RAM.Historical.Prototype.GraphTests
 import AlgoLib.Experimental.RAM.Historical.Prototype.FrameworkTests
 import AlgoLib.Experimental.RAM.Historical.Prototype.Tests

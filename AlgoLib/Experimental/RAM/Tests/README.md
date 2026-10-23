@@ -13,9 +13,22 @@ Run builds and the proof-edit benchmark sequentially. The latter temporarily edi
 and restores the sorting proof, including on failure; do not edit that file concurrently.
 
 - Full build: Lean proofs, executable examples, rejection tests and guarded axiom checks.
+- [GettingStarted](GettingStarted.lean): checked tutorial, public example runners,
+  generated obligation proof, and executable correctness/cost theorem.
 - Navigation check (included in the layer check): canonical module homes, working documentation links/imports, and complete example entry pages.
-- Layer check: import DAG, logical/backend boundary, no private queue unfolding in
-  BFS assembly, no retired target in author-facing witnesses, generated conformance consistency.
+- Layer check: import DAG, logical/backend boundary, known private-layout references
+  in registered assembly roles, no retired target in author-facing witnesses,
+  generated conformance consistency.
+- Architecture regressions: shared Lean header parsing, automatic logical-layer
+  protection, and repository-local bridge checks. Policy lives in
+  [architecture.json](../docs/architecture.json).
+  The build job additionally runs `test_lean_imports.py --check-lean` to compare
+  representative parsed headers with the pinned compiler's dependency output.
+- Algorithm roles: [algorithms.json](../docs/algorithms.json) classifies every example
+  module; backend independence, proof-edit boundaries, and execution-test coverage
+  apply to every maintained algorithm. Isolated tests exercise a new algorithm name.
+- Review routing: [reviewers.json](../docs/reviewers.json) generates CODEOWNERS;
+  missing owners, invalid roles, stale routing, and accidental overrides are rejected.
 - [Conformance](Conformance/README.md): independent bounded reference evaluator versus
   compiled executions, including signed cases and explicit rejection tests.
 - `EncoderLayout`, `OwnedBFS`, `OwnedQueues`: layout and implementation substitution.
@@ -33,7 +46,8 @@ guards; SignedAxioms and IntegerFrontend check the native path independently.
 PublicAPI runs source and example clients through the seven public layer imports.
 PublicCompatibility checks definitional equality of preferred and older names.
 `generate_navigation.py --check` checks module metadata and generated documentation;
-`test_navigation.py` rejects missing records, wrong ownership/exports, and stale indexes
+`test_navigation.py` rejects missing records, wrong ownership/exports, stale indexes,
+and broken RAM links in repository entry pages
 in a temporary tree without editing the checkout. Both run through `check_layers.py`.
 
 <!-- BEGIN GENERATED MODULE INDEX -->
@@ -58,6 +72,7 @@ Status and ownership come from `docs/modules.json`; summaries come from module d
 | [CreditLogic.lean](CreditLogic.lean) | test | A reusable algorithm proof with no RAM dependency |
 | [EncoderLayout.lean](EncoderLayout.lean) | test | Private-layout substitution through unchanged BFS assembly |
 | [GeneralityAxioms.lean](GeneralityAxioms.lean) | test | Exact trust checks for supported compilation and implementation substitution |
+| [GettingStarted.lean](GettingStarted.lean) | test | Getting started: from a source method to a certified RAM execution |
 | [IntegerFrontend.lean](IntegerFrontend.lean) | test | Default frontend executes integer instructions |
 | [IntegerRAM.lean](IntegerRAM.lean) | test | Signed execution and natural-number migration regressions |
 | [Language.lean](Language.lean) | test | Regression checks: Language |

@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "algorithms": {
+    "insertion-sort": {
+      "review_area": "algorithms",
+      "entrypoint": "Examples/InsertionSort/README.md",
+      "roles": {
+        "program": ["Examples/InsertionSort/Program.lean"],
+        "obligations": ["Examples/InsertionSort/Obligations.lean"],
+        "proofs": ["Examples/InsertionSort/Proofs.lean"],
+        "facts": [],
+        "client": ["Examples/InsertionSort/MinimumCaller.lean"],
+        "backend": ["Examples/InsertionSort/Backend.lean"],
+        "storage": [],
+        "execution": ["Examples/InsertionSort/Execution.lean"],
+        "inputs": []
+      },
+      "tests": ["Tests/PaperLoops.lean", "Tests/PaperLoopAxioms.lean"]
+    },
+    "bfs": {
+      "review_area": "algorithms",
+      "entrypoint": "Examples/BFS/README.md",
+      "roles": {
+        "program": ["Examples/BFS/Program.lean"],
+        "obligations": ["Examples/BFS/Obligations.lean"],
+        "proofs": ["Examples/BFS/Proofs.lean"],
+        "facts": ["Examples/BFS/Facts.lean"],
+        "client": [],
+        "backend": ["Examples/BFS/QueueBackend.lean"],
+        "storage": ["Examples/BFS/Storage.lean"],
+        "execution": ["Examples/BFS/Execution.lean"],
+        "inputs": ["Examples/BFS/Inputs.lean"]
+      },
+      "tests": ["Tests/OwnedBFS.lean", "Tests/EncoderLayout.lean", "Tests/OwnedBFSAxioms.lean"]
+    }
+  },
+  "fixtures": {
+    "Examples/Composition/BufferAlgorithms.lean": {
+      "kind": "logical",
+      "review_area": "algorithms",
+      "reason": "Combined procedure-composition examples exercise internal contract_vc; they are not the supported separate named-proof workflow."
+    },
+    "Examples/Composition/BufferClient.lean": {
+      "kind": "logical",
+      "review_area": "algorithms",
+      "reason": "Small direct contract-composition fixture, retained to test implementation substitution independently of the frontend."
+    },
+    "Examples/Composition/Demo.lean": {
+      "kind": "integration",
+      "review_area": "algorithms",
+      "reason": "Combined implementation-substitution demonstration intentionally links the buffer fixtures to their RAM implementations."
+    },
+    "Examples/Composition/MixedAlgorithms.lean": {
+      "kind": "logical",
+      "review_area": "algorithms",
+      "reason": "Combined array and procedure regression examples use internal contract_solve rather than the supported separate named-proof workflow."
+    },
+    "Examples/Composition/QueueAlgorithms.lean": {
+      "kind": "logical",
+      "review_area": "algorithms",
+      "reason": "Small FIFO procedure-contract fixture uses internal contract_solve and is retained for queue substitution tests."
+    }
+  }
+}

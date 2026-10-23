@@ -9,6 +9,7 @@ import argparse
 import collections
 import json
 import re
+from lean_imports import parse_imports
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = "AlgoLib.Experimental.RAM."
@@ -41,7 +42,7 @@ def generate():
         heading = re.search(r"^# ([^\n]+)", block[1], re.M)
         summary = heading[1] if heading else block[1].strip().splitlines()[0]
         summaries[path] = summary.replace("|", "\\|")
-        imports[path] = [modules[m] for m in re.findall(r"^import (\S+)", text, re.M) if m in modules]
+        imports[path] = [modules[m] for m in parse_imports(text, str(ROOT / path)) if m in modules]
     results = {}
     for layer in LAYERS:
         paths = [p for p, r in records.items() if r["layer"] == layer]

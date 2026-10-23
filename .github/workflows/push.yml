@@ -46,6 +46,9 @@ jobs:
       - name: Check RAM elaboration budgets
         run: python3 AlgoLib/Experimental/RAM/Tests/check_elaboration.py --output "$RUNNER_TEMP/ram-elaboration"
 
+      - name: Compare RAM import reader with pinned Lean
+        run: python3 AlgoLib/Experimental/RAM/Tests/test_lean_imports.py --check-lean
+
       - name: Preserve RAM elaboration profiles
         if: always()
         uses: actions/upload-artifact@v4
