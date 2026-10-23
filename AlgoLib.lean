@@ -49,6 +49,8 @@ import AlgoLib.Theory.Graph.Structures.SimpleWalk
 import AlgoLib.Theory.Graph.Structures.Trail
 import AlgoLib.Theory.Graph.Structures.Tree
 import AlgoLib.Theory.Graph.Structures.Trees.Basic
+import AlgoLib.Theory.Graph.Structures.Trees.ParentTree.Basic
+import AlgoLib.Theory.Graph.Structures.Trees.ParentTree.Acyclic
 import AlgoLib.Theory.Graph.Structures.VertexSeq
 import AlgoLib.Theory.Graph.Structures.VertexSeq.Append
 import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
