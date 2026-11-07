@@ -75,6 +75,9 @@ import AlgoLib.Algorithms.Graph.Traversal.Basic
 -- Data structures
 import AlgoLib.DataStructures.BinaryTree.Basic
 import AlgoLib.DataStructures.BinaryTree.BinaryTree
+import AlgoLib.DataStructures.SegmentTree.Basic
+import AlgoLib.DataStructures.SegmentTree.Cost
+import AlgoLib.DataStructures.SegmentTree.Lazy.Basic
 import AlgoLib.DataStructures.SplayTree.BSTAPI
 import AlgoLib.DataStructures.SplayTree.Basic
 import AlgoLib.DataStructures.SplayTree.Complexity
@@ -83,6 +86,9 @@ import AlgoLib.DataStructures.SplayTree.SequentialAccess
 import AlgoLib.DataStructures.SplayTree.StaticOptimality
 import AlgoLib.DataStructures.SplayTree.Weighted
 import AlgoLib.DataStructures.UnionFind.Basic
+
+-- Mathlib prerequisites
+import AlgoLib.Mathlib.Data.List.Intervals
 
 -- Utilities
 import AlgoLib.Util.Decidable
