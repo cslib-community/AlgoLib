@@ -1,0 +1,153 @@
+% Mirrors `AlgoLib.DataStructures.SegmentTree.*`
+%
+\subsection{Segment trees}
+% Mirrors `AlgoLib.DataStructures.SegmentTree.Basic` and `AlgoLib.DataStructures.SegmentTree.Cost`
+
+Throughout, $\alpha$ is an additive monoid; commutativity is not assumed, so sums are taken
+over lists in index order. Every operation is written once, in the cost monad
+\texttt{TimeM} of CSLib, charging one tick per node visited. The function one reasons
+about is the value component of that computation, and the complexity bounds are statements
+about its time component, so the bounds concern exactly the verified algorithm. The bounds
+assume that addition in $\alpha$ takes constant time.
+
+\begin{definition}[Segment tree]
+  \label{def:segment-tree}
+  \lean{SegmentTree, SegmentTree.valAt, SegmentTree.Valid}
+  \leanok
+  A \emph{segment tree} is a binary tree in which every subtree covers a half-open
+  interval $[\ell, h)$ of indices and caches a value. A leaf covers $[\ell, \ell + 1)$. The
+  tree is \emph{valid} if the children of every internal node cover consecutive intervals
+  partitioning the interval of the node, and the value cached at the node is the sum of the
+  values cached at its children. The tree \emph{represents} the array $a$ where $a_i$ is the
+  value of the leaf covering $i$, and $a_i = 0$ outside the covered interval.
+\end{definition}
+
+\begin{definition}[Build, query, update]
+  \label{def:segment-tree-ops}
+  \lean{SegmentTree.build, SegmentTree.query, SegmentTree.update}
+  \leanok
+  \uses{def:segment-tree}
+  \texttt{build} constructs a tree from a nonempty array by splitting $[\ell, h)$ at
+  $\lfloor (\ell + h) / 2 \rfloor$. \texttt{query} on $[q_\ell, q_r)$ returns $0$ at a node
+  disjoint from the range, the cached value at a node covered by it, and the sum of the
+  answers of both children otherwise. \texttt{update} replaces the value at one index and
+  recomputes the cached values on the path from that leaf to the root.
+\end{definition}
+
+\begin{theorem}[Correctness of build]
+  \label{thm:segment-tree-build}
+  \lean{SegmentTree.valid_build, SegmentTree.valAt_build}
+  \leanok
+  \uses{def:segment-tree-ops}
+  The tree built from an array $a$ is valid and represents $a$.
+\end{theorem}
+\begin{proof}
+  \leanok
+  By strong induction on $h - \ell$, following the recursion of \texttt{build}.
+\end{proof}
+
+\begin{theorem}[Correctness of query]
+  \label{thm:segment-tree-query}
+  \lean{SegmentTree.query_eq_sum_valAt, SegmentTree.query_build}
+  \leanok
+  \uses{def:segment-tree-ops}
+  On a valid tree covering $[\ell, h)$ and representing $a$, the query on $[q_\ell, q_r)$
+  returns $\sum_{i = \max(\ell, q_\ell)}^{\min(h, q_r) - 1} a_i$.
+\end{theorem}
+\begin{proof}
+  \leanok
+  By induction on validity. At a covered node the cached value is the sum of the represented
+  array over the interval of the node; at a partially covered node the range splits at the
+  boundary between the two children.
+\end{proof}
+
+\begin{theorem}[Correctness of update]
+  \label{thm:segment-tree-update}
+  \lean{SegmentTree.Valid.update, SegmentTree.valAt_update, SegmentTree.query_update_build}
+  \leanok
+  \uses{def:segment-tree-ops}
+  \texttt{update} preserves validity, and on a valid tree the represented array changes
+  exactly at the updated index.
+\end{theorem}
+\begin{proof}
+  \leanok
+  By induction on validity, descending into the child whose interval contains the index.
+\end{proof}
+
+\begin{theorem}[Height of a built tree]
+  \label{thm:segment-tree-height}
+  \lean{SegmentTree.height_build, SegmentTree.height_update}
+  \leanok
+  \uses{def:segment-tree-ops}
+  The tree built from an array of size $n$ has height exactly $\lceil \log_2 n \rceil$, and
+  \texttt{update} does not change the height.
+\end{theorem}
+\begin{proof}
+  \leanok
+  The recurrence is $T(n) = \max(T(\lfloor n/2 \rfloor), T(\lceil n/2 \rceil)) + 1$, and
+  the larger half dominates. The floor logarithm is not a bound: for $n = 3$ the height is
+  $2$.
+\end{proof}
+
+\begin{theorem}[Cost of the operations]
+  \label{thm:segment-tree-cost}
+  \lean{SegmentTree.buildT_time, SegmentTree.updateT_time_le, SegmentTree.queryT_time_le, SegmentTree.updateT_build_time_le, SegmentTree.queryT_build_time_le}
+  \leanok
+  \uses{thm:segment-tree-height}
+  On an array of size $n$, \texttt{build} visits exactly $2n - 1$ nodes. On a tree of
+  height $d$, \texttt{update} visits at most $d + 1$ nodes and, if the tree is valid,
+  \texttt{query} visits at most $4d + 1$ nodes. Hence both are $O(\log n)$ on a built tree.
+\end{theorem}
+\begin{proof}
+  \leanok
+  \texttt{update} follows one path. For \texttt{query}, the naive recurrence
+  $T(d) \le 2T(d - 1) + 1$ is exponential. Instead, once the query range has split at a
+  node, every further descent is one-sided: the range contains one end of the subtree, so
+  one child is disjoint or covered and costs a single visit. One-sided descents cost at most
+  $2d + 1$ visits, and combining the two sides gives $4d + 1$.
+\end{proof}
+
+\subsection{Lazy segment trees}
+% Mirrors `AlgoLib.DataStructures.SegmentTree.Lazy.Basic` (work in progress)
+
+A lazy segment tree additionally stores, at every internal node, a \emph{tag} $t \in M$
+pending to be applied to its children, where the monoid $M$ acts distributively on
+$\alpha$. A range update applies its tag at the covered nodes in constant time, and a tag
+is pushed to the children only when an operation descends past its node. The cost bounds
+for lazy segment trees are not yet formalized.
+
+\begin{definition}[Lazy segment tree]
+  \label{def:lazy-segment-tree}
+  \lean{LazySegmentTree, LazySegmentTree.applyTag, LazySegmentTree.valAt, LazySegmentTree.Valid}
+  \leanok
+  \uses{def:segment-tree}
+  The value cached at a node already includes the effect of its own tag, so validity
+  requires the value at a node with tag $t$ to be $t \cdot (v_L + v_R)$, where $v_L, v_R$
+  are the values cached at its children. The represented array applies every tag met on
+  the way from the root to a leaf.
+\end{definition}
+
+\begin{definition}[Range traversal]
+  \label{def:lazy-range-traversal}
+  \lean{LazySegmentTree.rangeRecT, LazySegmentTree.query, LazySegmentTree.rangeUpdate}
+  \leanok
+  \uses{def:lazy-segment-tree}
+  All range operations share one traversal: a node disjoint from the range or covered by it
+  is answered at once, and a partially covered node pushes its tag and recurses on both
+  children. \texttt{query} and \texttt{rangeUpdate} are instances of this traversal.
+\end{definition}
+
+\begin{theorem}[Correctness of lazy query and range update]
+  \label{thm:lazy-segment-tree-correct}
+  \lean{LazySegmentTree.query_eq_sum_valAt, LazySegmentTree.Valid.rangeUpdate, LazySegmentTree.valAt_rangeUpdate, LazySegmentTree.query_rangeUpdate_build}
+  \leanok
+  \uses{def:lazy-range-traversal}
+  On a valid tree, \texttt{query} returns the sum of the represented array over the range.
+  \texttt{rangeUpdate} on $[q_\ell, q_r)$ with tag $m$ preserves validity and acts by $m$
+  on exactly the represented values with index in $[q_\ell, q_r)$.
+\end{theorem}
+\begin{proof}
+  \leanok
+  By an induction principle in which the hypotheses at a node concern its children with
+  the tag of the node pushed, matching the recursive calls of the traversal.
+\end{proof}
