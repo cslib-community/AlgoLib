@@ -47,35 +47,26 @@ through a distributive action `[DistribMulAction M α]`; a tag is applied to a n
 
 ## Implementation notes
 
-**Convention.** The `val` stored at a node is its *true* aggregate: it already includes the
-effect of the node's own `tag`. The tag records what has *not yet* been applied to the
-children. Hence the invariant reads `val = tag • (left.rootValue + right.rootValue)`, and
-`valAt` applies the tags met on the way down. Leaves carry no tag, since there is nothing
-below them to defer to.
+The `val` stored at a node already includes the effect of the node's own `tag`; the tag
+records what has not yet been applied to the children. Hence the invariant reads
+`val = tag • (left.rootValue + right.rootValue)`, and `valAt` applies the tags met on the
+way down. Leaves carry no tag.
 
 Tags compose as `m * t` ("first `t`, then `m`"), so `M` need not be commutative: range
-assignment and affine maps are legitimate tag monoids. As in
+assignment and affine maps are valid tag monoids. As in
 `AlgoLib.DataStructures.SegmentTree.Basic`, values only form an `AddMonoid`, so sums are
-stated over `List.Ico`. The four laws of `DistribMulAction` (`one_smul`, `mul_smul`,
-`smul_add`, `smul_zero`) are exactly what the proofs use, and they are only ever used through
-`applyTag` (`valAt_applyTag`, `Valid.applyTag`): no proof pulls a tag out of a sum.
+stated over `List.Ico`.
 
-**One traversal for all range operations.** Every range operation visits the same nodes:
-disjoint and covered nodes are answered in `O(1)`, and a partially covered node pushes its
-tag and recurses on both children. `rangeRecT` is that traversal, parametrised by what to
-return at disjoint and covered nodes and how to combine the two recursive results; `query`
-is the instance `(0, rootValue, +)`, and `rangeUpdate` the instance `(id, applyTag m,
-rebuild the node with a neutral tag)`. The per-node work is itself in `TimeM`, so the cost
-of `rangeRecT` is its node visits plus the cost of that work, and nothing about it is assumed
-constant; both instances do it in `pure`. The cost bound is to be proved once, for
-`rangeRecT` (see the TODO below), and the proofs about its instances go by `induction_push`,
-whose hypotheses are exactly the recursive calls. In `query` the pushed children are only
-recursed on and then discarded, so `query` does not modify the tree.
+All range operations visit the same nodes, so they share one traversal, `rangeRecT`,
+parametrised by what to return at disjoint and covered nodes and how to combine the two
+recursive results. `query` is the instance `(0, rootValue, +)` and `rangeUpdate` the
+instance `(id, applyTag m, rebuild the node with a neutral tag)`. Proofs about the instances
+go by `induction_push`, whose hypotheses are exactly the recursive calls.
 
-Operations are written once in CSLib's cost monad `Cslib.Algorithms.Lean.TimeM ℕ`, and
-their pure counterparts are the `.ret` projections, following
-`AlgoLib.DataStructures.SegmentTree.Basic`. `applyTag` is a constant-time, non-recursive
-helper and stays pure: its cost is charged to the node visit that calls it.
+As in `AlgoLib.DataStructures.SegmentTree.Basic`, operations are written in CSLib's cost
+monad `Cslib.Algorithms.Lean.TimeM ℕ` and the pure functions are their `.ret` projections.
+`applyTag` is constant-time and stays pure; its cost is charged to the node visit that calls
+it.
 
 ## TODO
 
@@ -131,9 +122,6 @@ so they terminate by `height`. -/
   | leaf _ _ _ => 0
   | node _ _ l r _ _ => max l.height r.height + 1
 
-/- Everything below aggregates values and builds neutral tags, so we fix the algebraic
-structure once. `lo`, `hi` and `rootValue` above stay instance-free on purpose; the action
-of tags on values is added after `build`, which does not need it. -/
 variable [AddMonoid α] [Monoid M]
 
 /-! ### Construction
@@ -335,15 +323,10 @@ lemma rootValue_eq_sum_valAt {st : LazySegmentTree α M} (h : Valid st) :
 
 /-! ### Range operations
 
-`query` and the range update are the *same traversal* of the nodes that a range `[ql, qr)`
-touches: a node disjoint from the range or covered by it is answered in `O(1)`, and a
-partially covered node *pushes* its pending tag (`applyTag`) and recurses on both children.
-They only differ in what they return at disjoint and covered nodes, and in how they combine
-the children's results. So the traversal is written once, as `rangeRecT`, and its cost is
-analysed once.
-
-The push only builds the children `applyTag t left` and `applyTag t right` to recurse on.
-For `query` they are discarded afterwards, so `query` is still read-only. -/
+A node disjoint from the range or covered by it is answered in `O(1)`, and a partially
+covered node pushes its pending tag (`applyTag`) and recurses on both children. The push
+only builds the children `applyTag t left` and `applyTag t right` to recurse on; `query`
+discards them afterwards, so it does not modify the tree. -/
 
 /-- One traversal of the nodes that `[ql, qr)` touches, in the cost monad, charging one `✓`
 per node visited plus whatever the per-node work costs. A disjoint node runs `disj` on
@@ -352,9 +335,9 @@ itself, a covered one `cov` on itself, and a partially covered node
 pushed children `applyTag t left` and `applyTag t right`. On a leaf, which is never
 partially covered on a valid tree, anything not covered counts as disjoint.
 
-The per-node work `disj`, `cov` and `comb` lives in `TimeM` too, so its cost is added to
-that of the traversal instead of being assumed constant. The push itself (`applyTag`) is
-charged to the node's `✓`. -/
+The per-node work `disj`, `cov` and `comb` is in `TimeM` too, so its cost is added to that
+of the traversal instead of being assumed constant. The push itself is charged to the node's
+`✓`. -/
 def rangeRecT {β : Type*} (ql qr : ℕ) (disj cov : LazySegmentTree α M → TimeM ℕ β)
     (comb : ℕ → ℕ → β → β → TimeM ℕ β) (st : LazySegmentTree α M) : TimeM ℕ β :=
   match st with
@@ -479,7 +462,7 @@ theorem query_build (arr : Array α) (h : 0 < arr.size) (ql qr : ℕ) :
     (build (M := M) arr h).query ql qr
       = ((List.Ico ql (min arr.size qr)).map (arr.getD · 0)).sum := by
   rw [query_eq_sum_valAt (valid_build arr h), lo_build, hi_build,
-    show max 0 ql = ql from by omega]
+    show max 0 ql = ql by omega]
   refine congrArg List.sum (List.map_congr_left fun a ha => ?_)
   rw [List.Ico.mem] at ha
   exact valAt_buildAux arr 0 arr.size h le_rfl a ⟨Nat.zero_le a, by omega⟩
@@ -652,7 +635,7 @@ theorem query_rangeUpdate_build (arr : Array α) (h : 0 < arr.size) (ql qr : ℕ
       = ((List.Ico a (min arr.size b)).map fun i =>
           if ql ≤ i ∧ i < qr then m • arr.getD i 0 else arr.getD i 0).sum := by
   rw [query_eq_sum_valAt ((valid_build arr h).rangeUpdate ql qr m), lo_rangeUpdate,
-    hi_rangeUpdate, lo_build, hi_build, show max 0 a = a from by omega]
+    hi_rangeUpdate, lo_build, hi_build, show max 0 a = a by omega]
   refine congrArg List.sum (List.map_congr_left fun i hmem => ?_)
   rw [List.Ico.mem] at hmem
   rw [valAt_rangeUpdate (valid_build arr h), show (build (M := M) arr h).valAt i = arr.getD i 0

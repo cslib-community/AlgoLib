@@ -22,7 +22,7 @@ that the subtree covers.
   `[ql, qr)`, in `O(log n)` on balanced trees.
 * `SegmentTree.updateT`: point update in the cost monad `TimeM ℕ`, recomputing the
   aggregates along the path.
-* `SegmentTree.update`: the pure projection of `updateT`; the function one reasons about.
+* `SegmentTree.update`: the pure projection of `updateT`.
 * `SegmentTree.valAt`: the array that a tree logically represents.
 * `SegmentTree.Valid`: the structural invariant (contiguous, correctly aggregated intervals).
 
@@ -41,21 +41,13 @@ that the subtree covers.
 Aggregation only assumes `AddMonoid α` (no commutativity), hence sums are stated over
 `List.Ico` rather than `Finset.Ico`.
 
-Operations are written **once**, in CSLib's cost monad `Cslib.Algorithms.Lean.TimeM ℕ`
-(the writer monad over `(ℕ, +, 0)`), and their pure counterparts are defined as
-projections (`update := fun st i v => (st.updateT i v).ret`). This keeps a
-single source of truth: there is no separate "cost version" that could silently drift
-away from the algorithm being verified. Reasoning about the pure functions proceeds
-through the exported equation lemmas (`query_leaf`, `query_node_of_disjoint`,
-`query_node_of_covered`, `query_node_of_partial`, `update_leaf`, `update_node_of_lt`,
-`update_node_of_le`) rather than by unfolding the definitions, so proofs read the same as
-if `query` and `update` had been defined by direct pattern matching.
-
-This discipline covers all three operations: `build`, `query` and `update` are the
-projections of `buildT`, `queryT` and `updateT` respectively.
-
-Complexity bounds live in `AlgoLib.DataStructures.SegmentTree.Cost` and speak about the
-`.time` field of the same definitions used here.
+The operations `buildT`, `queryT` and `updateT` are written in CSLib's cost monad
+`Cslib.Algorithms.Lean.TimeM ℕ`, charging one `✓` per node visited, and `build`, `query`
+and `update` are their `.ret` projections. The complexity bounds in
+`AlgoLib.DataStructures.SegmentTree.Cost` are about the `.time` field of the same
+definitions, so there is no separate cost model. Proofs about the pure functions use the
+equation lemmas (`query_node_of_partial`, `update_node_of_lt`, …) instead of unfolding the
+monad.
 -/
 
 /-- A segment tree over `α`: a binary tree caching, at every subtree, the aggregate of the
@@ -89,16 +81,9 @@ def rootValue : SegmentTree α → α
   | leaf v _ _ => v
   | node v _ _ _ _ => v
 
-/- Everything below aggregates values, so we fix a monoid structure once.
-`lo`, `hi` and `rootValue` above stay instance-free on purpose. -/
 variable [AddMonoid α]
 
-/-! ### Construction
-
-As with `query` and `update` below, the construction is written once, in the cost monad,
-charging one `✓` per node created; `buildAux`/`build` are its pure projections, which is
-what the correctness lemmas speak about. `AlgoLib.DataStructures.SegmentTree.Cost` proves
-the cost bound on `(buildT ..).time`. -/
+/-! ### Construction -/
 
 /-- Build the subtree of `arr` covering `[lo, hi)` in the cost monad, charging one `✓`
 per node created. -/
@@ -139,10 +124,7 @@ def build (arr : Array α) (h : 0 < arr.size) : SegmentTree α :=
     (buildT arr h).ret = build arr h :=
   rfl
 
-/-! ### Range query
-
-As with `update` below, the algorithm is written once in `TimeM ℕ` and `query` is its pure
-projection. Each `✓` marks one node visit. -/
+/-! ### Range query -/
 
 /-- Range query in the cost monad: the sum of the values on `[ql, qr)`, together with the
 number of nodes visited. `O(log n)` on balanced trees. -/
@@ -160,10 +142,7 @@ def queryT (st : SegmentTree α) (ql qr : ℕ) : TimeM ℕ α :=
 /-- The sum of the values on `[ql, qr)`: the pure projection of `queryT`. -/
 def query (st : SegmentTree α) (ql qr : ℕ) : α := (st.queryT ql qr).ret
 
-/-! #### Equation lemmas for `query`
-
-These recover the pattern-matching view of `query`. Prefer them over `unfold query`:
-they keep proofs independent of how the cost monad desugars. -/
+/-! #### Equation lemmas for `query` -/
 
 @[simp] theorem queryT_ret (st : SegmentTree α) (ql qr : ℕ) :
     (st.queryT ql qr).ret = st.query ql qr := rfl
@@ -199,14 +178,9 @@ def valAt (st : SegmentTree α) (i : ℕ) : α :=
 
 /-! ### Point update
 
-The algorithm is defined once, in `TimeM ℕ`, and `update` is its pure projection. Each `✓`
-marks one node visit; see `AlgoLib.DataStructures.SegmentTree.Cost` for the resulting
-complexity bound.
-
-Note that the branch on `i < left.hi` sits *outside* the `do` block. This matters for the
-cost analysis: with the test inside the `let`s, both recursive calls would appear in the
-term and `bind` would charge for both, yielding a bound exponential in the height instead
-of linear. -/
+The branch on `i < left.hi` is outside the `do` block. With the test inside the `let`s,
+both recursive calls would appear in the term and `bind` would charge for both, giving a
+bound exponential in the height instead of linear. -/
 def updateT : SegmentTree α → ℕ → α → TimeM ℕ (SegmentTree α)
   | leaf w l h, i, v => do ✓ return (leaf (if l = i then v else w) l h)
   | node _ left right l h, i, v =>
@@ -223,10 +197,7 @@ unchanged. `O(log n)` on balanced trees. -/
 def update (st : SegmentTree α) (i : ℕ) (v : α) : SegmentTree α :=
   (st.updateT i v).ret
 
-/-! #### Equation lemmas for `update`
-
-These recover the pattern-matching view of `update`. Prefer them over `unfold update`:
-they keep proofs independent of how the cost monad desugars. -/
+/-! #### Equation lemmas for `update` -/
 
 @[simp] theorem updateT_ret (st : SegmentTree α) (i : ℕ) (v : α) :
     (st.updateT i v).ret = st.update i v := rfl
@@ -397,7 +368,7 @@ theorem query_build (arr : Array α) (h : 0 < arr.size) (ql qr : ℕ) :
     (build arr h).query ql qr
       = ((List.Ico ql (min arr.size qr)).map (arr.getD · 0)).sum := by
   rw [query_eq_sum_valAt (valid_build arr h), lo_build, hi_build,
-    show max 0 ql = ql from by omega]
+    show max 0 ql = ql by omega]
   refine congrArg List.sum (List.map_congr_left fun a ha => ?_)
   rw [List.Ico.mem] at ha
   exact valAt_buildAux arr 0 arr.size h le_rfl a ⟨Nat.zero_le a, by omega⟩
@@ -457,7 +428,7 @@ theorem query_update_build (arr : Array α) (h₀ : 0 < arr.size) {i : ℕ}
     ((build arr h₀).update i v).query ql qr
       = ((List.Ico ql (min arr.size qr)).map ((arr.set i v hia).getD · 0)).sum := by
   rw [query_eq_sum_valAt ((valid_build arr h₀).update i v), lo_update, hi_update,
-    lo_build, hi_build, show max 0 ql = ql from by omega]
+    lo_build, hi_build, show max 0 ql = ql by omega]
   refine congrArg List.sum (List.map_congr_left fun j hj => ?_)
   rw [List.Ico.mem] at hj
   have hja : j < arr.size := by omega

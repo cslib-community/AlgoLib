@@ -10,19 +10,16 @@ import Mathlib.Data.Nat.Log
 # Complexity of segment tree operations
 
 Bounds on the `.time` field of the operations defined in
-`AlgoLib.DataStructures.SegmentTree.Basic`. Since those operations are defined *once*, in
-CSLib's cost monad `Cslib.Algorithms.Lean.TimeM ℕ`, the bounds below speak about exactly the
-algorithms that were verified there — there is no second definition that could drift.
+`AlgoLib.DataStructures.SegmentTree.Basic`.
 
 ## Cost model
 
-We count **node visits**: each `✓` corresponds to reaching a node, deciding one comparison
-on ℕ and performing at most one `+` of the monoid.
+We count node visits: each `✓` corresponds to reaching a node, deciding one comparison
+on `ℕ` and performing at most one `+` of the monoid.
 
-WARNING. This assumes `(+ : α → α → α)` is O(1). True for `ℕ`, `ℤ`, `Fin n`, `Float` and
-the like. NOT true for monoids such as `List β` under `++` or `Multiset β`, where the
-operation is linear in the accumulator; there one would have to charge inside `+` and the
-bounds below are false. This assumption is external to the formal development.
+This assumes that `(+ : α → α → α)` takes constant time, which holds for `ℕ`, `ℤ` or
+`Fin n` but not for `List β` under `++` or `Multiset β`, where `+` is linear in the
+accumulator. This assumption is not part of the formal statements.
 
 ## Main definitions
 
@@ -61,13 +58,12 @@ variable [AddMonoid α]
 
 /-! ### Height of a built tree
 
-`Valid` does not imply balance — a valid tree may be a comb of height `n`. Balance is a
-property of `build`, which splits at `mid = (lo + hi) / 2`, so these are the only lemmas
-in this file that mention `buildAux`.
+`Valid` does not imply balance: a valid tree may be a comb of height `n`. Balance is a
+property of `build`, which splits at `mid = (lo + hi) / 2`.
 
-Note the **ceiling** logarithm. The recurrence is `T(n) = max (T ⌊n/2⌋) (T ⌈n/2⌉) + 1`,
-and it is the `⌈n/2⌉` side that dominates, so the floor logarithm is *not* a bound:
-already at `n = 3` the tree has height `2` while `Nat.log 2 3 = 1`. -/
+The height is the ceiling logarithm. The recurrence is
+`T(n) = max (T ⌊n/2⌋) (T ⌈n/2⌉) + 1` and the `⌈n/2⌉` side dominates, so the floor
+logarithm is not a bound: at `n = 3` the tree has height `2` while `Nat.log 2 3 = 1`. -/
 
 /-- The subtree covering `[lo, hi)` has height exactly `⌈log₂ (hi - lo)⌉`. -/
 theorem height_buildAux (arr : Array α) (l h : ℕ) (h1 : l < h) (hle : h ≤ arr.size) :
@@ -93,9 +89,8 @@ theorem height_build (arr : Array α) (h : 0 < arr.size) :
 
 /-! ### Shape preservation
 
-`update` only rewrites cached values along a path, so it does not change the height. This
-is what lets the `O(log n)` bounds below hold along any sequence of operations started
-from `build`, not only for a single operation on a freshly built tree. -/
+`update` only rewrites cached values along a path, so it does not change the height, and
+the `O(log n)` bounds below hold along any sequence of updates starting from `build`. -/
 
 @[simp] theorem height_update (st : SegmentTree α) (i : ℕ) (v : α) :
     (st.update i v).height = st.height := by
@@ -116,17 +111,6 @@ theorem updateT_time_le (st : SegmentTree α) (i : ℕ) (v : α) :
   | node w left right l h ihl ihr =>
       by_cases hil : i < left.hi <;> grind [updateT, height]
 
-/-- Correctness and complexity of a point update on a built tree, in one statement. -/
-theorem updateT_build_spec (arr : Array α) (h₀ : 0 < arr.size) {i : ℕ}
-    (hia : i < arr.size) (v : α) (j : ℕ) :
-    ((build arr h₀).updateT i v).ret.valAt j
-        = (if j = i then v else (build arr h₀).valAt j)
-      ∧ ((build arr h₀).updateT i v).time ≤ (build arr h₀).height + 1 := by
-  refine ⟨?_, updateT_time_le _ i v⟩
-  rw [updateT_ret]
-  exact valAt_update (valid_build arr h₀) v
-    (by rw [lo_build]; exact Nat.zero_le i) (by rw [hi_build]; exact hia) j
-
 /-- A point update on a built tree is `O(log n)`: at most `⌈log₂ n⌉ + 1` node visits on an
 array of size `n`. -/
 theorem updateT_build_time_le (arr : Array α) (h : 0 < arr.size) (i : ℕ) (v : α) :
@@ -135,19 +119,14 @@ theorem updateT_build_time_le (arr : Array α) (h : 0 < arr.size) (i : ℕ) (v :
 
 /-! ### Cost of `query`
 
-`query` branches into both children, so the naive induction gives `T(d) ≤ 2 T(d-1) + 1`,
-which is exponential and useless. The real argument splits into two regimes: below the
-(unique) node at which the query range splits in two, every descent is *one-sided* — the
-range covers one end of the subtree — with recurrence `T₁(d) ≤ T₁(d-1) + 2`. The
-one-sided lemmas require `Valid st`, since the argument uses `left.hi = right.lo` to
-locate `mid`. Note that `queryT` also charges a tick on disjoint and fully covered
-nodes — in particular a leaf costs `1` while its height is `0`, hence the `+ 1`s. -/
+`query` branches into both children, so the naive induction gives
+`T(d) ≤ 2 T(d-1) + 1`, which is exponential. Instead, below the node at which the query
+range splits in two, every descent is one-sided (the range covers one end of the subtree),
+with recurrence `T₁(d) ≤ T₁(d-1) + 2`. The one-sided lemmas require `Valid st`, since they
+use `left.hi = right.lo` to locate `mid`. `queryT` also charges one visit at disjoint and
+covered nodes; in particular a leaf costs `1` while its height is `0`, hence the `+ 1`s. -/
 
-/-! #### Cost equation lemmas for `queryT`
-
-The time analogue of the equation lemmas for `query` in
-`AlgoLib.DataStructures.SegmentTree.Basic`: one lemma per branch of `queryT`, so the bounds
-below never unfold the cost monad. -/
+/-! #### Cost equation lemmas for `queryT` -/
 
 @[simp] lemma queryT_time_leaf (v : α) (l h ql qr : ℕ) :
     ((leaf v l h).queryT ql qr).time = 1 := rfl
@@ -262,10 +241,8 @@ theorem queryT_build_time_le (arr : Array α) (h : 0 < arr.size) (ql qr : ℕ) :
 
 /-! ### Cost of `build`
 
-Unlike `query` and `update`, `build` touches every node, so the bound is linear rather
-than logarithmic: a tree over `n` leaves has `n - 1` internal nodes, hence `2 * n - 1`
-node visits. By strong induction on `hi - lo`, which is what `fun_induction` on
-`buildAuxT` performs. -/
+`build` creates every node: a tree over `n` leaves has `n - 1` internal nodes, hence
+`2 * n - 1` node visits. -/
 
 /-- Building the subtree covering `[lo, hi)` visits exactly `2 * (hi - lo) - 1` nodes. -/
 theorem buildAuxT_time (arr : Array α) (l h : ℕ) (h1 : l < h) (hle : h ≤ arr.size) :
