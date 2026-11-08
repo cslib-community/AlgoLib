@@ -79,7 +79,6 @@ import AlgoLib.DataStructures.SplayTree.BSTAPI
 import AlgoLib.DataStructures.SplayTree.Basic
 import AlgoLib.DataStructures.SplayTree.Complexity
 import AlgoLib.DataStructures.SplayTree.Correctness
-import AlgoLib.DataStructures.SplayTree.SequentialAccess
 import AlgoLib.DataStructures.SplayTree.StaticOptimality
 import AlgoLib.DataStructures.SplayTree.Weighted
 import AlgoLib.DataStructures.UnionFind.Basic
