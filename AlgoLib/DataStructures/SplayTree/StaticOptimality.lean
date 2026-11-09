@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Benjamin Aram Berendsohn, Antoine du Fresne von Hohenesche
 -/
 
-import AlgoLib.DataStructures.SplayTree.Weighted
+module
+
+public import AlgoLib.DataStructures.SplayTree.Weighted
 
 /-!
 # Static optimality of Splay Trees
@@ -13,40 +15,43 @@ Formalizes static optimality of splay trees with an O(n²) overall overhead, as 
 analysis (https://11011110.github.io/blog/2008/02/07/static-optimality-for.html).
 -/
 
+@[expose] public section
+
 variable {α : Type}
 
 namespace SplayTree
 
 namespace Weighted
 
-open Tree
+open BinaryTree
 
 /-- Total cost of a sequence of accesses in the static tree `t`: the sum of the search path
 lengths of the accessed keys. -/
-def staticCost {m : ℕ} [LinearOrder α] (t : Tree α) (X : Fin m → α) : ℕ :=
+def staticCost {m : ℕ} [LinearOrder α] (t : BinaryTree α) (X : Fin m → α) : ℕ :=
   ∑ i, search_path_len t (X i)
 
-private noncomputable def staticWeight [LinearOrder α] (s : Tree α) (q : α) : ℝ :=
+private noncomputable def staticWeight [LinearOrder α] (s : BinaryTree α) (q : α) : ℝ :=
   3 ^ (s.num_nodes - search_path_len s q : ℝ)
 
-private lemma staticWeight_ge_one [LinearOrder α] (s : Tree α) (q : α) :
+private lemma staticWeight_ge_one [LinearOrder α] (s : BinaryTree α) (q : α) :
     staticWeight s q ≥ 1 :=
   Real.one_le_rpow (by norm_num) (sub_nonneg.mpr (mod_cast search_path_len_le_num_nodes s q))
 
-private lemma staticWeight_pos [LinearOrder α] (s : Tree α) (q : α) : staticWeight s q > 0 :=
+private lemma staticWeight_pos [LinearOrder α] (s : BinaryTree α) (q : α) : staticWeight s q > 0 :=
   FnPos_of_FnLbOne (staticWeight_ge_one s) q
 
 /-- If two weight functions differ by a constant factor on the keys of `t`, so do the sizes. -/
-private lemma size_eq_mul_size {w w' : α → ℝ} {c : ℝ} {t : Tree α}
+private lemma size_eq_mul_size {w w' : α → ℝ} {c : ℝ} {t : BinaryTree α}
     (h : ∀ x ∈ t.toKeyList, w x = c * w' x) : size w t = c * size w' t := by
   rw [size_from_toKeyList, size_from_toKeyList, ← List.sum_map_mul_left]
   exact congrArg List.sum (List.map_congr_left h)
 
-private lemma search_path_len_left [LinearOrder α] (v : α) (l r : Tree α) (q : α) (hqv : q < v) :
+private lemma search_path_len_left [LinearOrder α] (v : α) (l r : BinaryTree α)
+    (q : α) (hqv : q < v) :
     search_path_len (node v l r) q = 1 + search_path_len l q := by
   simp [search_path_len, hqv]
 
-private lemma staticWeight_left [LinearOrder α] (v : α) (l r : Tree α) (q : α) (hqv : q < v) :
+private lemma staticWeight_left [LinearOrder α] (v : α) (l r : BinaryTree α) (q : α) (hqv : q < v) :
     let s := node v l r
     staticWeight s q = 3 ^ (s.num_nodes - l.num_nodes - 1 : ℝ) * staticWeight l q := by
   simp only [staticWeight, num_nodes_node, Nat.cast_add, Nat.cast_one]
@@ -55,7 +60,7 @@ private lemma staticWeight_left [LinearOrder α] (v : α) (l r : Tree α) (q : �
   simp [search_path_len_left v l r q hqv]; linarith
 
 private lemma staticWeight_size_left [LinearOrder α]
-    {v : α} {l r : Tree α} (hbst : (node v l r).IsBST) :
+    {v : α} {l r : BinaryTree α} (hbst : (node v l r).IsBST) :
     let s := node v l r
     size (staticWeight s) l =
       3 ^ (s.num_nodes - l.num_nodes - 1 : ℝ) * size (staticWeight l) l := by
@@ -64,11 +69,13 @@ private lemma staticWeight_size_left [LinearOrder α]
   intro x hx
   exact staticWeight_left v l r x (lt_of_IsBST_left l v r hbst (mem_iff_mem_toKeyList.mpr hx))
 
-private lemma search_path_len_right [LinearOrder α] (v : α) (l r : Tree α) (q : α) (hqv : v < q) :
+private lemma search_path_len_right [LinearOrder α] (v : α) (l r : BinaryTree α)
+    (q : α) (hqv : v < q) :
     search_path_len (node v l r) q = 1 + search_path_len r q := by
   simp [search_path_len, hqv, lt_asymm hqv]
 
-private lemma staticWeight_right [LinearOrder α] (v : α) (l r : Tree α) (q : α) (hqv : v < q) :
+private lemma staticWeight_right [LinearOrder α] (v : α) (l r : BinaryTree α)
+    (q : α) (hqv : v < q) :
     let s := node v l r
     staticWeight s q = 3 ^ (s.num_nodes - r.num_nodes - 1 : ℝ) * staticWeight r q := by
   simp only [staticWeight, num_nodes_node, Nat.cast_add, Nat.cast_one]
@@ -77,7 +84,7 @@ private lemma staticWeight_right [LinearOrder α] (v : α) (l r : Tree α) (q : 
   simp [search_path_len_right v l r q hqv]; linarith
 
 private lemma staticWeight_size_right [LinearOrder α]
-    {v : α} {l r : Tree α} (hbst : (node v l r).IsBST) :
+    {v : α} {l r : BinaryTree α} (hbst : (node v l r).IsBST) :
     let s := node v l r
     size (staticWeight s) r =
       3 ^ (s.num_nodes - r.num_nodes - 1 : ℝ) * size (staticWeight r) r := by
@@ -86,7 +93,7 @@ private lemma staticWeight_size_right [LinearOrder α]
   intro x hx
   exact staticWeight_right v l r x (gt_of_IsBST_right l v r hbst (mem_iff_mem_toKeyList.mpr hx))
 
-private lemma staticWeight_size_self_ub [LinearOrder α] (s : Tree α) (hbst : s.IsBST) :
+private lemma staticWeight_size_self_ub [LinearOrder α] (s : BinaryTree α) (hbst : s.IsBST) :
     size (staticWeight s) s ≤ 3 ^ s.num_nodes := by
   induction s with
   | nil => simp
@@ -123,13 +130,13 @@ private lemma staticWeight_size_self_ub [LinearOrder α] (s : Tree α) (hbst : s
       simp only [this]; apply mul_comm
     linarith
 
-private lemma staticWeight_size_ub [LinearOrder α] (s t : Tree α)
+private lemma staticWeight_size_ub [LinearOrder α] (s t : BinaryTree α)
     (hst : t.toKeyList.Sublist s.toKeyList) (hbst : s.IsBST) :
     size (staticWeight s) t ≤ 3 ^ s.num_nodes :=
   (size_le_size_of_toKeyList_Sublist (FnNonneg_of_FnPos (staticWeight_pos s)) hst).trans
     (staticWeight_size_self_ub s hbst)
 
-private lemma staticWeight_rank_ub [LinearOrder α] (s t : Tree α)
+private lemma staticWeight_rank_ub [LinearOrder α] (s t : BinaryTree α)
     (hst : t.toKeyList.Sublist s.toKeyList) (hbst : s.IsBST) :
     rank (staticWeight s) t ≤ s.num_nodes * Real.logb 2 3 := by
   unfold rank; cases t with
@@ -143,7 +150,7 @@ private lemma staticWeight_rank_ub [LinearOrder α] (s t : Tree α)
       simp
     · exact staticWeight_size_ub s _ hst hbst
 
-private lemma staticWeight_φ_ub_aux [LinearOrder α] (s t : Tree α)
+private lemma staticWeight_φ_ub_aux [LinearOrder α] (s t : BinaryTree α)
     (hst : t.toKeyList.Sublist s.toKeyList) (hbst : s.IsBST) :
     φ (staticWeight s) t ≤ s.num_nodes * t.num_nodes * Real.logb 2 3 := by
   induction t with
@@ -161,7 +168,7 @@ private lemma staticWeight_φ_ub_aux [LinearOrder α] (s t : Tree α)
     have := staticWeight_rank_ub s (node v l r) hst hbst
     linarith
 
-private lemma staticWeight_φ_ub [LinearOrder α] (s t : Tree α)
+private lemma staticWeight_φ_ub [LinearOrder α] (s t : BinaryTree α)
     (hst : s.toKeyList = t.toKeyList) (hbst : s.IsBST) :
     φ (staticWeight s) t ≤ s.num_nodes ^ 2 * Real.logb 2 3 := by
   calc φ (staticWeight s) t ≤ s.num_nodes * t.num_nodes * Real.logb 2 3 := by
@@ -179,13 +186,13 @@ and an O(n²) additive term.
 Assumes that all queries are successful.
 -/
 theorem splay_tree_static_optimality [LinearOrder α] (m : ℕ)
-    (init s : Tree α) (hkeys : s.toKeyList = init.toKeyList)
+    (init s : BinaryTree α) (hkeys : s.toKeyList = init.toKeyList)
     (hinitbst : init.IsBST)
     (X : Fin m → α) (hX : ∀ i, X i ∈ init) :
     let n := s.num_nodes
     splay.sequence_cost init X ≤ m + (Real.logb 2 3) * (3 * staticCost s X + n ^ 2) := by
   have hsbst : s.IsBST := IsBST_of_toKeyList_eq hkeys hinitbst
-  have hφ_ub : (∀ (t : Tree α), t.toKeyList = init.toKeyList
+  have hφ_ub : (∀ (t : BinaryTree α), t.toKeyList = init.toKeyList
       → φ (staticWeight s) t ≤ ↑s.num_nodes ^ 2 * Real.logb 2 3) := by
     intro t h; apply staticWeight_φ_ub
     · simp [h, hkeys]

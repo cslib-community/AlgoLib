@@ -5,9 +5,11 @@ Authors: Anton Kovsharov, Antoine du Fresne von Hohenesche,
   Sorrachai Yingchareonthawornchai
 -/
 
-import AlgoLib.DataStructures.SplayTree.Basic
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.Base
+module
+
+public import AlgoLib.DataStructures.SplayTree.Basic
+public import Mathlib.Data.Real.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 /-!
 # Amortized Complexity of Splay Trees
@@ -21,11 +23,13 @@ the classical O(m log n + n log n) total cost bound for a sequence of
 splay operations.
 -/
 
+@[expose] public section
+
 variable {α : Type}
 
 namespace SplayTree
 
-open Tree
+open BinaryTree
 
 /-! ### Cost and Search-Path Length -/
 section CostAndSearchPath
@@ -34,19 +38,19 @@ section CostAndSearchPath
 Caution: If the search fails, we do not rotate (as currently
 defined in splay) the empty leaf and start to rotate from
 its ancestor, so the cost is path.length - 1. -/
-def splay.cost [LinearOrder α] (t : Tree α) (q : α) : ℝ :=
+def splay.cost [LinearOrder α] (t : BinaryTree α) (q : α) : ℝ :=
   match descend t q with
   | (.nil, []) => 0
   | (.nil, _ :: rest) => rest.length
   | (.node _ _ _, path) => path.length
 
-theorem splay_cost_nonneg [LinearOrder α] (t : Tree α) (q : α) :
+theorem splay_cost_nonneg [LinearOrder α] (t : BinaryTree α) (q : α) :
     0 ≤ splay.cost t q := by
   unfold splay.cost
   split <;> simp
 
 /-- Subtrees have positive search path length. -/
-lemma search_path_len_node_pos [LinearOrder α] (l : Tree α) (k : α) (r : Tree α)
+lemma search_path_len_node_pos [LinearOrder α] (l : BinaryTree α) (k : α) (r : BinaryTree α)
     (q : α) : 1 ≤ (l △[k] r).search_path_len q := by
   unfold search_path_len
   split_ifs <;> omega
@@ -54,7 +58,7 @@ lemma search_path_len_node_pos [LinearOrder α] (l : Tree α) (k : α) (r : Tree
 /-- Relation between `search_path_len` and the length of the path produced by
 `descend`. When `descend` reaches a node, the search path is one link longer;
 when it reaches `.nil`, the two are equal. -/
-theorem search_path_len_eq_descend_length [LinearOrder α] (t : Tree α) (q : α) :
+theorem search_path_len_eq_descend_length [LinearOrder α] (t : BinaryTree α) (q : α) :
     t.search_path_len q =
       (descend t q).2.length +
         (match (descend t q).1 with | .nil => 0 | .node _ _ _ => 1) := by
@@ -89,11 +93,11 @@ path to give the O(log n) amortized bound.
 noncomputable section PotentialMethod
 
 /-- Rank of a tree: `log_2(num_nodes)`, or 0 for the empty tree. -/
-def rank (t : Tree α) : ℝ :=
+def rank (t : BinaryTree α) : ℝ :=
   if t.num_nodes = 0 then 0 else Real.logb 2 t.num_nodes
 
 /-- Potential of a tree: sum of ranks over all subtrees (including itself). -/
-def φ : Tree α → ℝ
+def φ : BinaryTree α → ℝ
   | .nil => 0
   | s@(l △[_] r) => rank s + φ l + φ r
 
@@ -127,25 +131,25 @@ theorem log_sum_le {a b c : ℝ} (ha : 0 < a) (hb : 0 < b)
 
 /-! #### Basic rank and potential lemmas -/
 
-@[simp] lemma rank_empty : rank (.nil : Tree α) = 0 := by simp [rank]
+@[simp] lemma rank_empty : rank (.nil : BinaryTree α) = 0 := by simp [rank]
 
-lemma rank_nonneg (t : Tree α) : 0 ≤ rank t := by
+lemma rank_nonneg (t : BinaryTree α) : 0 ≤ rank t := by
   simp only [rank]; split_ifs with h
   · rfl
   · exact Real.logb_nonneg (by grind)
       (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr h)
 
-@[simp] lemma φ_empty : φ (.nil : Tree α) = 0 := rfl
+@[simp] lemma φ_empty : φ (.nil : BinaryTree α) = 0 := rfl
 
-@[simp] lemma φ_node (l : Tree α) (k : α) (r : Tree α) :
+@[simp] lemma φ_node (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     φ (l △[k] r) = rank (l △[k] r) + φ l + φ r := rfl
 
-lemma φ_nonneg : ∀ t : Tree α, 0 ≤ φ t
+lemma φ_nonneg : ∀ t : BinaryTree α, 0 ≤ φ t
   | .nil => le_refl _
   | l △[k] r => by
       simp [φ]; linarith [rank_nonneg (l △[k] r), φ_nonneg l, φ_nonneg r]
 
-lemma rank_le_of_num_nodes_le {s t : Tree α}
+lemma rank_le_of_num_nodes_le {s t : BinaryTree α}
     (h : s.num_nodes ≤ t.num_nodes) : rank s ≤ rank t := by
   simp only [rank]
   split_ifs with hs ht ht
@@ -157,21 +161,21 @@ lemma rank_le_of_num_nodes_le {s t : Tree α}
       (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hs)
       (by simp_all only [Nat.cast_le])
 
-lemma rank_eq_of_num_nodes_eq {s t : Tree α}
+lemma rank_eq_of_num_nodes_eq {s t : BinaryTree α}
     (h : s.num_nodes = t.num_nodes) : rank s = rank t := by
   exact le_antisymm (rank_le_of_num_nodes_le (le_of_eq h))
     (rank_le_of_num_nodes_le (le_of_eq h.symm))
 
-@[simp] lemma rank_splay [LinearOrder α] (t : Tree α) (q : α) :
+@[simp] lemma rank_splay [LinearOrder α] (t : BinaryTree α) (q : α) :
     rank (splay t q) = rank t :=
   rank_eq_of_num_nodes_eq (num_nodes_splay t q)
 
 /-! #### Mirror preserves rank and potential -/
 
-lemma rank_mirror (t : Tree α) : rank t.mirror = rank t := by
+lemma rank_mirror (t : BinaryTree α) : rank t.mirror = rank t := by
   simp [rank]
 
-lemma φ_mirror : ∀ t : Tree α, φ t.mirror = φ t
+lemma φ_mirror : ∀ t : BinaryTree α, φ t.mirror = φ t
   | .nil => rfl
   | l △[k] r => by
     change rank (r.mirror △[k] l.mirror) + φ r.mirror + φ l.mirror =
@@ -184,7 +188,7 @@ lemma φ_mirror : ∀ t : Tree α, φ t.mirror = φ t
 /-- Transfer a potential-step inequality from mirrored trees to the
 originals. -/
 private lemma φ_transfer_mirror
-    {step s c step' s' : Tree α}
+    {step s c step' s' : BinaryTree α}
     (hstep : step.mirror = step')
     (hs : s.mirror = s')
     (h : φ step' - φ s' + 2 ≤
@@ -214,28 +218,28 @@ private lemma one_le_logb {x : ℝ} (hx : 2 ≤ x) :
 
 /-! #### Potential of subtrees versus the whole tree -/
 
-theorem φ_subtree_le_left (l : Tree α) (k : α) (r : Tree α) :
+theorem φ_subtree_le_left (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     φ l ≤ φ (l △[k] r) := by
   simp [φ]; linarith [rank_nonneg (l △[k] r), φ_nonneg r]
 
-theorem φ_subtree_le_right (l : Tree α) (k : α) (r : Tree α) :
+theorem φ_subtree_le_right (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     φ r ≤ φ (l △[k] r) := by
   simp [φ]; linarith [rank_nonneg (l △[k] r), φ_nonneg l]
 
-theorem φ_le_attach (c : Tree α) (f : Frame α) :
+theorem φ_le_attach (c : BinaryTree α) (f : Frame α) :
   φ c ≤ φ (f.attach c) := by
   cases f with | mk d k s =>
   cases d <;> simp [Frame.attach, φ_node] <;>
   linarith [rank_nonneg (c △[k] s), rank_nonneg (s △[k] c),
   φ_nonneg c, φ_nonneg s]
 
-theorem φ_le_reassemble (c : Tree α) (path : List (Frame α)) :
+theorem φ_le_reassemble (c : BinaryTree α) (path : List (Frame α)) :
     φ c ≤ φ (reassemble c path) := by
   induction path generalizing c with
   | nil => simp
   | cons f rest ih => simp only [reassemble_cons]; exact le_trans (φ_le_attach c f) (ih _)
 
-theorem φ_descend_subtree_le [LinearOrder α] (t : Tree α) (q : α) :
+theorem φ_descend_subtree_le [LinearOrder α] (t : BinaryTree α) (q : α) :
     φ (descend t q).1 ≤ φ t := by
   have h := descend_preserves_tree t q
   calc φ (descend t q).1
@@ -243,15 +247,15 @@ theorem φ_descend_subtree_le [LinearOrder α] (t : Tree α) (q : α) :
         φ_le_reassemble _ _
     _ = φ t := by rw [h]
 
-theorem φ_attach_base_le [LinearOrder α] (t : Tree α) (q : α)
+theorem φ_attach_base_le [LinearOrder α] (t : BinaryTree α) (q : α)
   (f : Frame α) (rest : List (Frame α))
   (hd : descend t q = (.nil, f :: rest)) : φ (f.attach .nil) ≤ φ t := by
   have h := descend_preserves_tree t q
   rw [hd] at h; simp only at h; rw [← h]
   exact φ_le_reassemble (f.attach .nil) rest
 
-theorem φ_descend_node_le [LinearOrder α] (t : Tree α) (q : α)
-  (l : Tree α) (k : α) (r : Tree α) (path : List (Frame α))
+theorem φ_descend_node_le [LinearOrder α] (t : BinaryTree α) (q : α)
+  (l : BinaryTree α) (k : α) (r : BinaryTree α) (path : List (Frame α))
   (hd : descend t q = (l △[k] r, path)) : φ (l △[k] r) ≤ φ t := by
   have h := descend_preserves_tree t q
   rw [hd] at h; simp_all only [φ_node, ge_iff_le]; rw [← h]
@@ -259,7 +263,7 @@ theorem φ_descend_node_le [LinearOrder α] (t : Tree α) (q : α)
 
 /-! #### Splay step potential bounds -/
 
-theorem φ_zig (c : Tree α) (f : Frame α) :
+theorem φ_zig (c : BinaryTree α) (f : Frame α) :
     φ (f.dir.bringUp (f.attach c)) - φ (f.attach c) ≤
       rank (f.dir.bringUp (f.attach c)) - rank c := by
   rcases f with ⟨d, key, sib⟩
@@ -279,8 +283,8 @@ theorem φ_zig (c : Tree α) (f : Frame α) :
       by simp; omega)]
 
 /-- Zig-zig, left–left direction only. -/
-private theorem φ_zigzig_left (c : Tree α)
-    (k1 : α) (n1 : Tree α) (k2 : α) (n2 : Tree α) :
+private theorem φ_zigzig_left (c : BinaryTree α)
+    (k1 : α) (n1 : BinaryTree α) (k2 : α) (n2 : BinaryTree α) :
     let s := (Frame.mk .L k2 n2).attach ((Frame.mk .L k1 n1).attach c)
     let step := rotateRight (rotateRight s)
     φ step - φ s + 2 ≤ 3 * (rank step - rank c) := by
@@ -314,7 +318,7 @@ private theorem φ_zigzig_left (c : Tree α)
       logb_mono (show (0 : ℝ) < 1 + a + b by linarith)
         (show 1 + a + b ≤ 2 + a + b + nn1 by linarith)]
 
-theorem φ_zigzig (c : Tree α) (f1 f2 : Frame α)
+theorem φ_zigzig (c : BinaryTree α) (f1 f2 : Frame α)
     (heq : f1.dir = f2.dir) :
     let s := f2.attach (f1.attach c)
     let step := f2.dir.bringUp (f2.dir.bringUp s)
@@ -327,8 +331,8 @@ theorem φ_zigzig (c : Tree α) (f1 f2 : Frame α)
     exact φ_transfer_mirror (by simp [mirror_rotateLeft]) (by simp) h
 
 /-- Zig-zag, left–right direction only. -/
-private theorem φ_zigzag_left (c : Tree α)
-    (k1 : α) (n1 : Tree α) (k2 : α) (n2 : Tree α) :
+private theorem φ_zigzag_left (c : BinaryTree α)
+    (k1 : α) (n1 : BinaryTree α) (k2 : α) (n2 : BinaryTree α) :
     let f1 : Frame α := ⟨.L, k1, n1⟩
     let f2 : Frame α := ⟨.R, k2, n2⟩
     let s := f2.attach (f1.attach c)
@@ -369,7 +373,7 @@ private theorem φ_zigzag_left (c : Tree α)
       logb_mono (show (0 : ℝ) < 1 + a + b by linarith)
         (show 1 + a + b ≤ 3 + nn2 + a + b + nn1 by linarith)]
 
-theorem φ_zigzag (c : Tree α) (f1 f2 : Frame α)
+theorem φ_zigzag (c : BinaryTree α) (f1 f2 : Frame α)
     (hne : f1.dir ≠ f2.dir) :
     let s := f2.attach (f1.attach c)
     let step := f2.dir.bringUp (applyChild f2.dir f1.dir.bringUp s)
@@ -384,14 +388,14 @@ theorem φ_zigzag (c : Tree α) (f1 f2 : Frame α)
 
 /-! #### Telescoping: potential change along the full splayUp -/
 
-lemma φ_attach_congr {s s' : Tree α} (f : Frame α)
+lemma φ_attach_congr {s s' : BinaryTree α} (f : Frame α)
     (h : s.num_nodes = s'.num_nodes) :
     φ (f.attach s') - φ (f.attach s) = φ s' - φ s := by
   cases f with | mk d k sib =>
   cases d <;> simp only [Frame.attach, φ_node, add_sub_add_right_eq_sub] <;>
     (unfold rank; simp [h])
 
-lemma φ_reassemble_congr {s s' : Tree α} (path : List (Frame α))
+lemma φ_reassemble_congr {s s' : BinaryTree α} (path : List (Frame α))
     (h : s.num_nodes = s'.num_nodes) :
     φ (reassemble s' path) - φ (reassemble s path) = φ s' - φ s := by
   induction path generalizing s s' with
@@ -403,7 +407,7 @@ lemma φ_reassemble_congr {s s' : Tree α} (path : List (Frame α))
 
 /-- The total potential change of splayUp plus the path length is at
     most 3 × the rank increase + 1. -/
-theorem φ_splayUp (c : Tree α) (path : List (Frame α)) :
+theorem φ_splayUp (c : BinaryTree α) (path : List (Frame α)) :
     φ (splayUp c path) - φ (reassemble c path) + path.length ≤
       3 * (rank (splayUp c path) - rank c) + 1 := by
   induction c, path using splayUp_induction with
@@ -436,14 +440,14 @@ theorem φ_splayUp (c : Tree α) (path : List (Frame α)) :
 
 /-! #### The main O(log n) amortized bound -/
 
-private lemma rank_eq_logb {t : Tree α}
+private lemma rank_eq_logb {t : BinaryTree α}
     (h : t.num_nodes ≠ 0) :
     rank t = Real.logb 2 t.num_nodes := by
   simp [rank, h]
 
 private lemma num_nodes_pos_of_descend_nonempty_path
-    [LinearOrder α] {t : Tree α} {q : α}
-    {reached : Tree α} {path : List (Frame α)}
+    [LinearOrder α] {t : BinaryTree α} {q : α}
+    {reached : BinaryTree α} {path : List (Frame α)}
     (hdecomp : descend t q = (reached, path))
     (hpath : path ≠ []) : t.num_nodes ≠ 0 := by
   intro h0
@@ -454,7 +458,7 @@ private lemma num_nodes_pos_of_descend_nonempty_path
   · simp [pathNodes, Frame.nodes] at hd; omega
 
 theorem splay_amortized_bound [LinearOrder α]
-    (t : Tree α) (q : α) :
+    (t : BinaryTree α) (q : α) :
     φ (splay t q) - φ t + splay.cost t q ≤
       3 * Real.logb 2 t.num_nodes + 1 := by
   rcases hdecomp : descend t q with ⟨reached, path⟩
@@ -479,7 +483,7 @@ theorem splay_amortized_bound [LinearOrder α]
       rw [h_cost]
       have h_eq : splay t q = splayUp (f.attach .nil) rest := by simp [splay, hdecomp]
       rw [h_eq]
-      set base := f.attach (.nil : Tree α)
+      set base := f.attach (.nil : BinaryTree α)
       have hpres' : reassemble base rest = t := by rw [← hpres]; simp [reassemble, base]
       have hφ := φ_splayUp base rest
       rw [hpres'] at hφ
@@ -515,27 +519,27 @@ section SequenceCost
 /-! #### Splay Sequence -/
 
 /-- A clean sequence generator for a series of splays. -/
-def splaySeq [LinearOrder α] {m : ℕ} (init : Tree α)
-(X : Fin m → α) : Fin (m + 1) → Tree α :=
+def splaySeq [LinearOrder α] {m : ℕ} (init : BinaryTree α)
+(X : Fin m → α) : Fin (m + 1) → BinaryTree α :=
   fun i => Nat.recOn i.val init (fun j acc =>
     if h : j < m then splay acc (X ⟨j, h⟩) else acc)
 
 /-- The total cost is defined as the sum of actual rotations
 performed across the generated sequence. -/
-def splay.sequence_cost [LinearOrder α] {m : ℕ} (init : Tree α) (X : Fin m → α) : ℝ :=
+def splay.sequence_cost [LinearOrder α] {m : ℕ} (init : BinaryTree α) (X : Fin m → α) : ℝ :=
   ∑ i : Fin m, splay.cost (splaySeq init X i.castSucc) (X i)
 
 /-- The tree at step `i+1` is exactly the result of splaying the target key
 on the tree at step `i`. -/
 lemma splaySeq_succ [LinearOrder α] {m : ℕ}
-(init : Tree α) (X : Fin m → α) (i : Fin m) :
+(init : BinaryTree α) (X : Fin m → α) (i : Fin m) :
     splaySeq init X i.succ = splay (splaySeq init X i.castSucc) (X i) := by
   unfold splaySeq
   simp only [Fin.val_succ, Fin.val_castSucc, Fin.is_lt, ↓reduceDIte]
 
 /-- Splaying preserves the number of nodes across the entire sequence. -/
 lemma splaySeq_num_nodes [LinearOrder α] {m : ℕ}
-(init : Tree α) (X : Fin m → α) (i : Fin (m + 1)) :
+(init : BinaryTree α) (X : Fin m → α) (i : Fin (m + 1)) :
     (splaySeq init X i).num_nodes = init.num_nodes := by
   unfold splaySeq
   generalize i.val = j
@@ -561,7 +565,7 @@ private lemma nat_log_le (a b : ℕ) (hab : a ≤ b) :
     exact mul_le_mul_of_nonneg_left h_log ha_nonneg
 
 /-- Bound the maximum possible potential of any initial tree: Φ ≤ n log₂ n. -/
-lemma φ_le_n_log_n [LinearOrder α] (init : Tree α) :
+lemma φ_le_n_log_n [LinearOrder α] (init : BinaryTree α) :
     φ init ≤ init.num_nodes * Real.logb 2 init.num_nodes := by
   induction init with
   | nil => simp [φ]
@@ -614,7 +618,7 @@ theorem amortized_cost_bound' {S : Type*} (m : ℕ)
     hΦ_nonneg (s (Fin.last m))]
 
 theorem splay_total_cost [LinearOrder α] (m : ℕ)
-    (t : Fin (m + 1) → Tree α)
+    (t : Fin (m + 1) → BinaryTree α)
     (q : Fin m → α) (n : ℕ)
     (hseq : ∀ i : Fin m,
       t i.succ = splay (t i.castSucc) (q i))
@@ -647,7 +651,7 @@ theorem splay_total_cost [LinearOrder α] (m : ℕ)
 /-! #### The Main Total Cost Bound Theorem -/
 
 theorem nlogn_cost [LinearOrder α] (n m : ℕ) (X : Fin m → α)
-    (init : Tree α) (h_size : init.num_nodes = n) :
+    (init : BinaryTree α) (h_size : init.num_nodes = n) :
     splay.sequence_cost init X ≤ m * (3 * Real.logb 2 n + 1) + n * Real.logb 2 n := by
   have h_amortized := splay_total_cost m (splaySeq init X) X n
     (splaySeq_succ init X)

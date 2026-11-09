@@ -3,15 +3,17 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Predicates
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Append
-import AlgoLib.Theory.Graph.Structures.VertexSeq.MapZip
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Subseq
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Erase
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Edges
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Index
-import AlgoLib.Theory.Graph.Structures.VertexSeq.CommonPrefix
+module
+
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Predicates
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Append
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.MapZip
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Subseq
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Erase
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Edges
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Index
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.CommonPrefix
 
 /-!
 # Vertex sequences

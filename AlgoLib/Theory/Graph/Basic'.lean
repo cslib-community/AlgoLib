@@ -4,9 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai
 -/
 
-import Cslib.Foundations.Semantics.LTS.Basic
-import Mathlib.Combinatorics.SimpleGraph.Basic
-import Mathlib.Combinatorics.Graph.Basic
+module
+
+public import Cslib.Foundations.Semantics.LTS.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.Graph.Basic
 
 @[expose] public section
 

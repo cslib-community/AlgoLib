@@ -3,8 +3,10 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import Mathlib.Data.Sym.Sym2
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Erase
+module
+
+public import Mathlib.Data.Sym.Sym2
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Erase
 
 /-!
 # Vertex sequences: traversed edges and arcs
@@ -24,6 +26,8 @@ multiplicity are retained (needed for trails/Eulerian walks), and a graph's
 * `VertexSeq.edges` — the list of unordered edges traversed.
 * `VertexSeq.arcs` — the list of directed arcs traversed.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

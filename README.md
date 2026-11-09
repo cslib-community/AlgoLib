@@ -18,11 +18,18 @@ Install [Lean and its editor support](https://lean-lang.org/install/) and
 [Git](https://git-scm.com/downloads). The Lean installation includes `elan`, the
 toolchain manager, and `lake`, the build tool and package manager.
 
+To start a new project with the supported Lean version:
+
+```sh
+lake +leanprover/lean4:v4.35.0 new my_algolib_project lib
+cd my_algolib_project
+```
+
 Use the Lean version specified by AlgoLib's [`lean-toolchain`](lean-toolchain)
 at the revision you depend on. The current version is:
 
 ```text
-leanprover/lean4:v4.30.0-rc2
+leanprover/lean4:v4.35.0
 ```
 
 For an existing project, its `lean-toolchain` must match this version, and any
@@ -59,13 +66,17 @@ lake exe cache get
 ```
 
 The cache command downloads precompiled Mathlib dependencies to reduce the first
-build's work. AlgoLib's dependencies are fetched automatically.
+build's work. AlgoLib's dependencies are fetched automatically, including Mathlib
+and CSLib pinned to `v4.35.0`.
 
 ### Import and build
 
-Import the modules you need in your Lean files. For example:
+AlgoLib uses Lean's module system. A new Lean file can import the modules it
+needs as follows:
 
 ```lean
+module
+
 import AlgoLib.Theory.Graph.Basic
 
 #check AlgoLib.Graph
@@ -76,6 +87,8 @@ import AlgoLib.Theory.Graph.Basic
 You can also import the modules collected in the library's root file with:
 
 ```lean
+module
+
 import AlgoLib
 ```
 
@@ -96,6 +109,17 @@ The examples above follow `main` when you run `lake update AlgoLib`. For a
 reproducible project, replace `main` with the full commit hash of a revision you
 have tested, and commit the generated `lake-manifest.json`. Use the
 `lean-toolchain` from that same AlgoLib revision.
+
+### Upgrading an existing project
+
+Set your project's `lean-toolchain` to `leanprover/lean4:v4.35.0`, then run the
+dependency and build commands above. If you require Mathlib or CSLib directly,
+align those requirements with their `v4.35.0` releases.
+
+Mathlib renamed `Tree` to `BinaryTree`. AlgoLib's binary-tree API now uses the
+`BinaryTree` namespace too: update `Tree α`, `open Tree`, and qualified names
+such as `Tree.num_nodes` to `BinaryTree α`, `open BinaryTree`, and
+`BinaryTree.num_nodes`. The module import paths are unchanged.
 
 ## Building AlgoLib locally
 

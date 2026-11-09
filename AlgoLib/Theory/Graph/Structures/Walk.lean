@@ -4,9 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan,
          Huang.JiangYi (co/ Claude Opus 5)
 -/
-import Mathlib.Data.Sym.Sym2
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Structures.VertexSeq
+module
+
+public import Mathlib.Data.Sym.Sym2
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Structures.VertexSeq
 
 /-!
 # Walks
@@ -19,6 +21,8 @@ edge `e` joining `w.tail` to `v`.
 This file mirrors the API of `VertexSeq` lemma-for-lemma, with the additional
 edge list `toEdgeList` and edge-aware membership.
 -/
+
+@[expose] public section
 
 variable {α ε : Type*}
 

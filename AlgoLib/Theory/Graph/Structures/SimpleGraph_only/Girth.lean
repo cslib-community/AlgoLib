@@ -3,11 +3,13 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Degree
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Bipartite
-import Mathlib.Data.ENat.Lattice
-import Mathlib.Data.Set.Card
+module
+
+public import AlgoLib.Theory.Graph.Degree
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Bipartite
+public import Mathlib.Data.ENat.Lattice
+public import Mathlib.Data.Set.Card
 
 /-!
 # Girth
@@ -41,6 +43,8 @@ over `ℕ∞`. The empty-index convention makes the girth of an acyclic graph `�
 automatically, and the infimum API (`le_iInf`, `iInf₂_le`) drives the basic
 lemmas below; see `girth.ge_iff` for the workhorse characterization.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

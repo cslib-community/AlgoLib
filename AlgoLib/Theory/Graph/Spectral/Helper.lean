@@ -1,6 +1,10 @@
-import Mathlib.Tactic
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Finite
+module
+
+public import Mathlib.Tactic
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Finite
+
+@[expose] public section
 
 -- Arithmetic Helpers
 -- Authors: Weixuan Yuan, Yuchen Zhong

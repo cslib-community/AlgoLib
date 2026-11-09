@@ -3,11 +3,13 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Data.Set.Card.Arithmetic
+module
+
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # Counting lemmas for the Moore bounds
@@ -23,6 +25,8 @@ so that the graph development can stay free of ad-hoc cardinality reasoning.
 * `Set.mul_ncard_le_ncard_of_children` — if every element of `L` owns at least `k`
   elements of `N`, and distinct elements own disjoint sets, then `k * |L| ≤ |N|`.
 -/
+
+@[expose] public section
 
 namespace Set
 

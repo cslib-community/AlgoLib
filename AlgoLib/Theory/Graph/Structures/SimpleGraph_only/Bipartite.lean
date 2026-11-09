@@ -3,8 +3,10 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph
-import Mathlib.Algebra.Group.Nat.Even
+module
+
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph
+public import Mathlib.Algebra.Group.Nat.Even
 
 /-!
 # Bipartite simple graphs
@@ -41,6 +43,8 @@ induction on `IsVertexSeqIn`; the closed-walk and cycle statements are short
 corollaries of it, and live in the `IsBipartite` namespace because that is the
 predicate they assume.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

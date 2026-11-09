@@ -3,9 +3,11 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Adjacency
-import AlgoLib.Theory.Graph.Subgraph
-import AlgoLib.Theory.Graph.Structures.SimpleWalk
+module
+
+public import AlgoLib.Theory.Graph.Adjacency
+public import AlgoLib.Theory.Graph.Subgraph
+public import AlgoLib.Theory.Graph.Structures.SimpleWalk
 
 /-!
 # Vertex sequences realized in a simple directed graph
@@ -49,6 +51,8 @@ simple walks to a `SimpleDiGraph`.
   `IsVertexSeqIn` on `w.val`; later API should normally be proved by delegating
   to the vertex sequence layer.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

@@ -3,8 +3,10 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Adjacency
-import AlgoLib.Theory.Graph.Subgraph
+module
+
+public import AlgoLib.Theory.Graph.Adjacency
+public import AlgoLib.Theory.Graph.Subgraph
 
 /-!
 # Deleting vertices and edges
@@ -36,6 +38,8 @@ a set of edges, or remove a set of vertices.
   deletion on the labelled types has a genuine design question (delete by label or by
   endpoint pair?) that should not be settled here as a side effect.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 variable {α : Type*}
@@ -134,9 +138,9 @@ lemma SimpleGraph.deleteVertices_mono (G : SimpleGraph α) {S₁ S₂ : Set α}
 makes the `induce` API of `AlgoLib.Graph.Subgraph` available for `deleteVertices`. -/
 lemma SimpleGraph.deleteVertices_eq_induce (G : SimpleGraph α) (S : Set α) :
     G.deleteVertices S = G.induce Sᶜ := by
-  cases G
-  simp only [SimpleGraph.deleteVertices, SimpleGraph.induce, SimpleGraph.mk.injEq]
-  refine ⟨?_, rfl⟩
-  rw [Set.diff_eq, Set.inter_comm]
+  have hv : G.vertexSet \ S = Sᶜ ∩ G.vertexSet := by
+    ext v
+    exact and_comm
+  exact (SimpleGraph.mk.injEq ..).mpr ⟨hv, rfl⟩
 
 end AlgoLib

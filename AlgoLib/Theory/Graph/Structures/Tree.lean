@@ -4,8 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan,
          Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Connectivity.Reachable
-import AlgoLib.Theory.Graph.Structures.Forest
+module
+
+public import AlgoLib.Theory.Graph.Connectivity.Reachable
+public import AlgoLib.Theory.Graph.Structures.Forest
 
 /-!
 # Trees
@@ -26,6 +28,8 @@ carried a second, standalone definition of `IsConnected` phrased over the now-re
 `SimpleGraph.Contains`; it has been removed in favour of the canonical one, so that
 there is a single notion of connectedness in the library.
 -/
+
+@[expose] public section
 
 open AlgoLib
 

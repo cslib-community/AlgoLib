@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan,
          Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph
+module
+
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph
 
 /-!
 # Forests
@@ -28,6 +30,8 @@ hand that a walk's vertices and edges lie in `G`. That has been retired in favou
 `SimpleGraph.IsSimpleWalkIn`, which says the same thing (see
 `SimpleGraph.IsSimpleWalkIn.iff_edges`) and carries the whole closure API.
 -/
+
+@[expose] public section
 
 open AlgoLib
 

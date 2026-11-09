@@ -1,4 +1,8 @@
-import AlgoLib.Theory.Graph.Spectral.Expansion
+module
+
+public import AlgoLib.Theory.Graph.Spectral.Expansion
+
+@[expose] public section
 
 -- Cheeger's Lower Bound
 -- Authors: Weixuan Yuan, Yuchen Zhong

@@ -3,13 +3,15 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Huang.JiangYi (co/ Claude Opus 5)
 -/
-import Mathlib.Algebra.Group.Nat.Even
-import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Data.Set.Card
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Set.Finite.Range
-import Mathlib.Data.Sym.Card
-import AlgoLib.Theory.Graph.Basic
+module
+
+public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Set.Card
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Data.Set.Finite.Range
+public import Mathlib.Data.Sym.Card
+public import AlgoLib.Theory.Graph.Basic
 
 /-!
 # Finiteness of graphs
@@ -71,6 +73,8 @@ proved rather than assumed.
 * `SimpleDiGraph.card_edgeFinset_le_two_card_choose_two` —
   `|E(G)| ≤ 2·C(|V(G)|, 2)`.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 
@@ -286,7 +290,7 @@ subtype. -/
 private lemma SimpleGraph.vertexFinset_card_eq (G : SimpleGraph α) [Finite G.vertexSet]
     [Fintype G.vertexSet] :
     G.vertexFinset.card = Fintype.card G.vertexSet := by
-  simp [SimpleGraph.vertexFinset]
+  exact Set.toFinset_card G.vertexSet
 
 /-- Lift an edge of `G` to a non-diagonal `Sym2` on the vertex subtype. -/
 private lemma SimpleGraph.edge_lift (G : SimpleGraph α) {e : Sym2 α} (he : e ∈ G.edgeSet) :
@@ -334,7 +338,7 @@ theorem SimpleGraph.card_edgeFinset_le_card_choose_two
 private lemma SimpleDiGraph.vertexFinset_card_eq (G : SimpleDiGraph α)
     [Fintype G.vertexSet] :
     G.vertexFinset.card = Fintype.card G.vertexSet := by
-  simp [SimpleDiGraph.vertexFinset]
+  exact Set.toFinset_card G.vertexSet
 
 /-- The edge set of a simple directed graph has size at most `2·C(|V|, 2)`.
 The proof embeds `E(G)` into the off-diagonal of `V × V`. -/

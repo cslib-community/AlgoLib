@@ -3,8 +3,10 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Connectivity.Reachable
-import Mathlib.Data.Set.Card
+module
+
+public import AlgoLib.Theory.Graph.Connectivity.Reachable
+public import Mathlib.Data.Set.Card
 
 /-!
 # Connected components
@@ -46,6 +48,8 @@ represents them as sets of vertices and collects the facts that make
   correct on infinite graphs. Where a bare `Prop` suffices, prefer `Set.Nontrivial` and
   the reachability-level characterizations below, which avoid cardinals altogether.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

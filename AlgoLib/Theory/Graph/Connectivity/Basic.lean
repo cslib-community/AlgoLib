@@ -3,11 +3,13 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5), Basil Rohner, Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Theory.Graph.Connectivity.Reachable
-import AlgoLib.Theory.Graph.Connectivity.Directed
-import AlgoLib.Theory.Graph.Connectivity.Components
-import AlgoLib.Theory.Graph.Connectivity.Cuts
-import AlgoLib.Theory.Graph.Connectivity.Connectivity
+module
+
+public import AlgoLib.Theory.Graph.Connectivity.Reachable
+public import AlgoLib.Theory.Graph.Connectivity.Directed
+public import AlgoLib.Theory.Graph.Connectivity.Components
+public import AlgoLib.Theory.Graph.Connectivity.Cuts
+public import AlgoLib.Theory.Graph.Connectivity.Connectivity
 
 /-!
 # `AlgoLib.Theory.Graph.Connectivity`

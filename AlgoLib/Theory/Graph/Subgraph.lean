@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai
 -/
-import AlgoLib.Theory.Graph.Basic
+module
+
+public import AlgoLib.Theory.Graph.Basic
 
 /-!
 # Subgraphs and induced subgraphs
@@ -48,6 +50,8 @@ with a subgraph predicate and an induced-subgraph constructor.
   `G.edgeSet`, so `loopless'` (when present) is inherited verbatim from
   `G`; no separate looplessness obligation appears.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 variable {α β : Type*}

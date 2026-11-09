@@ -3,9 +3,11 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Fable 5.1)
 -/
-import AlgoLib.Theory.Graph.Structures.InSimpleDiGraph
-import AlgoLib.Theory.Graph.Connectivity.Reachable
-import Mathlib.Data.ENat.Lattice
+module
+
+public import AlgoLib.Theory.Graph.Structures.InSimpleDiGraph
+public import AlgoLib.Theory.Graph.Connectivity.Reachable
+public import Mathlib.Data.ENat.Lattice
 
 /-!
 # Reachability and distance in a simple directed graph
@@ -52,6 +54,8 @@ that definition usable.
   `SimpleDiGraph.dist` on `G.toSimpleDiGraph`: one definition, one algorithm, and one
   correctness proof serve both kinds of graph.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 
@@ -134,6 +138,7 @@ theorem le_dist_iff {G : SimpleDiGraph α} {u v : α} {n : ℕ∞} :
 theorem dist_eq_top_iff {G : SimpleDiGraph α} {u v : α} :
     G.dist u v = ⊤ ↔ ¬ G.Reachable u v := by
   simp [dist, iInf_eq_top, Reachable]
+  exact ⟨fun h w hG hu hns => h w hns hG hu, fun h w hns hG hu => h w hG hu hns⟩
 
 /-- `v` is reachable from `u` exactly when the distance is finite. -/
 theorem reachable_iff_dist_ne_top {G : SimpleDiGraph α} {u v : α} :

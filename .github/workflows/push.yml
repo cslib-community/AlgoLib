@@ -25,7 +25,7 @@ jobs:
       - name: Don't 'import Mathlib', use precise imports
         if: always()
         run: |
-          ! (find AlgoLib -name "*.lean" -type f -print0 | xargs -0 grep -E -n '^import Mathlib$')
+          ! (find AlgoLib -name "*.lean" -type f -print0 | xargs -0 grep -E -n '^(public )?(meta )?import Mathlib$')
 
   build:
     name: Build project
@@ -39,6 +39,11 @@ jobs:
       - name: Build and lint the project
         id: build-lean
         uses: leanprover/lean-action@f807b338d95de7813c5c50d018f1c23c9b93b4ec # v1.2.0
+
+      - name: Check public imports and declaration checker
+        run: |
+          lake env lean tests/Import.lean
+          lake build checkdecls
 
       - name: File dependencies
         if: github.ref == 'refs/heads/main'
