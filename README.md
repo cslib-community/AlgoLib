@@ -146,9 +146,10 @@ The checkout includes its toolchain and dependency manifest. Keep these files
 when reproducing a build. See the [contribution guide](.github/CONTRIBUTING.md)
 before making changes.
 
-Lean version upgrades are made through manual PRs so maintainers can align
-Mathlib and CSLib and fix breaking changes together. CI checks the build and
-publishes version tags after successful merges. See the
+CI checks daily for new stable Lean releases and waits for matching Mathlib and
+CSLib tags using the same toolchain. Once available, it opens one upgrade issue.
+Maintainers make the upgrade PR and fix breaking changes. CI checks the build
+and publishes version tags after successful merges. See the
 [maintenance notes](.github/CONTRIBUTING.md#lean-version-updates) for the process.
 
 ## Repository layout

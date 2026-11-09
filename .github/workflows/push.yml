@@ -27,6 +27,9 @@ jobs:
         run: |
           ! (find AlgoLib -name "*.lean" -type f -print0 | xargs -0 grep -E -n '^(public )?(meta )?import Mathlib$')
 
+      - name: Test the release readiness checker
+        run: node --test .github/scripts/check-lean-release.test.cjs
+
   build:
     name: Build project
     runs-on: ubuntu-latest

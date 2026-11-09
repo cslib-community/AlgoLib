@@ -8,9 +8,16 @@ On top of Mathlib's contribution guidelines, we also enforce the following:
 
 ## Lean version updates
 
-Upgrades are manual PRs; there is no scheduled dependency updater. Wait for
-compatible stable Lean, Mathlib and CSLib versions, then create an upgrade branch
-from the current `main`.
+The `Check stable Lean releases` workflow checks daily for the latest stable
+Lean 4 release. It waits until Mathlib and CSLib both have matching version tags
+whose `lean-toolchain` files agree with that release, then opens one upgrade
+issue. Missing tags or different toolchains are retried on later runs. Release
+candidates and nightlies are excluded. A closed upgrade issue is not recreated.
+You can also start the check from the Actions tab.
+
+Matching releases are a readiness signal; the build still determines whether
+AlgoLib works with them. Upgrade edits and merging remain manual. From the
+upgrade issue, create a branch from current `main` and link the issue in your PR.
 
 Update `lean-toolchain` and the Mathlib and CSLib requirements in `lakefile.toml`,
 then regenerate the manifest and check the library:
@@ -35,4 +42,6 @@ timestamp. Existing tags, including tags made before this workflow, are left
 unchanged. Each Lean version gets one automatic tag; use a tested commit hash
 for later fixes on the same Lean version. Keeping a tag available does not
 automatically backport future fixes to it. Publishing uses the built-in
-`GITHUB_TOKEN`; no extra secret or dependency-update service is needed.
+`GITHUB_TOKEN`; the readiness checker uses the same token with issue-writing
+permission. No extra secret or dependency-update service is needed. The checker
+only reports readiness: it does not change dependencies or open upgrade PRs.
