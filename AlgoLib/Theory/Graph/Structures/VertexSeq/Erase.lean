@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan,
          Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Subseq
+module
+
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Subseq
 
 /-!
 # Vertex sequences: erasure operations
@@ -20,6 +22,8 @@ Two ways to remove redundancy from a vertex sequence:
 
 * `VertexSeq.loopErase`, `VertexSeq.cycleErase`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

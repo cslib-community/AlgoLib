@@ -3,10 +3,12 @@ Copyright (c) 2026 GraphLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Data.Set.Card
-import Mathlib.Data.ENat.Lattice
-import AlgoLib.Util.Decidable
+module
+
+public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Set.Card
+public import Mathlib.Data.ENat.Lattice
+public import AlgoLib.Util.Decidable
 
 /-!
 # Finite iteration and bounded infima
@@ -51,6 +53,8 @@ once here rather than four times over in the connectivity development.
   `∀ s, P s → s ⊆ ↑B` — the mathematical content of "the search space is finite" —
   visible at every call site.
 -/
+
+@[expose] public section
 
 variable {β : Type*}
 

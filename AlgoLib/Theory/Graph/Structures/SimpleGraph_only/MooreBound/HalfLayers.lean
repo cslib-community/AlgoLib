@@ -3,7 +3,11 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.RootedLayers
+module
+
+import Mathlib.Tactic.NormNum
+
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.RootedLayers
 
 /-!
 # Moore bounds: the half-layers around a central edge
@@ -15,6 +19,8 @@ growth and disjointness estimates. This is the family behind the even Moore boun
 Part of the `MooreBound` folder; see the umbrella module
 `AlgoLib.Theory.Structures.SimpleGraph_only.MooreBound`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 
@@ -224,7 +230,8 @@ lemma mul_ncard_halfLayer_le_succ_of_lt_girth (G : SimpleGraph α)
     intro v hv
     simp only [hFdef, dif_pos hv]
   have hgirth' : (2 * (((i + 1 : ℕ) : ℕ∞) + 1)) < G.girth := by
-    push_cast; convert hgirth using 2
+    convert hgirth using 2
+    norm_num [Nat.cast_add, add_assoc]
   refine Set.mul_ncard_le_ncard_of_children (F := F) hLfin hNfin ?_ ?_ ?_
   · -- children lie in the next half-layer: a child cannot be the banned endpoint,
     -- since that would close a cycle shorter than the girth

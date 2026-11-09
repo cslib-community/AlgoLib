@@ -3,10 +3,12 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Delete
-import AlgoLib.Theory.Graph.Degree
-import AlgoLib.Theory.Graph.Finite
-import AlgoLib.Util.Decidable
+module
+
+public import AlgoLib.Theory.Graph.Delete
+public import AlgoLib.Theory.Graph.Degree
+public import AlgoLib.Theory.Graph.Finite
+public import AlgoLib.Util.Decidable
 
 /-!
 # Decidable graph predicates
@@ -55,6 +57,8 @@ on top of what is here and of the breadth-first search in
   `AlgoLib.Graph.Delete` are all `Iff.rfl`, so these instances hold by `rfl`; writing
   them explicitly keeps instance search from having to unfold structure literals.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 

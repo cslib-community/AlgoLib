@@ -5,25 +5,29 @@ Authors: Anton Kovsharov, Antoine du Fresne von Hohenesche,
   Sorrachai Yingchareonthawornchai
 -/
 
-import AlgoLib.DataStructures.SplayTree.Complexity
-import AlgoLib.DataStructures.SplayTree.Correctness
-import AlgoLib.DataStructures.SplayTree.StaticOptimality
+module
+
+public import AlgoLib.DataStructures.SplayTree.Complexity
+public import AlgoLib.DataStructures.SplayTree.Correctness
+public import AlgoLib.DataStructures.SplayTree.StaticOptimality
 
 /-!
 # Splay Tree API for BST
 
 This module provides a high-level API for splaying directly on the `BST` type.
-It encapsulates the raw `Tree` operations and their associated invariant
+It encapsulates the raw `BinaryTree` operations and their associated invariant
 proofs, allowing users to safely and cleanly manipulate BSTs without manually
 re-proving the `IsBST` invariant after every rotation.
 -/
+
+@[expose] public section
 
 variable {α : Type} [LinearOrder α]
 
 namespace SplayTree.BSTAPI
 
 open SplayTree
-open Tree
+open BinaryTree
 
 /-! ### Core Operation -/
 

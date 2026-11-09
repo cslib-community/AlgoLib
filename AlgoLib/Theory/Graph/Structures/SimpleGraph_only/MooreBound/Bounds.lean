@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.HalfLayers
+module
+
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.HalfLayers
 
 /-!
 # The Moore bounds
@@ -12,6 +14,8 @@ The two counting theorems themselves. Everything they stand on lives in the othe
 files of the `MooreBound` folder; see the umbrella module
 `AlgoLib.Theory.Structures.SimpleGraph_only.MooreBound`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

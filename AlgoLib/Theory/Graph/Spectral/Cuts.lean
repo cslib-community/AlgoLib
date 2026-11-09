@@ -1,10 +1,14 @@
-import Mathlib.Tactic
-import Mathlib.Order.WithBot
-import Mathlib.Data.Sym.Sym2
-import Mathlib.Data.Finset.Basic
+module
 
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Finite
+public import Mathlib.Tactic
+public import Mathlib.Order.WithBot
+public import Mathlib.Data.Sym.Sym2
+public import Mathlib.Data.Finset.Basic
+
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Finite
+
+@[expose] public section
 
 -- Cuts (undirected simple)
 -- Authors: Weixuan Yuan

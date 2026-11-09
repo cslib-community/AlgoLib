@@ -3,8 +3,10 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Girth
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Counting
+module
+
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Girth
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Counting
 
 /-!
 # Moore bounds: fresh neighbours and the shared counting core
@@ -17,6 +19,8 @@ that the odd and even layer families both consume.
 Part of the `MooreBound` folder; see the umbrella module
 `AlgoLib.Theory.Structures.SimpleGraph_only.MooreBound`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

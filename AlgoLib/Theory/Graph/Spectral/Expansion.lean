@@ -1,10 +1,14 @@
-import Mathlib.Tactic
+module
 
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Finite
-import AlgoLib.Theory.Graph.Degree
-import AlgoLib.Theory.Graph.Spectral.Cuts
-import AlgoLib.Theory.Graph.Spectral.Helper
+public import Mathlib.Tactic
+
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Finite
+public import AlgoLib.Theory.Graph.Degree
+public import AlgoLib.Theory.Graph.Spectral.Cuts
+public import AlgoLib.Theory.Graph.Spectral.Helper
+
+@[expose] public section
 
 -- Cuts and contractions (undirected simple)
 -- Authors: Yuchen Zhong, Weixuan Yuan

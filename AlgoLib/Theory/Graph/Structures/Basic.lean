@@ -1,3 +1,5 @@
+module
+
 /-
 /-
 Copyright (c) 2026 Basil Rohner. All rights reserved.

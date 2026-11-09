@@ -3,9 +3,11 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Finite
-import AlgoLib.Theory.Graph.Connectivity.Cuts
-import Mathlib.Data.ENat.Lattice
+module
+
+public import AlgoLib.Theory.Graph.Finite
+public import AlgoLib.Theory.Graph.Connectivity.Cuts
+public import Mathlib.Data.ENat.Lattice
 
 /-!
 # Vertex and edge connectivity
@@ -50,6 +52,8 @@ edges, must be removed to destroy the connectivity of `G`.
   empty-index convention makes the connectivity of a graph with no separating set `⊤`
   automatically.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

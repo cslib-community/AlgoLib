@@ -3,9 +3,11 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner
 -/
-import AlgoLib.Theory.Graph.Adjacency
-import Mathlib.Data.Set.Card
-import Mathlib.Data.ENat.Lattice
+module
+
+public import AlgoLib.Theory.Graph.Adjacency
+public import Mathlib.Data.Set.Card
+public import Mathlib.Data.ENat.Lattice
 
 /-!
 # Neighbourhoods and degrees
@@ -49,6 +51,8 @@ and the minimum and maximum degree.
   values in `ℕ∞`, so the empty graph gives `maxDegree = 0` and
   `minDegree = ⊤` without per-definition finiteness hypotheses.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 variable {α β : Type*}

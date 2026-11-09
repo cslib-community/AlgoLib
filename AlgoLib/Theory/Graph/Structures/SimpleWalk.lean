@@ -4,8 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan,
          Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Structures.VertexSeq
+module
+
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Structures.VertexSeq
 
 /-!
 # Simple walks
@@ -31,10 +33,12 @@ Every operation is the `VertexSeq` one plus a proof that non-stalling survives,
 and every lemma below is a thin wrapper around its `VertexSeq` counterpart.
 -/
 
+@[expose] public section
+
 variable {α : Type*}
 
 /-- A simple walk: a `VertexSeq` with no two consecutive vertices equal. -/
-def SimpleWalk (α : Type*) := { w : VertexSeq α // w.nonstalling }
+abbrev SimpleWalk (α : Type*) := { w : VertexSeq α // w.nonstalling }
 
 -- `VertexSeq.edges` and `VertexSeq.arcs` (the traversed edges/arcs) live in
 -- `VertexSeq/Edges.lean`, since they are purely combinatorial.
