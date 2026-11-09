@@ -1,22 +1,143 @@
 # AlgoLib
 
-A [Lean 4](https://lean-lang.org/) library for **algorithms**, built on top of [Mathlib](https://github.com/leanprover-community/mathlib4). AlgoLib aims to provide machine-checked definitions, theorems, and algorithm implementations covering the standard undergraduate-through-graduate curriculum on algorithms.
+A [Lean 4](https://lean-lang.org/) library for **algorithms**, built on top of
+[Mathlib](https://github.com/leanprover-community/mathlib4) and
+[CSLib](https://github.com/leanprover/cslib). AlgoLib aims to provide machine-checked
+definitions, theorems, and algorithm implementations covering the standard
+undergraduate-through-graduate curriculum on algorithms.
 
-Since we focus on computable definitions and algorithms, we introduce new definitions for concepts already formalized in Mathlib (e.g., out definition of graphs). Our primarly goals is to provide a concise formalization of algorithms that stays close to their textbook formulation without compromising on generality. 
+We focus on computable definitions and algorithms. Where needed, we introduce
+definitions for concepts already formalized in Mathlib, such as graphs. Our goal
+is to stay close to textbook formulations without compromising on generality.
+
+## Using AlgoLib in your project
+
+### Prerequisites
+
+Install [Lean and its editor support](https://lean-lang.org/install/) and
+[Git](https://git-scm.com/downloads). The Lean installation includes `elan`, the
+toolchain manager, and `lake`, the build tool and package manager.
+
+Use the Lean version specified by AlgoLib's [`lean-toolchain`](lean-toolchain)
+at the revision you depend on. The current version is:
+
+```text
+leanprover/lean4:v4.30.0-rc2
+```
+
+For an existing project, its `lean-toolchain` must match this version, and any
+direct Mathlib or CSLib dependencies must be compatible with AlgoLib's
+[`lakefile.toml`](lakefile.toml) and [`lake-manifest.json`](lake-manifest.json).
+When you run Lake, `elan` downloads the specified Lean toolchain if needed.
+
+### Add the dependency
+
+Add the following to your project's `lakefile.toml`:
+
+```toml
+[[require]]
+name = "AlgoLib"
+git = "https://github.com/cslib-community/AlgoLib"
+rev = "main"
+```
+
+Alternatively, if your project uses `lakefile.lean`, add:
+
+```lean
+require AlgoLib from git
+  "https://github.com/cslib-community/AlgoLib" @ "main"
+```
+
+Use the configuration format your project already uses. The package name is
+case-sensitive: `AlgoLib`.
+
+From your project's root directory, fetch the dependency and the Mathlib cache:
+
+```sh
+lake update AlgoLib
+lake exe cache get
+```
+
+The cache command downloads precompiled Mathlib dependencies to reduce the first
+build's work. AlgoLib's dependencies are fetched automatically.
+
+### Import and build
+
+Import the modules you need in your Lean files. For example:
+
+```lean
+import AlgoLib.Theory.Graph.Basic
+
+#check AlgoLib.Graph
+#check AlgoLib.SimpleGraph
+#check AlgoLib.DiGraph
+```
+
+You can also import the modules collected in the library's root file with:
+
+```lean
+import AlgoLib
+```
+
+Run `lake build` after adding the import to one of your project's build targets.
+For a standalone file named `Example.lean` in the project root, use:
+
+```sh
+lake build AlgoLib
+lake env lean Example.lean
+```
+
+Open the project root in VS Code so the Lean extension uses the project's
+toolchain and dependencies.
+
+### Pinning a revision
+
+The examples above follow `main` when you run `lake update AlgoLib`. For a
+reproducible project, replace `main` with the full commit hash of a revision you
+have tested, and commit the generated `lake-manifest.json`. Use the
+`lean-toolchain` from that same AlgoLib revision.
+
+## Building AlgoLib locally
+
+To work on AlgoLib itself, clone the repository and build it:
+
+```sh
+git clone https://github.com/cslib-community/AlgoLib.git
+cd AlgoLib
+lake exe cache get
+lake build
+```
+
+The checkout includes its toolchain and dependency manifest. Keep these files
+when reproducing a build. See the [contribution guide](.github/CONTRIBUTING.md)
+before making changes.
+
+## Repository layout
+
+```text
+AlgoLib.lean            # imports the library's modules
+AlgoLib/
+├── Theory/            # graph definitions and mathematical results
+├── Algorithms/        # algorithms and correctness proofs
+├── DataStructures/    # binary trees, splay trees, union-find, …
+└── Util/              # supporting lemmas and utilities
+blueprint/             # mathematical exposition
+website/               # website sources
+```
 
 ## Roadmap — v1
 
+The following topics describe our goals for the library.
+
 ### Theory
 
-Among others:
-
-- **Walks & connectivity.** Walks, paths, cycles, Eulerian walks, components.
+- **Walks and connectivity.** Walks, paths, cycles, Eulerian walks, components.
 - **Trees.** Trees and forests, Cayley's theorem on the number of labeled trees.
-- **Spectral graph theory.** Laplacian, Cheeger's inequality (upper and lower bounds), expansion / expander graphs.
+- **Spectral graph theory.** Laplacians, Cheeger's inequality, expansion and expander graphs.
 - **Matchings.** Matchings, augmenting paths, Hall's theorem, König's theorem.
 - **Colorings.** Proper vertex and edge colorings, chromatic number, basic bounds.
-- **Contractions, minors, topological minors.** Edge/vertex contractions and the minor and topological-minor relations.
-- **Embeddings & planarity.** Planar graphs, Euler's formula, Kuratowski's theorem, toroidal graphs.
+- **Contractions and minors.** Edge and vertex contractions, minors and topological minors.
+- **Embeddings and planarity.** Planar graphs, Euler's formula, Kuratowski's theorem, toroidal graphs.
 
 ### Algorithms
 
@@ -27,21 +148,8 @@ Among others:
 - **Strongly connected components.** Tarjan / Kosaraju.
 - **Union–Find.** Disjoint-set forests with union-by-rank and path compression.
 
-Every algorithm comes with a proof of correctness and a proof of runtime.
+We aim to accompany each algorithm with proofs of correctness and runtime.
 
-## Repository layout
+## License
 
-```
-AlgoLib/
-├── Basic/          -- core graph structures (Graph, SimpleGraph, DiGraph, SimpleDiGraph)
-├── Theory/         -- mathematical results (walks, trees, spectral, matching, …)
-└── Algorithms/     -- algorithm implementations and correctness proofs
-```
-
-## Building
-
-```
-lake build
-```
-
-Requires the Lean toolchain pinned in `lean-toolchain`. `elan` will install it automatically.
+AlgoLib is released under the [Apache License 2.0](LICENSE).
