@@ -147,9 +147,11 @@ when reproducing a build. See the [contribution guide](.github/CONTRIBUTING.md)
 before making changes.
 
 CI checks daily for new stable Lean releases and waits for matching Mathlib and
-CSLib tags using the same toolchain. Once available, it opens one upgrade issue.
-Maintainers make the upgrade PR and fix breaking changes. CI checks the build
-and publishes version tags after successful merges. See the
+CSLib tags using the same toolchain. It attempts the upgrade and opens a PR if
+dependency resolution and build checks pass. If the attempt fails, it opens an
+issue with the failed stage and logs. Maintainers review PRs and handle breaking
+changes; merging remains manual. CI publishes version tags after successful
+merges. See the
 [maintenance notes](.github/CONTRIBUTING.md#lean-version-updates) for the process.
 
 ## Repository layout

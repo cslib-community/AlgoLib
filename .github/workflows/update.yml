@@ -1,0 +1,147 @@
+name: Upgrade stable Lean
+
+on:
+  schedule:
+    - cron: '37 5 * * *' # Daily at 05:37 UTC
+  workflow_dispatch:
+    inputs:
+      retry:
+        description: Retry an upgrade with an existing issue
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: stable-lean-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Select a matching stable release
+        id: select
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { selectUpgrade } = require('./.github/scripts/lean-upgrade.cjs');
+            await selectUpgrade({ github, context, core,
+              retry: context.eventName === 'workflow_dispatch' && context.payload.inputs?.retry === 'true' });
+
+      - name: Update toolchain, dependency pins and README
+        id: prepare
+        if: steps.select.outputs.ready == 'true'
+        uses: actions/github-script@v9
+        env:
+          TARGET_VERSION: ${{ steps.select.outputs.version }}
+        with:
+          script: |
+            const { prepareUpgrade } = require('./.github/scripts/lean-upgrade.cjs');
+            prepareUpgrade({ version: process.env.TARGET_VERSION });
+
+      - name: Install Lean tooling
+        id: tooling
+        if: steps.select.outputs.ready == 'true'
+        uses: leanprover/lean-action@f807b338d95de7813c5c50d018f1c23c9b93b4ec # v1.2.0
+        with:
+          auto-config: 'false'
+          build: 'false'
+          test: 'false'
+          lint: 'false'
+          use-mathlib-cache: 'false'
+          use-github-cache: 'false'
+
+      - name: Resolve and lock dependencies
+        id: resolve
+        if: steps.select.outputs.ready == 'true'
+        env:
+          MATHLIB_NO_CACHE_ON_UPDATE: '1'
+        run: lake update
+
+      - name: Build the upgrade
+        id: build
+        if: steps.select.outputs.ready == 'true'
+        uses: leanprover/lean-action@f807b338d95de7813c5c50d018f1c23c9b93b4ec # v1.2.0
+
+      - name: Check imports, declaration checker and style
+        id: checks
+        if: steps.select.outputs.ready == 'true'
+        shell: bash
+        run: |
+          lake env lean tests/Import.lean
+          lake build checkdecls
+          if (find AlgoLib -name '*.lean' -type f -print0 | xargs -0 grep -E -n '^(public )?(meta )?import Mathlib$'); then
+            echo 'Use precise Mathlib imports before upgrading.'
+            exit 1
+          fi
+          node --test .github/scripts/*.test.cjs
+          git diff --check
+
+      - name: Ensure main did not change during validation
+        id: base
+        if: steps.select.outputs.ready == 'true'
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+            echo 'Main advanced during validation; retry against the updated base.'
+            exit 1
+          fi
+
+      - name: Open the tested upgrade PR
+        id: pr
+        if: >-
+          steps.select.outputs.ready == 'true' &&
+          steps.resolve.outcome == 'success' &&
+          steps.build.outcome == 'success' &&
+          steps.checks.outcome == 'success' &&
+          steps.base.outcome == 'success'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          base: main
+          branch: ${{ steps.select.outputs.branch }}
+          add-paths: |
+            lean-toolchain
+            lakefile.toml
+            lake-manifest.json
+            README.md
+          title: 'chore: upgrade Lean and dependencies to ${{ steps.select.outputs.version }}'
+          commit-message: 'chore: upgrade Lean and dependencies to ${{ steps.select.outputs.version }}'
+          body: |
+            Upgrade Lean, Mathlib and CSLib to the matching stable release.
+            Dependency resolution, the build, public imports, declaration-checker tooling and style checks passed.
+            The manifest was regenerated and current README version examples were updated.
+
+            Review public API changes and migration notes before merging. This PR is never merged automatically.
+            Subsequent scheduled runs leave this PR and any maintainer fixes untouched.
+
+            Validation: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            ${{ steps.select.outputs.issue-reference }}
+
+      - name: Run CI on the published PR branch
+        id: ci
+        if: steps.pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BRANCH: ${{ steps.select.outputs.branch }}
+        run: gh workflow run push.yml --ref "$PR_BRANCH"
+
+      - name: Report an unsuccessful upgrade
+        if: failure() && steps.select.outputs.version != ''
+        uses: actions/github-script@v9
+        env:
+          TARGET_VERSION: ${{ steps.select.outputs.version }}
+          STEP_RESULTS: ${{ toJSON(steps) }}
+        with:
+          script: |
+            const { reportFailure } = require('./.github/scripts/lean-upgrade.cjs');
+            await reportFailure({ github, context, core, version: process.env.TARGET_VERSION,
+              steps: JSON.parse(process.env.STEP_RESULTS) });
