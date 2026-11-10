@@ -27,6 +27,9 @@ jobs:
         run: |
           ! (find AlgoLib -name "*.lean" -type f -print0 | xargs -0 grep -E -n '^(public )?(meta )?import Mathlib$')
 
+      - name: Test the Lean upgrade automation
+        run: node --test .github/scripts/*.test.cjs
+
   build:
     name: Build project
     runs-on: ubuntu-latest
@@ -62,3 +65,36 @@ jobs:
           # website/ is plain static HTML, not a Jekyll site. The action still copies
           # the API docs and blueprint into website/, then uploads that folder directly.
           build-page: false
+
+  release:
+    name: Release tested Lean version
+    needs: [style_lint, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: lean-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Publish a new stable version once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          toolchain=$(cat lean-toolchain)
+          if [[ ! "$toolchain" =~ ^leanprover/lean4:(v[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Skipping non-stable toolchain: $toolchain"
+            exit 0
+          fi
+          tag="${BASH_REMATCH[1]}"
+          existing=$(git ls-remote --tags origin "refs/tags/$tag")
+          if [[ -n "$existing" ]]; then
+            echo "Keeping existing tag $tag unchanged."
+            exit 0
+          fi
+          # Tag the commit that passed this run, including all upgrade fixes.
+          gh release create "$tag" --target "$GITHUB_SHA" \
+            --title "AlgoLib for Lean $tag" --generate-notes

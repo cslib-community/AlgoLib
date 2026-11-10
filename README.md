@@ -45,14 +45,14 @@ Add the following to your project's `lakefile.toml`:
 [[require]]
 name = "AlgoLib"
 git = "https://github.com/cslib-community/AlgoLib"
-rev = "main"
+rev = "v4.35.0"
 ```
 
 Alternatively, if your project uses `lakefile.lean`, add:
 
 ```lean
 require AlgoLib from git
-  "https://github.com/cslib-community/AlgoLib" @ "main"
+  "https://github.com/cslib-community/AlgoLib" @ "v4.35.0"
 ```
 
 Use the configuration format your project already uses. The package name is
@@ -105,10 +105,20 @@ toolchain and dependencies.
 
 ### Pinning a revision
 
-The examples above follow `main` when you run `lake update AlgoLib`. For a
-reproducible project, replace `main` with the full commit hash of a revision you
-have tested, and commit the generated `lake-manifest.json`. Use the
-`lean-toolchain` from that same AlgoLib revision.
+The examples above use the fixed `v4.35.0` tag for Lean 4.35.0. To use an older
+Lean version, choose an available matching [tag](https://github.com/cslib-community/AlgoLib/tags)
+and use the `lean-toolchain` from that revision. Only versions with a published
+tag are supported this way.
+
+You can also pin a full commit hash you have tested. Commit the generated
+`lake-manifest.json` to keep the resolved dependency versions reproducible.
+Use `main` instead of a tag only if you want to follow ongoing development when
+running `lake update AlgoLib`.
+
+New stable Lean versions receive a tag and a dated
+[GitHub release](https://github.com/cslib-community/AlgoLib/releases) after CI
+passes on `main`. Existing tags stay fixed; later fixes can be selected by their
+commit hash. There is no need to put a timestamp in the dependency name.
 
 ### Upgrading an existing project
 
@@ -135,6 +145,14 @@ lake build
 The checkout includes its toolchain and dependency manifest. Keep these files
 when reproducing a build. See the [contribution guide](.github/CONTRIBUTING.md)
 before making changes.
+
+CI checks daily for new stable Lean releases and waits for matching Mathlib and
+CSLib tags using the same toolchain. It attempts the upgrade and opens a PR if
+dependency resolution and build checks pass. If the attempt fails, it opens an
+issue with the failed stage and logs. Maintainers review PRs and handle breaking
+changes; merging remains manual. CI publishes version tags after successful
+merges. See the
+[maintenance notes](.github/CONTRIBUTING.md#lean-version-updates) for the process.
 
 ## Repository layout
 
