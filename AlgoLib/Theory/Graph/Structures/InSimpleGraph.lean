@@ -3,10 +3,12 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.VertexSeq
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Walk
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Path
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Cycle
+module
+
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.VertexSeq
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Walk
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Path
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Cycle
 
 /-!
 # Vertex sequences, walks, paths and cycles realized in a simple graph

@@ -3,7 +3,9 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Connectivity.Components
+module
+
+public import AlgoLib.Theory.Graph.Connectivity.Components
 
 /-!
 # Cuts, separators and boundaries
@@ -43,6 +45,8 @@ boundary of a vertex set.
   vacuously. For `IsSTVertexCut` the Menger convention is the opposite — the cut is
   allowed to meet `A` and `B`, and a terminal inside the cut is simply no longer a vertex.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

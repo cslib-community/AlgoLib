@@ -3,8 +3,10 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Fable 5.1)
 -/
-import AlgoLib.Theory.Graph.Decidable
-import AlgoLib.Theory.Graph.Connectivity.Directed
+module
+
+public import AlgoLib.Theory.Graph.Decidable
+public import AlgoLib.Theory.Graph.Connectivity.Directed
 
 /-!
 # Breadth-first search
@@ -72,6 +74,8 @@ arcs have decidable membership, and proves it correct against the specifications
   otherwise, so every statement below holds with no hypothesis on `s`: nothing outside
   `V(G)` reaches anything, and `Reachable s s ↔ s ∈ V(G)` is reproduced exactly.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 

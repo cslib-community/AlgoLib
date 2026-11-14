@@ -3,7 +3,11 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Core
+module
+
+import Mathlib.Tactic.NormNum
+
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Core
 
 /-!
 # Moore bounds: the rooted layers
@@ -16,6 +20,8 @@ odd Moore bound.
 Part of the `MooreBound` folder; see the umbrella module
 `AlgoLib.Theory.Structures.SimpleGraph_only.MooreBound`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 
@@ -185,7 +191,8 @@ lemma mul_ncard_rootLayer_le_succ_of_lt_girth (G : SimpleGraph α)
       F v = freshNeighborSet G hv.path := by
     intro v hv; simp only [hFdef, dif_pos hv]
   have hgirth' : (2 * (((i + 1 : ℕ) : ℕ∞) + 1)) < G.girth := by
-    push_cast; convert hgirth using 2
+    convert hgirth using 2
+    norm_num [Nat.cast_add, add_assoc]
   refine Set.mul_ncard_le_ncard_of_children (F := F) hLfin hNfin ?_ ?_ ?_
   · -- children lie in the next layer
     intro v hv u hu
@@ -232,7 +239,8 @@ lemma le_ncard_rootLayer_succ (G : SimpleGraph α) (hV : V(G).Finite)
       have hprev : δ * (δ - 1) ^ i ≤ (rootLayer G x (i + 1)).ncard :=
         ih hgirthPrev
       have hgirthGrowth : (2 * (i + 2) : ℕ∞) < G.girth := by
-        simpa [Nat.add_assoc] using hgirth
+        convert hgirth using 2
+        norm_num [Nat.cast_add, add_assoc]
       have hgrowth :=
         mul_ncard_rootLayer_le_succ_of_lt_girth
           G hV (δ := δ) (i := i) (x := x) hmin hgirthGrowth

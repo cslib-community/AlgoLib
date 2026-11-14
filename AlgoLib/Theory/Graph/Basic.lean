@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai
 -/
-import Mathlib.Data.Sym.Sym2
+module
+
+public import Mathlib.Data.Sym.Sym2
 
 /-!
 # Graph structures
@@ -60,6 +62,8 @@ The corresponding `Coe` instances are registered.
   breadth-first search — instead of duplicating them. It is not registered as a
   coercion: an undirected graph should be viewed as directed only on purpose.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 variable {α β : Type*}

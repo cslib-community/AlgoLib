@@ -5,7 +5,9 @@ Authors: Anton Kovsharov, Antoine du Fresne von Hohenesche,
   Sorrachai Yingchareonthawornchai
 -/
 
-import AlgoLib.DataStructures.SplayTree.Basic
+module
+
+public import AlgoLib.DataStructures.SplayTree.Basic
 
 /-!
 # Splay Tree Correctness
@@ -15,44 +17,46 @@ It establishes that splaying preserves the binary search tree (BST) invariant
 and guarantees that querying an existing key successfully rotates it to the root.
 -/
 
+@[expose] public section
+
 variable {α : Type}
 
 namespace SplayTree
 
-open Tree
+open BinaryTree
 
 /-! ### `toKeyList` Preservation -/
 section ToKeyListPreservation
 
-@[simp] theorem toKeyList_rotateRight (t : Tree α) :
+@[simp] theorem toKeyList_rotateRight (t : BinaryTree α) :
     (rotateRight t).toKeyList = t.toKeyList := by
   cases t; · rfl
   rename_i k l r
   cases l <;> simp [rotateRight, toKeyList]
 
-@[simp] theorem toKeyList_rotateLeft (t : Tree α) :
+@[simp] theorem toKeyList_rotateLeft (t : BinaryTree α) :
     (rotateLeft t).toKeyList = t.toKeyList := by
   cases t; · rfl
   rename_i k l r
   cases r <;> simp [rotateLeft, toKeyList]
 
-@[simp] theorem toKeyList_bringUp (d : Dir) (t : Tree α) :
+@[simp] theorem toKeyList_bringUp (d : Dir) (t : BinaryTree α) :
     (d.bringUp t).toKeyList = t.toKeyList := by
   cases d <;> simp [Dir.bringUp]
 
-@[simp] theorem toKeyList_applyChild (d : Dir) (op : Tree α → Tree α)
-    (hop : ∀ s, (op s).toKeyList = s.toKeyList) (t : Tree α) :
+@[simp] theorem toKeyList_applyChild (d : Dir) (op : BinaryTree α → BinaryTree α)
+    (hop : ∀ s, (op s).toKeyList = s.toKeyList) (t : BinaryTree α) :
     (applyChild d op t).toKeyList = t.toKeyList := by
   cases t with
   | nil => rfl
   | node k l r => cases d <;> simp [applyChild, toKeyList, hop]
 
 @[simp]
-theorem toKeyList_applyChild_bringUp (d₁ d₂ : Dir) (t : Tree α) :
+theorem toKeyList_applyChild_bringUp (d₁ d₂ : Dir) (t : BinaryTree α) :
     (applyChild d₁ d₂.bringUp t).toKeyList = t.toKeyList :=
   toKeyList_applyChild _ _ (toKeyList_bringUp _) _
 
-@[simp] theorem toKeyList_Frame_attach (c : Tree α) (f : Frame α) :
+@[simp] theorem toKeyList_Frame_attach (c : BinaryTree α) (f : Frame α) :
     (f.attach c).toKeyList =
       (match f.dir with
         | .L => c.toKeyList ++ [f.key] ++ f.sibling.toKeyList
@@ -60,7 +64,7 @@ theorem toKeyList_applyChild_bringUp (d₁ d₂ : Dir) (t : Tree α) :
   unfold Frame.attach
   cases f.dir <;> simp [toKeyList]
 
-lemma reassemble_toKeyList_congr {c1 c2 : Tree α} (path : List (Frame α))
+lemma reassemble_toKeyList_congr {c1 c2 : BinaryTree α} (path : List (Frame α))
     (h : c1.toKeyList = c2.toKeyList) :
     (reassemble c1 path).toKeyList = (reassemble c2 path).toKeyList := by
   induction path generalizing c1 c2 with
@@ -70,7 +74,7 @@ lemma reassemble_toKeyList_congr {c1 c2 : Tree α} (path : List (Frame α))
     simp [h]
 
 @[simp]
-theorem toKeyList_splayUp (c : Tree α) (path : List (Frame α)) :
+theorem toKeyList_splayUp (c : BinaryTree α) (path : List (Frame α)) :
     (splayUp c path).toKeyList = (reassemble c path).toKeyList := by
   induction c, path using splayUp_induction with
   | nil c => simp
@@ -81,7 +85,7 @@ theorem toKeyList_splayUp (c : Tree α) (path : List (Frame α)) :
       (rw [ih]; apply reassemble_toKeyList_congr; simp)
 
 @[simp]
-theorem toKeyList_splay [LinearOrder α] (t : Tree α) (q : α) :
+theorem toKeyList_splay [LinearOrder α] (t : BinaryTree α) (q : α) :
     (splay t q).toKeyList = t.toKeyList := by
   unfold splay
   have hpres := descend_preserves_tree t q
@@ -98,7 +102,7 @@ theorem toKeyList_splay [LinearOrder α] (t : Tree α) (q : α) :
       rw [h] at hpres
       rw [toKeyList_splayUp, ← hpres]
 
-theorem splay_empty_iff [LinearOrder α] (t : Tree α) (q : α) :
+theorem splay_empty_iff [LinearOrder α] (t : BinaryTree α) (q : α) :
     splay t q = .nil ↔ t = .nil := by
   constructor
   · intro h
@@ -118,7 +122,7 @@ section BSTPreservation
 
 /-- Helper: `IsBSTAux t lb ub` is equivalent to the key list being bounded
 and sorted. Proved by induction on `t`. -/
-private lemma IsBSTAux_iff_bounded_sorted (t : Tree α) [LinearOrder α] :
+private lemma IsBSTAux_iff_bounded_sorted (t : BinaryTree α) [LinearOrder α] :
     ∀ lb ub : Option α,
     IsBSTAux t lb ub ↔
       (∀ x ∈ t.toKeyList, lb.elim True (· < x)) ∧
@@ -135,34 +139,34 @@ private lemma IsBSTAux_iff_bounded_sorted (t : Tree α) [LinearOrder α] :
 /-- A tree is a BST iff its in-order traversal is strictly sorted (pairwise
 `<`). Reduces every BST-preservation question to "does the operation
 preserve `toKeyList`?". -/
-theorem IsBST_iff_toKeyList_sorted [LinearOrder α] (t : Tree α) :
+theorem IsBST_iff_toKeyList_sorted [LinearOrder α] (t : BinaryTree α) :
     IsBST t ↔ t.toKeyList.Pairwise (· < ·) := by
   simp only [IsBST, IsBSTAux_iff_bounded_sorted t none none, Option.elim]
   exact ⟨fun ⟨_, _, h⟩ => h, fun h => ⟨fun _ _ => trivial, fun _ _ => trivial, h⟩⟩
 
 /-- Transfer BST-ness between trees with the same in-order traversal. -/
-lemma IsBST_of_toKeyList_eq [LinearOrder α] {t t' : Tree α}
+lemma IsBST_of_toKeyList_eq [LinearOrder α] {t t' : BinaryTree α}
     (h : t'.toKeyList = t.toKeyList) (hbst : IsBST t) : IsBST t' := by
   rw [IsBST_iff_toKeyList_sorted] at hbst ⊢; rwa [h]
 
 /-- Bottom-up splay preserves the BST invariant. -/
-theorem IsBST_splay [LinearOrder α] (t : Tree α) (q : α) (h : IsBST t) :
+theorem IsBST_splay [LinearOrder α] (t : BinaryTree α) (q : α) (h : IsBST t) :
     IsBST (splay t q) :=
   IsBST_of_toKeyList_eq (toKeyList_splay t q) h
 
 /-- Each primitive rotation preserves the BST invariant. -/
-theorem IsBST_bringUp [LinearOrder α] (d : Dir) (t : Tree α) (h : IsBST t) :
+theorem IsBST_bringUp [LinearOrder α] (d : Dir) (t : BinaryTree α) (h : IsBST t) :
     IsBST (d.bringUp t) :=
   IsBST_of_toKeyList_eq (toKeyList_bringUp d t) h
 
-theorem IsBST_applyChild [LinearOrder α] (d : Dir) (op : Tree α → Tree α)
+theorem IsBST_applyChild [LinearOrder α] (d : Dir) (op : BinaryTree α → BinaryTree α)
     (hop_keys : ∀ s, (op s).toKeyList = s.toKeyList)
-    (t : Tree α) (h : IsBST t) :
+    (t : BinaryTree α) (h : IsBST t) :
     IsBST (applyChild d op t) :=
   IsBST_of_toKeyList_eq (toKeyList_applyChild d op hop_keys t) h
 
 /-- Any frame-wise splay-up preserves BST-ness of the reassembled tree. -/
-theorem IsBST_splayUp [LinearOrder α] (c : Tree α) (path : List (Frame α))
+theorem IsBST_splayUp [LinearOrder α] (c : BinaryTree α) (path : List (Frame α))
     (h : IsBST (reassemble c path)) : IsBST (splayUp c path) :=
   IsBST_of_toKeyList_eq (toKeyList_splayUp c path) h
 
@@ -173,9 +177,9 @@ end BSTPreservation
 section RootOfContainedKey
 
 /-- If `t.contains q`, the subtree reached by `descend` is a node whose key
-equals `q`. Mirrors how `descend` and `Tree.contains` follow the same
+equals `q`. Mirrors how `descend` and `BinaryTree.contains` follow the same
 comparison path. -/
-theorem descend_contains [LinearOrder α] (t : Tree α) (q : α) (h : t.BST_contains q) :
+theorem descend_contains [LinearOrder α] (t : BinaryTree α) (q : α) (h : t.BST_contains q) :
     ∃ l r, (descend t q).1 = l △[q] r := by
   induction t with
   | nil => simp [BST_contains] at h
@@ -195,7 +199,7 @@ theorem descend_contains [LinearOrder α] (t : Tree α) (q : α) (h : t.BST_cont
 
 /-- Membership-style variant of `descend_contains`: in a BST, if `q ∈ t` then
 `descend` reaches the node with key `q`. -/
-theorem descend_contains' [LinearOrder α] (t : Tree α) (q : α) (hbst : IsBST t)
+theorem descend_contains' [LinearOrder α] (t : BinaryTree α) (q : α) (hbst : IsBST t)
     (h : q ∈ t) : ∃ l r, (descend t q).1 = l △[q] r :=
   descend_contains t q (mem_imp_contains hbst h)
 
@@ -203,7 +207,7 @@ theorem descend_contains' [LinearOrder α] (t : Tree α) (q : α) (hbst : IsBST 
 whose root key is still `k`. Each rotation step brings `c` one level higher
 without changing its root key. -/
 theorem splayUp_root_key_of_node :
-    ∀ (path : List (Frame α)) (l : Tree α) (k : α) (r : Tree α),
+    ∀ (path : List (Frame α)) (l : BinaryTree α) (k : α) (r : BinaryTree α),
       ∃ l' r', splayUp (l △[k] r) path = l' △[k] r' := by
   intro path
   induction path using List.twoStepInduction with
@@ -223,7 +227,7 @@ theorem splayUp_root_key_of_node :
         rotateRight, rotateLeft]
 
 /-- If `t.contains q`, the bottom-up splay of `t` at `q` has `q` at the root. -/
-theorem splay_root_of_contains [LinearOrder α] (t : Tree α) (q : α)
+theorem splay_root_of_contains [LinearOrder α] (t : BinaryTree α) (q : α)
     (hc : t.BST_contains q) : ∃ l r, splay t q = l △[q] r := by
   obtain ⟨lr, rr, hd⟩ := descend_contains t q hc
   unfold splay
@@ -234,7 +238,7 @@ theorem splay_root_of_contains [LinearOrder α] (t : Tree α) (q : α)
 
 /-- Membership-style variant of `splay_root_of_contains`: in a BST, if `q ∈ t`
 then splaying brings `q` to the root. -/
-theorem splay_root_of_contains' [LinearOrder α] (t : Tree α) (q : α)
+theorem splay_root_of_contains' [LinearOrder α] (t : BinaryTree α) (q : α)
     (hbst : IsBST t) (h : q ∈ t) : ∃ l r, splay t q = l △[q] r :=
   splay_root_of_contains t q (mem_imp_contains hbst h)
 

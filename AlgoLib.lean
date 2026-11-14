@@ -1,89 +1,90 @@
+module
+
 -- Theory
-import AlgoLib.Theory.Graph.Adjacency
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Basic'
-import AlgoLib.Theory.Graph.Coloring.Basic
-import AlgoLib.Theory.Graph.Connectivity.Basic
-import AlgoLib.Theory.Graph.Connectivity.Components
-import AlgoLib.Theory.Graph.Connectivity.Connectivity
-import AlgoLib.Theory.Graph.Connectivity.Cuts
-import AlgoLib.Theory.Graph.Connectivity.Directed
-import AlgoLib.Theory.Graph.Connectivity.Reachable
-import AlgoLib.Theory.Graph.Decidable
-import AlgoLib.Theory.Graph.Degree
-import AlgoLib.Theory.Graph.Delete
-import AlgoLib.Theory.Graph.Embeddings.Basic
-import AlgoLib.Theory.Graph.Finite
-import AlgoLib.Theory.Graph.Graphs
-import AlgoLib.Theory.Graph.Matching.Basic
-import AlgoLib.Theory.Graph.Minors.Basic
-import AlgoLib.Theory.Graph.Spectral.Basic
-import AlgoLib.Theory.Graph.Spectral.Cheeger_LB
-import AlgoLib.Theory.Graph.Spectral.Cuts
-import AlgoLib.Theory.Graph.Spectral.Expansion
-import AlgoLib.Theory.Graph.Spectral.Helper
-import AlgoLib.Theory.Graph.Structures.Basic
-import AlgoLib.Theory.Graph.Structures.Cycle
-import AlgoLib.Theory.Graph.Structures.Eulerian
-import AlgoLib.Theory.Graph.Structures.Forest
-import AlgoLib.Theory.Graph.Structures.Hamiltonian
-import AlgoLib.Theory.Graph.Structures.InGraph
-import AlgoLib.Theory.Graph.Structures.InSimpleDiGraph
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Cycle
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Path
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.VertexSeq
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Walk
-import AlgoLib.Theory.Graph.Structures.Path
-import AlgoLib.Theory.Graph.Structures.SimpleCycle
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Bipartite
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Girth
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Bounds
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Core
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Counting
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.HalfLayers
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.RootedLayers
-import AlgoLib.Theory.Graph.Structures.SimplePath
-import AlgoLib.Theory.Graph.Structures.SimpleWalk
-import AlgoLib.Theory.Graph.Structures.Trail
-import AlgoLib.Theory.Graph.Structures.Tree
-import AlgoLib.Theory.Graph.Structures.Trees.Basic
-import AlgoLib.Theory.Graph.Structures.Trees.ParentTree.Basic
-import AlgoLib.Theory.Graph.Structures.Trees.ParentTree.Acyclic
-import AlgoLib.Theory.Graph.Structures.VertexSeq
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Append
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
-import AlgoLib.Theory.Graph.Structures.VertexSeq.CommonPrefix
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Edges
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Erase
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Index
-import AlgoLib.Theory.Graph.Structures.VertexSeq.MapZip
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Predicates
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Subseq
-import AlgoLib.Theory.Graph.Structures.Walk
-import AlgoLib.Theory.Graph.Subgraph
+public import AlgoLib.Theory.Graph.Adjacency
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Basic'
+public import AlgoLib.Theory.Graph.Coloring.Basic
+public import AlgoLib.Theory.Graph.Connectivity.Basic
+public import AlgoLib.Theory.Graph.Connectivity.Components
+public import AlgoLib.Theory.Graph.Connectivity.Connectivity
+public import AlgoLib.Theory.Graph.Connectivity.Cuts
+public import AlgoLib.Theory.Graph.Connectivity.Directed
+public import AlgoLib.Theory.Graph.Connectivity.Reachable
+public import AlgoLib.Theory.Graph.Decidable
+public import AlgoLib.Theory.Graph.Degree
+public import AlgoLib.Theory.Graph.Delete
+public import AlgoLib.Theory.Graph.Embeddings.Basic
+public import AlgoLib.Theory.Graph.Finite
+public import AlgoLib.Theory.Graph.Graphs
+public import AlgoLib.Theory.Graph.Matching.Basic
+public import AlgoLib.Theory.Graph.Minors.Basic
+public import AlgoLib.Theory.Graph.Spectral.Basic
+public import AlgoLib.Theory.Graph.Spectral.Cheeger_LB
+public import AlgoLib.Theory.Graph.Spectral.Cuts
+public import AlgoLib.Theory.Graph.Spectral.Expansion
+public import AlgoLib.Theory.Graph.Spectral.Helper
+public import AlgoLib.Theory.Graph.Structures.Basic
+public import AlgoLib.Theory.Graph.Structures.Cycle
+public import AlgoLib.Theory.Graph.Structures.Eulerian
+public import AlgoLib.Theory.Graph.Structures.Forest
+public import AlgoLib.Theory.Graph.Structures.Hamiltonian
+public import AlgoLib.Theory.Graph.Structures.InGraph
+public import AlgoLib.Theory.Graph.Structures.InSimpleDiGraph
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Cycle
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Path
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.VertexSeq
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.Walk
+public import AlgoLib.Theory.Graph.Structures.Path
+public import AlgoLib.Theory.Graph.Structures.SimpleCycle
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Bipartite
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.Girth
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Bounds
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Core
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Counting
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.HalfLayers
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.RootedLayers
+public import AlgoLib.Theory.Graph.Structures.SimplePath
+public import AlgoLib.Theory.Graph.Structures.SimpleWalk
+public import AlgoLib.Theory.Graph.Structures.Trail
+public import AlgoLib.Theory.Graph.Structures.Tree
+public import AlgoLib.Theory.Graph.Structures.Trees.Basic
+public import AlgoLib.Theory.Graph.Structures.VertexSeq
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Append
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.CommonPrefix
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Edges
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Erase
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Index
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.MapZip
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Predicates
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Subseq
+public import AlgoLib.Theory.Graph.Structures.Walk
+public import AlgoLib.Theory.Graph.Subgraph
 
 -- Algorithms
-import AlgoLib.Algorithms.Graph.Connectivity.Basic
-import AlgoLib.Algorithms.Graph.Flow.Basic
-import AlgoLib.Algorithms.Graph.MST.Basic
-import AlgoLib.Algorithms.Graph.SCC.Basic
-import AlgoLib.Algorithms.Graph.Search.Basic
-import AlgoLib.Algorithms.Graph.ShortestPath.Basic
-import AlgoLib.Algorithms.Graph.Traversal.BFS
-import AlgoLib.Algorithms.Graph.Traversal.Basic
+public import AlgoLib.Algorithms.Graph.Connectivity.Basic
+public import AlgoLib.Algorithms.Graph.Flow.Basic
+public import AlgoLib.Algorithms.Graph.MST.Basic
+public import AlgoLib.Algorithms.Graph.SCC.Basic
+public import AlgoLib.Algorithms.Graph.Search.Basic
+public import AlgoLib.Algorithms.Graph.ShortestPath.Basic
+public import AlgoLib.Algorithms.Graph.Traversal.BFS
+public import AlgoLib.Algorithms.Graph.Traversal.Basic
 
 -- Data structures
-import AlgoLib.DataStructures.BinaryTree.Basic
-import AlgoLib.DataStructures.BinaryTree.BinaryTree
-import AlgoLib.DataStructures.SplayTree.BSTAPI
-import AlgoLib.DataStructures.SplayTree.Basic
-import AlgoLib.DataStructures.SplayTree.Complexity
-import AlgoLib.DataStructures.SplayTree.Correctness
-import AlgoLib.DataStructures.SplayTree.SequentialAccess
-import AlgoLib.DataStructures.UnionFind.Basic
+public import AlgoLib.DataStructures.BinaryTree.Basic
+public import AlgoLib.DataStructures.BinaryTree.BinaryTree
+public import AlgoLib.DataStructures.SplayTree.BSTAPI
+public import AlgoLib.DataStructures.SplayTree.Basic
+public import AlgoLib.DataStructures.SplayTree.Complexity
+public import AlgoLib.DataStructures.SplayTree.Correctness
+public import AlgoLib.DataStructures.SplayTree.StaticOptimality
+public import AlgoLib.DataStructures.SplayTree.Weighted
+public import AlgoLib.DataStructures.UnionFind.Basic
 
 -- Utilities
-import AlgoLib.Util.Decidable
-import AlgoLib.Util.Finset
+public import AlgoLib.Util.Decidable
+public import AlgoLib.Util.Finset

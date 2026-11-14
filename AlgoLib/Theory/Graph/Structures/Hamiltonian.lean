@@ -3,9 +3,11 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Basic
-import AlgoLib.Theory.Graph.Structures.Walk
-import AlgoLib.Theory.Graph.Structures.SimpleWalk
+module
+
+public import AlgoLib.Theory.Graph.Basic
+public import AlgoLib.Theory.Graph.Structures.Walk
+public import AlgoLib.Theory.Graph.Structures.SimpleWalk
 
 /-!
 # Hamiltonian walks
@@ -22,6 +24,8 @@ Hamiltonian *path* is open (head ≠ tail in a simple graph); a Hamiltonian
 * `SimpleWalk.IsHamiltonian G w` — analogue for simple walks.
 * `SimpleWalk.IsHamiltonianCycle G w` — Hamiltonian and closed.
 -/
+
+@[expose] public section
 
 open AlgoLib
 

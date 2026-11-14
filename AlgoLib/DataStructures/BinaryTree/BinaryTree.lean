@@ -18,48 +18,54 @@ set_option linter.style.header false
 /-!
 # Binary Tree
 
-In this file we introduce the `Tree` data structure and its basic operations.
+In this file we introduce the `BinaryTree` data structure and its basic operations.
 -/
 
 variable {α : Type}
 
 /-- A tree node -/
-notation:65 l:66 " △[" v "] " r:66 => Tree.node v l r
+notation:65 l:66 " △[" v "] " r:66 => BinaryTree.node v l r
 
-namespace Tree
+namespace BinaryTree
 
 /-! ### Core Definitions -/
 section CoreDefs
 
-theorem non_empty_exist (s : Tree α) (h : s ≠ .nil) :
+theorem non_empty_exist (s : BinaryTree α) (h : s ≠ .nil) :
     ∃ A k B, s = A △[k] B := by
   induction s <;> grind
 
-def num_nodes : Tree α → ℕ
+def num_nodes : BinaryTree α → ℕ
   | .nil => 0
   | .node _ l r => 1 + num_nodes l + num_nodes r
 
-@[simp] lemma num_nodes_empty : num_nodes (nil : Tree α) = 0 := rfl
+@[simp] lemma num_nodes_empty : num_nodes (nil : BinaryTree α) = 0 := rfl
 
-@[simp] lemma num_nodes_node (l : Tree α) (k : α) (r : Tree α) :
+@[simp] lemma num_nodes_node (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     (l △[k] r).num_nodes = 1 + l.num_nodes + r.num_nodes := rfl
 
 /-- In-order traversal as a list of keys. -/
-def toKeyList : Tree α → List α
+def toKeyList : BinaryTree α → List α
   | .nil => []
   | l △[k] r => l.toKeyList ++ [k] ++ r.toKeyList
 
-@[simp] lemma toKeyList_empty : toKeyList (nil : Tree α) = [] := rfl
+@[simp] lemma toKeyList_empty : toKeyList (nil : BinaryTree α) = [] := rfl
 
-@[simp] lemma toKeyList_node (l : Tree α) (k : α) (r : Tree α) :
+@[simp] lemma toKeyList_node (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     (l △[k] r).toKeyList = l.toKeyList ++ [k] ++ r.toKeyList := rfl
+
+lemma eq_nil_of_toKeyList_eq_nil {t : BinaryTree α} (h : toKeyList t = []) : t = nil := by
+  cases t <;> simp_all
+
+lemma num_nodes_eq_length_toKeyList (t : BinaryTree α) : t.num_nodes = t.toKeyList.length := by
+  induction t <;> simp_all; omega
 
 /-- Number of nodes on the search path for `q` in `t`. Zero on the empty
 tree; on a node this counts the root plus (if `q ≠ k`) the search path
 length in the appropriate subtree. -/
-def search_path_len [LinearOrder α] (t : Tree α) (q : α) : ℕ :=
+def search_path_len [LinearOrder α] (t : BinaryTree α) (q : α) : ℕ :=
   match t with
-  | nil => 0
+  | .nil => 0
   | l △[key] r =>
     if q < key then
       1 + l.search_path_len q
@@ -67,6 +73,10 @@ def search_path_len [LinearOrder α] (t : Tree α) (q : α) : ℕ :=
       1 + r.search_path_len q
     else
       1
+
+lemma search_path_len_le_num_nodes [LinearOrder α] (t : BinaryTree α) (q : α) :
+    search_path_len t q ≤ t.num_nodes := by
+  induction t <;> simp [search_path_len]; split_ifs <;> omega
 
 /--
 Remark:
@@ -77,9 +87,9 @@ If `contains t q` is true, then `q` is in `t`; but
 the converse need not necessarily hold true. The
 converse is true for a binary search tree. Hence the name of it.
 -/
-def BST_contains [LinearOrder α] (t : Tree α) (q : α) : Prop :=
+def BST_contains [LinearOrder α] (t : BinaryTree α) (q : α) : Prop :=
   match t with
-  | nil => False
+  | .nil => False
   | l △[key] r =>
     if q < key then
       l.BST_contains q
@@ -95,19 +105,19 @@ end CoreDefs
 section Membership
 
 /-- Inductive membership relation on binary trees, modelled on `List.Mem`. -/
-inductive Mem (a : α) : Tree α → Prop where
+inductive Mem (a : α) : BinaryTree α → Prop where
   /-- `a` is the key at the root. -/
-  | here  {l r : Tree α} : Mem a (l △[a] r)
+  | here  {l r : BinaryTree α} : Mem a (l △[a] r)
   /-- `a` lies in the left subtree. -/
-  | left  {k : α} {l r : Tree α} : Mem a l → Mem a (l △[k] r)
+  | left  {k : α} {l r : BinaryTree α} : Mem a l → Mem a (l △[k] r)
   /-- `a` lies in the right subtree. -/
-  | right {k : α} {l r : Tree α} : Mem a r → Mem a (l △[k] r)
+  | right {k : α} {l r : BinaryTree α} : Mem a r → Mem a (l △[k] r)
 
-instance : Membership α (Tree α) := ⟨fun t a => Mem a t⟩
+instance : Membership α (BinaryTree α) := ⟨fun t a => Mem a t⟩
 
-@[simp] lemma not_mem_nil (a : α) : a ∉ (nil : Tree α) := nofun
+@[simp] lemma not_mem_nil (a : α) : a ∉ (nil : BinaryTree α) := nofun
 
-@[simp] lemma mem_node_iff {a k : α} {l r : Tree α} :
+@[simp] lemma mem_node_iff {a k : α} {l r : BinaryTree α} :
     a ∈ (l △[k] r) ↔ a = k ∨ a ∈ l ∨ a ∈ r := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · cases h with
@@ -120,7 +130,7 @@ instance : Membership α (Tree α) := ⟨fun t a => Mem a t⟩
     · exact .right h
 
 /-- Membership agrees with membership in the in-order key list. -/
-theorem mem_iff_mem_toKeyList {a : α} {t : Tree α} :
+theorem mem_iff_mem_toKeyList {a : α} {t : BinaryTree α} :
     a ∈ t ↔ a ∈ t.toKeyList := by
   induction t with
   | nil => simp
@@ -129,7 +139,7 @@ theorem mem_iff_mem_toKeyList {a : α} {t : Tree α} :
     simp only [List.mem_append, List.mem_singleton, ihl, ihr]
     tauto
 
-instance decidableMem [DecidableEq α] (a : α) : ∀ t : Tree α, Decidable (a ∈ t)
+instance decidableMem [DecidableEq α] (a : α) : ∀ t : BinaryTree α, Decidable (a ∈ t)
   | .nil       => isFalse nofun
   | l △[k] r =>
     haveI : Decidable (a ∈ l) := decidableMem a l
@@ -138,7 +148,7 @@ instance decidableMem [DecidableEq α] (a : α) : ∀ t : Tree α, Decidable (a 
 
 /-- The search-path `contains` implies membership. The converse needs the BST
 invariant. -/
-theorem contains_imp_mem [LinearOrder α] {t : Tree α} {q : α} :
+theorem contains_imp_mem [LinearOrder α] {t : BinaryTree α} {q : α} :
     t.BST_contains q → q ∈ t := by
   induction t with
   | nil => simp [BST_contains]
@@ -157,46 +167,49 @@ end Membership
 /-! ### Rotations and Mirroring -/
 section Transformations
 
-def rotateRight : Tree α → Tree α
+def rotateRight : BinaryTree α → BinaryTree α
   | (a △[x] b) △[y] c => a △[x] (b △[y] c)
   | t => t
 
-def rotateLeft : Tree α → Tree α
+def rotateLeft : BinaryTree α → BinaryTree α
   | a △[x] (b △[y] c) => (a △[x] b) △[y] c
   | t => t
 
 /-- Mirror a binary tree: swap every left and right subtree. -/
-def mirror : Tree α → Tree α
+def mirror : BinaryTree α → BinaryTree α
   | .nil => .nil
   | l △[k] r => r.mirror △[k] l.mirror
 
-@[simp] lemma mirror_empty : (nil : Tree α).mirror = nil := rfl
+@[simp] lemma mirror_empty : (nil : BinaryTree α).mirror = nil := rfl
 
-@[simp] lemma mirror_node (l : Tree α) (k : α) (r : Tree α) :
+@[simp] lemma mirror_node (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     (l △[k] r).mirror = r.mirror △[k] l.mirror := rfl
 
-@[simp] lemma mirror_mirror (t : Tree α) : t.mirror.mirror = t := by
+@[simp] lemma mirror_mirror (t : BinaryTree α) : t.mirror.mirror = t := by
   induction t <;> simp_all
 
-@[simp] lemma num_nodes_mirror (t : Tree α) : t.mirror.num_nodes = t.num_nodes := by
+@[simp] lemma num_nodes_mirror (t : BinaryTree α) : t.mirror.num_nodes = t.num_nodes := by
   induction t <;> simp_all [num_nodes]; omega
 
-@[simp] lemma mirror_rotateRight (t : Tree α) :
+@[simp] lemma toKeyList_mirror (t : BinaryTree α) : t.mirror.toKeyList = t.toKeyList.reverse := by
+  induction t <;> simp_all [toKeyList]
+
+@[simp] lemma mirror_rotateRight (t : BinaryTree α) :
     (rotateRight t).mirror = rotateLeft t.mirror := by
   rcases t with _ | ⟨k, (_ | ⟨lk, ll, lr⟩), r⟩ <;>
     simp [rotateRight, rotateLeft, mirror]
 
-@[simp] lemma mirror_rotateLeft (t : Tree α) :
+@[simp] lemma mirror_rotateLeft (t : BinaryTree α) :
     (rotateLeft t).mirror = rotateRight t.mirror := by
   rcases t with _ | ⟨k, l, (_ | ⟨rk, rl, rr⟩)⟩ <;>
     simp [rotateRight, rotateLeft, mirror]
 
-@[simp] theorem num_nodes_rotateRight (t : Tree α) :
+@[simp] theorem num_nodes_rotateRight (t : BinaryTree α) :
     (rotateRight t).num_nodes = t.num_nodes := by
   rcases t with _ | ⟨k, (_ | ⟨lk, ll, lr⟩), r⟩ <;>
     simp [rotateRight]; omega
 
-@[simp] theorem num_nodes_rotateLeft (t : Tree α) :
+@[simp] theorem num_nodes_rotateLeft (t : BinaryTree α) :
     (rotateLeft t).num_nodes = t.num_nodes := by
   have h := num_nodes_rotateRight t.mirror
   simp only [← mirror_rotateLeft, num_nodes_mirror] at h; exact h
@@ -208,20 +221,20 @@ end Transformations
 section ContainsLemmas
 
 @[simp] lemma not_contains_empty [LinearOrder α] (q : α) :
-    ¬ (nil : Tree α).BST_contains q := nofun
+    ¬ (nil : BinaryTree α).BST_contains q := nofun
 
-@[simp] lemma contains_node_lt [LinearOrder α] {l : Tree α} {k q : α}
-    {r : Tree α} (h : q < k) :
+@[simp] lemma contains_node_lt [LinearOrder α] {l : BinaryTree α} {k q : α}
+    {r : BinaryTree α} (h : q < k) :
     (l △[k] r).BST_contains q ↔ l.BST_contains q := by
   simp [BST_contains, h]
 
-@[simp] lemma contains_node_gt [LinearOrder α] {l : Tree α} {k q : α}
-    {r : Tree α} (h : k < q) :
+@[simp] lemma contains_node_gt [LinearOrder α] {l : BinaryTree α} {k q : α}
+    {r : BinaryTree α} (h : k < q) :
     (l △[k] r).BST_contains q ↔ r.BST_contains q := by
   simp [BST_contains, h, not_lt_of_gt h]
 
 @[simp] lemma contains_node_not_eq_not_lt [LinearOrder α]
-    {l : Tree α} {k q : α} {r : Tree α}
+    {l : BinaryTree α} {k q : α} {r : BinaryTree α}
     (h1 : ¬ q = k) (h2 : ¬ q < k) :
     (l △[k] r).BST_contains q ↔ r.BST_contains q := by
   have hgt : k < q := lt_of_le_of_ne (Std.not_lt.mp h2) (Ne.symm (Ne.intro h1))
@@ -230,22 +243,22 @@ section ContainsLemmas
 end ContainsLemmas
 
 
-/-! ### Tree Invariants and BST Properties -/
+/-! ### BinaryTree Invariants and BST Properties -/
 section Invariants
 
 /-- BST invariant parameterised by optional lower/upper key bounds.
 `IsBSTAux t lb ub` holds iff every key in `t` lies strictly in `(lb, ub)`
 (absent bound = ±∞) and children satisfy the BST property recursively. -/
-inductive IsBSTAux [LinearOrder α] : Tree α → Option α → Option α → Prop where
+inductive IsBSTAux [LinearOrder α] : BinaryTree α → Option α → Option α → Prop where
   | nil (lb ub : Option α) : IsBSTAux .nil lb ub
-  | node {l r : Tree α} {k : α} {lb ub : Option α}
+  | node {l r : BinaryTree α} {k : α} {lb ub : Option α}
       (hlb : lb.elim True (· < k))
       (hub : ub.elim True (k < ·))
       (hl  : IsBSTAux l lb (some k))
       (hr  : IsBSTAux r (some k) ub) :
       IsBSTAux (l △[k] r) lb ub
 
-def IsBST [LinearOrder α] (t : Tree α) : Prop := t.IsBSTAux none none
+def IsBST [LinearOrder α] (t : BinaryTree α) : Prop := t.IsBSTAux none none
 
 end Invariants
 
@@ -253,9 +266,9 @@ end Invariants
 section IsBSTAccessors
 
 @[simp] lemma IsBSTAux_nil [LinearOrder α] (lb ub : Option α) :
-    IsBSTAux (.nil : Tree α) lb ub := .nil lb ub
+    IsBSTAux (.nil : BinaryTree α) lb ub := .nil lb ub
 
-@[simp] lemma IsBSTAux_node [LinearOrder α] (l : Tree α) (k : α) (r : Tree α)
+@[simp] lemma IsBSTAux_node [LinearOrder α] (l : BinaryTree α) (k : α) (r : BinaryTree α)
     (lb ub : Option α) :
     IsBSTAux (l △[k] r) lb ub ↔
       lb.elim True (· < k) ∧ ub.elim True (k < ·) ∧
@@ -263,9 +276,21 @@ section IsBSTAccessors
   ⟨fun h => by cases h with | node hlb hub hl hr => exact ⟨hlb, hub, hl, hr⟩,
    fun ⟨h1, h2, h3, h4⟩ => .node h1 h2 h3 h4⟩
 
-@[simp] lemma IsBST_node [LinearOrder α] (l : Tree α) (k : α) (r : Tree α) :
+@[simp] lemma IsBST_node [LinearOrder α] (l : BinaryTree α) (k : α) (r : BinaryTree α) :
     IsBST (l △[k] r) ↔ IsBSTAux l none (some k) ∧ IsBSTAux r (some k) none := by
   simp [IsBST, IsBSTAux_node]
+
+private lemma IsBSTAux_children_none [LinearOrder α] {t : BinaryTree α} {x y : Option α}
+    (h : IsBSTAux t x y) : IsBSTAux t none y ∧ IsBSTAux t x none := by
+  induction h <;> simp_all
+
+theorem IsBST_left_of_IsBST [LinearOrder α] {k : α} {l r : BinaryTree α}
+    (hbst : IsBST (l △[k] r)) : IsBST l :=
+  (IsBSTAux_children_none ((IsBST_node l k r).mp hbst).1).2
+
+theorem IsBST_right_of_IsBST [LinearOrder α] {k : α} {l r : BinaryTree α}
+    (hbst : IsBST (l △[k] r)) : IsBST r :=
+  (IsBSTAux_children_none ((IsBST_node l k r).mp hbst).2).1
 
 end IsBSTAccessors
 
@@ -274,7 +299,7 @@ end IsBSTAccessors
 section BSTMembership
 
 /-- In a BST subtree with upper bound `some ub`, every member is `< ub`. -/
-private lemma IsBSTAux.lt_of_mem_ub [LinearOrder α] {t : Tree α} {q ub : α}
+private lemma IsBSTAux.lt_of_mem_ub [LinearOrder α] {t : BinaryTree α} {q ub : α}
     {lb : Option α} (h : IsBSTAux t lb (some ub)) (hmem : q ∈ t) : q < ub := by
   induction t generalizing lb ub with
   | nil => simp at hmem
@@ -286,7 +311,7 @@ private lemma IsBSTAux.lt_of_mem_ub [LinearOrder α] {t : Tree α} {q ub : α}
     · exact ihr hr hmr
 
 /-- In a BST subtree with lower bound `some lb`, every member is `> lb`. -/
-private lemma IsBSTAux.gt_of_mem_lb [LinearOrder α] {t : Tree α} {q lb : α}
+private lemma IsBSTAux.gt_of_mem_lb [LinearOrder α] {t : BinaryTree α} {q lb : α}
     {ub : Option α} (h : IsBSTAux t (some lb) ub) (hmem : q ∈ t) : lb < q := by
   induction t generalizing lb ub with
   | nil => simp at hmem
@@ -299,7 +324,7 @@ private lemma IsBSTAux.gt_of_mem_lb [LinearOrder α] {t : Tree α} {q lb : α}
 
 /-- Membership implies the BST search path finds the key, for any bound
 configuration. -/
-private theorem IsBSTAux.mem_imp_contains [LinearOrder α] {t : Tree α} {q : α}
+private theorem IsBSTAux.mem_imp_contains [LinearOrder α] {t : BinaryTree α} {q : α}
     {lb ub : Option α} (h : IsBSTAux t lb ub) (hmem : q ∈ t) : t.BST_contains q := by
   induction t generalizing lb ub with
   | nil => simp at hmem
@@ -316,26 +341,40 @@ private theorem IsBSTAux.mem_imp_contains [LinearOrder α] {t : Tree α} {q : α
 
 /-- Converse of `contains_imp_mem` for BSTs: membership implies the search-path
 `contains` succeeds. -/
-theorem mem_imp_contains [LinearOrder α] {t : Tree α} (hbst : IsBST t)
+theorem mem_imp_contains [LinearOrder α] {t : BinaryTree α} (hbst : IsBST t)
     {q : α} (hmem : q ∈ t) : t.BST_contains q :=
   IsBSTAux.mem_imp_contains hbst hmem
 
 /-- For BSTs, the search-path `contains` coincides with membership. -/
-theorem contains_iff_mem [LinearOrder α] {t : Tree α} (hbst : IsBST t) {q : α} :
+theorem contains_iff_mem [LinearOrder α] {t : BinaryTree α} (hbst : IsBST t) {q : α} :
     t.BST_contains q ↔ q ∈ t :=
   ⟨contains_imp_mem, mem_imp_contains hbst⟩
 
+/-- For BSTs, all keys in the left subtree are smaller than the root key. -/
+theorem lt_of_IsBST_left [LinearOrder α] (l : BinaryTree α) (k : α) (r : BinaryTree α)
+    (hbst : IsBST (l △[k] r)) {q : α} (hql : q ∈ l) : q < k :=
+  IsBSTAux.lt_of_mem_ub ((IsBST_node l k r).mp hbst).1 hql
+
+/-- For BSTs, all keys in the right subtree are greater than the root key. -/
+theorem gt_of_IsBST_right [LinearOrder α] (l : BinaryTree α) (k : α) (r : BinaryTree α)
+    (hbst : IsBST (l △[k] r)) {q : α} (hqr : q ∈ r) : k < q :=
+  IsBSTAux.gt_of_mem_lb ((IsBST_node l k r).mp hbst).2 hqr
+
+/-- A tree that contains something is not nil. -/
+theorem ne_nil_of_mem {t : BinaryTree α} (q : α) (hq : q ∈ t) : t ≠ nil := by
+  rintro rfl; exact not_mem_nil q hq
+
 end BSTMembership
 
-end Tree
+end BinaryTree
 
 /-! ### BST Structure -/
 section BSTStructure
 
-/-- A binary search tree: a `Tree` bundled with a proof of the `IsBST` invariant. -/
+/-- A binary search tree: a `BinaryTree` bundled with a proof of the `IsBST` invariant. -/
 structure BST (α : Type) [LinearOrder α] where
-  tree : Tree α
-  hBST : Tree.IsBST tree
+  tree : BinaryTree α
+  hBST : BinaryTree.IsBST tree
 
 namespace BST
 

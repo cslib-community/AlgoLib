@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Predicates
+module
+
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Predicates
 
 /-!
 # Vertex sequences: map, fold, zip
@@ -23,6 +25,8 @@ a colouring pass) reaches for first.
 * `VertexSeq.zip` — pointwise pairing of two sequences.
 * `VertexSeq.any`, `VertexSeq.all` — existential/universal predicates.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

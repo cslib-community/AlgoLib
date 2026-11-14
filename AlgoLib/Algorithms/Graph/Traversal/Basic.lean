@@ -3,7 +3,9 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Fable 5.1)
 -/
-import AlgoLib.Algorithms.Graph.Traversal.BFS
+module
+
+public import AlgoLib.Algorithms.Graph.Traversal.BFS
 
 /-!
 # `AlgoLib.Algorithms.Graph.Traversal`

@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
+module
+
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
 
 /-!
 # Vertex sequences: indexing and insertion
@@ -19,6 +21,8 @@ of a vertex at a given index.
 `insert` currently has no lemmas and no clients inside AlgoLib; it is kept as the
 one positional *editing* operation the carrier is expected to offer.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

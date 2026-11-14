@@ -3,8 +3,10 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph.VertexSeq
-import AlgoLib.Theory.Graph.Structures.SimpleWalk
+module
+
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph.VertexSeq
+public import AlgoLib.Theory.Graph.Structures.SimpleWalk
 
 /-!
 # Simple walks realized in a simple graph
@@ -17,6 +19,8 @@ the walk operations (`append`, `glue`, `prefixUntil`, …).
 Part of the `InSimpleGraph` folder; see the umbrella module
 `AlgoLib.Theory.Structures.InSimpleGraph`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

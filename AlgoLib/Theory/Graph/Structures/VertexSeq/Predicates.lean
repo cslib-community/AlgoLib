@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
+module
+
+public import AlgoLib.Theory.Graph.Structures.VertexSeq.Basic
 
 /-!
 # Vertex sequences: structural predicates
@@ -23,6 +25,8 @@ operations in their own files.
 
 * `VertexSeq.nodup`, `VertexSeq.nonstalling`, `VertexSeq.closed`.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

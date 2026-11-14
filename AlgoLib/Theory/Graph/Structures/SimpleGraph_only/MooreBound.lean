@@ -3,11 +3,13 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Counting
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Core
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.RootedLayers
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.HalfLayers
-import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Bounds
+module
+
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Counting
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Core
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.RootedLayers
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.HalfLayers
+public import AlgoLib.Theory.Graph.Structures.SimpleGraph_only.MooreBound.Bounds
 
 /-!
 # Moore bounds for simple graphs

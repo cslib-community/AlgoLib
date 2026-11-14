@@ -14,16 +14,18 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "cslib"
 scope = "leanprover"
+rev = "v4.35.0"
 
 [[require]]
 name = "checkdecls"
 scope = "PatrickMassot"
-rev = "master"
+rev = "3d425859e73fcfbef85b9638c2a91708ef4a22d4"
 
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.30.0-rc2"
+rev = "v4.35.0"
 
 [[lean_lib]]
 name = "AlgoLib"
+requiresModuleSystem = true

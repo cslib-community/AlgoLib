@@ -5,24 +5,29 @@ Authors: Anton Kovsharov, Antoine du Fresne von Hohenesche,
   Sorrachai Yingchareonthawornchai
 -/
 
-import AlgoLib.DataStructures.SplayTree.Complexity
-import AlgoLib.DataStructures.SplayTree.Correctness
+module
+
+public import AlgoLib.DataStructures.SplayTree.Complexity
+public import AlgoLib.DataStructures.SplayTree.Correctness
+public import AlgoLib.DataStructures.SplayTree.StaticOptimality
 
 /-!
 # Splay Tree API for BST
 
 This module provides a high-level API for splaying directly on the `BST` type.
-It encapsulates the raw `Tree` operations and their associated invariant
+It encapsulates the raw `BinaryTree` operations and their associated invariant
 proofs, allowing users to safely and cleanly manipulate BSTs without manually
 re-proving the `IsBST` invariant after every rotation.
 -/
+
+@[expose] public section
 
 variable {α : Type} [LinearOrder α]
 
 namespace SplayTree.BSTAPI
 
 open SplayTree
-open Tree
+open BinaryTree
 
 /-! ### Core Operation -/
 
@@ -69,11 +74,13 @@ theorem splay_amortized_bound (t : BST α) (q : α) :
   SplayTree.splay_amortized_bound t.tree q
 
 
-/-! ### Sequence Cost and Total Complexity Bound -/
+/-! ### Sequence Cost -/
 
 /-- The total cost of a sequence of `m` splays, defined directly on the initial BST. -/
 noncomputable def sequenceCost {m : ℕ} (init : BST α) (X : Fin m → α) : ℝ :=
   SplayTree.splay.sequence_cost init.tree X
+
+/-! ### Total Worst-Case Complexity Bound -/
 
 /--
 The classical total sequence cost bound for `m` operations on a BST of size `n`.
@@ -83,5 +90,22 @@ theorem nlogn_cost (n m : ℕ) (X : Fin m → α)
     (init : BST α) (h_size : init.tree.num_nodes = n) :
     sequenceCost init X ≤ m * (3 * Real.logb 2 n + 1) + n * Real.logb 2 n :=
   SplayTree.nlogn_cost n m X init.tree h_size
+
+/-! ### Static Optimality -/
+
+/-- Total cost of a sequence of accesses in the given static tree. -/
+def staticCost {m : ℕ} (t : BST α) (X : Fin m → α) : ℕ :=
+  SplayTree.Weighted.staticCost t.tree X
+
+/--
+Splay performs as well as any static tree `s`, with any initial tree `init`, up to constant factors
+and an O(n²) additive term. Assumes that all queries are successful.
+-/
+theorem splay_tree_static_optimality (m : ℕ)
+    (init s : BST α) (hkeys : s.tree.toKeyList = init.tree.toKeyList)
+    (X : Fin m → α) (hX : ∀ i, X i ∈ init.tree) :
+    let n := s.tree.num_nodes
+    sequenceCost init X ≤ m + (Real.logb 2 3) * (3 * staticCost s X + n ^ 2) :=
+  SplayTree.Weighted.splay_tree_static_optimality m init.tree s.tree hkeys init.hBST X hX
 
 end SplayTree.BSTAPI

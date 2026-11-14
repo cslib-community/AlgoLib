@@ -3,8 +3,10 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Delete
-import AlgoLib.Theory.Graph.Structures.InSimpleGraph
+module
+
+public import AlgoLib.Theory.Graph.Delete
+public import AlgoLib.Theory.Graph.Structures.InSimpleGraph
 
 /-!
 # Reachability in a simple graph
@@ -46,6 +48,8 @@ is the failure of reachability after a deletion.
   `IsConnected` includes non-emptiness, so that a connected graph has exactly one
   connected component. `IsPreconnected` is the non-emptiness-free variant.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

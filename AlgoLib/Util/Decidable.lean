@@ -3,9 +3,11 @@ Copyright (c) 2026 GraphLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import Mathlib.Data.Sym.Sym2
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Fintype.Sets
+module
+
+public import Mathlib.Data.Sym.Sym2
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Data.Fintype.Sets
 
 /-!
 # Decidability helpers for `Sym2` and `Set`
@@ -31,6 +33,8 @@ candidates for upstreaming.
 * **Decidability, not `Classical`.** Each result is stated so that its `Decidable`
   instance actually evaluates: `Set.toFinset` needs only `[Fintype ↥s]` and computes.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

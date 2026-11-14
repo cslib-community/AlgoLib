@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Basic
+module
+
+public import AlgoLib.Theory.Graph.Basic
 
 /-!
 # Adjacency
@@ -53,6 +55,8 @@ defined in terms of the same edge-membership conditions.
   `SimpleDiGraph.Adj G u v` mean there is an arc with source `u` and
   target `v`; no `symm` lemma is provided for them.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 variable {α β : Type*}

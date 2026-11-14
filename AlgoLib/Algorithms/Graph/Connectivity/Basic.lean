@@ -3,10 +3,12 @@ Copyright (c) 2026 AlgoLib working group. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Huang.JiangYi (co/ Claude Opus 5)
 -/
-import AlgoLib.Theory.Graph.Decidable
-import AlgoLib.Theory.Graph.Connectivity.Connectivity
-import AlgoLib.Algorithms.Graph.Traversal.BFS
-import AlgoLib.Util.Finset
+module
+
+public import AlgoLib.Theory.Graph.Decidable
+public import AlgoLib.Theory.Graph.Connectivity.Connectivity
+public import AlgoLib.Algorithms.Graph.Traversal.BFS
+public import AlgoLib.Util.Finset
 
 /-!
 # The computable connectivity layer
@@ -69,6 +71,8 @@ never imports the algorithms tree.
   of a deleted graph for each. The latter is a *specification that computes*, not an
   algorithm: `decide` is realistic up to about six vertices.
 -/
+
+@[expose] public section
 
 namespace AlgoLib
 

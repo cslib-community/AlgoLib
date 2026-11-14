@@ -3,9 +3,11 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Adjacency
-import AlgoLib.Theory.Graph.Subgraph
-import AlgoLib.Theory.Graph.Structures.VertexSeq
+module
+
+public import AlgoLib.Theory.Graph.Adjacency
+public import AlgoLib.Theory.Graph.Subgraph
+public import AlgoLib.Theory.Graph.Structures.VertexSeq
 
 /-!
 # Vertex sequences realized in a simple graph
@@ -25,6 +27,8 @@ edge of `G` (phrased through `SimpleGraph.Adj`). This is the base layer of the
 Part of the `InSimpleGraph` folder; see the umbrella module
 `AlgoLib.Theory.Structures.InSimpleGraph` for the overview.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 

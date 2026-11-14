@@ -3,7 +3,9 @@ Copyright (c) 2026 Basil Rohner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Basil Rohner, Sorrachai Yingchareonthawornchai, Weixuan Yuan
 -/
-import AlgoLib.Theory.Graph.Structures.SimplePath
+module
+
+public import AlgoLib.Theory.Graph.Structures.SimplePath
 
 /-!
 # Simple cycles
@@ -33,6 +35,8 @@ API here only reflects a chosen traversal orientation and is not canonical.
 * `SimpleCycle.head_ofTwoPaths_mem_left` — the selected root lies on the first path.
 * `SimpleCycle.edges_ofTwoPaths_subset` — every selected edge comes from an input path.
 -/
+
+@[expose] public section
 
 variable {α : Type*}
 
@@ -112,7 +116,7 @@ attribute [simp, grind] SimpleCycle.val SimpleCycle.vertices SimpleCycle.support
 
 /-- The simple walk obtained by appending the starting vertex to a path of
 length at least two. -/
-private def walkOfPathClosing (p : SimplePath α) (hlen : 2 ≤ p.vertices.length) :
+def walkOfPathClosing (p : SimplePath α) (hlen : 2 ≤ p.vertices.length) :
     SimpleWalk α :=
   ⟨VertexSeq.cons p.vertices p.head, ⟨p.val.nonstalling, fun h => by
     have hzero := VertexSeq.length_zero_of_nodup_closed p.vertices p.nodup
@@ -120,15 +124,16 @@ private def walkOfPathClosing (p : SimplePath α) (hlen : 2 ≤ p.vertices.lengt
     omega⟩⟩
 
 /-- Closing a path of length at least two satisfies the cycle conditions. -/
-private lemma isCycle_ofPathClosing (p : SimplePath α)
+lemma isCycle_ofPathClosing (p : SimplePath α)
     (hlen : 2 ≤ p.vertices.length) :
     SimpleWalk.IsCycle (walkOfPathClosing p hlen) := by
   change 3 ≤ (VertexSeq.cons p.vertices p.head).length ∧
     (VertexSeq.cons p.vertices p.head).closed ∧
     (VertexSeq.cons p.vertices p.head).dropTail.nodup
-  refine ⟨?_, by simp [VertexSeq.closed], by simpa using p.nodup⟩
-  simp [VertexSeq.length] at hlen ⊢
-  omega
+  refine ⟨?_, by simp [VertexSeq.closed], ?_⟩
+  · simp [VertexSeq.length] at hlen ⊢
+    omega
+  · simpa only [VertexSeq.dropTail] using p.nodup
 
 /-- Close a simple path by adding an edge from its tail back to its head. -/
 def ofPathClosing (p : SimplePath α)
@@ -139,13 +144,13 @@ def ofPathClosing (p : SimplePath α)
 /-! ### ofInternallyDisjointPaths -/
 
 /-- Two paths with the same tail can be glued after reversing the second one. -/
-private lemma tail_eq_head_reverse_of_tail_eq (P Q : SimplePath α)
+lemma tail_eq_head_reverse_of_tail_eq (P Q : SimplePath α)
     (htail : P.tail = Q.tail) : P.val.tail = Q.val.reverse.head := by
   simpa using htail
 
 /-- The walk obtained by following two internally disjoint paths in opposite
 directions is a simple cycle. -/
-private lemma isCycle_ofInternallyDisjointPaths (P Q : SimplePath α)
+lemma isCycle_ofInternallyDisjointPaths (P Q : SimplePath α)
     (hhead : P.head = Q.head) (htail : P.tail = Q.tail)
     (hab : P.head ≠ P.tail)
     (hint : ∀ z, z ∈ P.vertices → z ∈ Q.vertices →
@@ -258,7 +263,7 @@ longest common prefix of their vertex lists.
 Defined via `List.commonPrefix`, so no index arithmetic is involved. Compare the
 earlier `findIdx`-on-`zip` definition, which forced every downstream lemma to
 carry dependent `getElem` bounds. -/
-private def divergenceVertex [DecidableEq α] (p q : SimplePath α)
+def divergenceVertex [DecidableEq α] (p q : SimplePath α)
     (hhead : p.head = q.head) : α :=
   (List.commonPrefix p.vertices.toList q.vertices.toList).getLast
     (List.commonPrefix_ne_nil (x := p.head) (by grind) (by grind))
@@ -266,7 +271,7 @@ private def divergenceVertex [DecidableEq α] (p q : SimplePath α)
 /-- The three facts that make the divergence vertex what it is: the two suffixes
 from it end together, it is not that common endpoint, and the two paths take
 different next steps out of it. -/
-private lemma divergenceVertex_core [DecidableEq α] (p q : SimplePath α)
+lemma divergenceVertex_core [DecidableEq α] (p q : SimplePath α)
     (hhead : p.head = q.head) (htail : p.tail = q.tail)
     (hne : p.vertices ≠ q.vertices) :
     let a := divergenceVertex p q hhead
@@ -332,7 +337,7 @@ private lemma divergenceVertex_core [DecidableEq α] (p q : SimplePath α)
 
 /-- The full divergence specification used by `buildOfTwoPaths`. The four extra
 components are routine consequences of `divergenceVertex_core`. -/
-private lemma divergenceVertex_spec [DecidableEq α] (p q : SimplePath α)
+lemma divergenceVertex_spec [DecidableEq α] (p q : SimplePath α)
     (hhead : p.head = q.head) (htail : p.tail = q.tail)
     (hne : p.vertices ≠ q.vertices) :
     let a := divergenceVertex p q hhead
@@ -346,23 +351,23 @@ private lemma divergenceVertex_spec [DecidableEq α] (p q : SimplePath α)
   refine ⟨hap, haq, ?_, ?_, htaileq, ?_, ?_, hane, hsecond⟩ <;>
     grind [VertexSeq.head_suffixFrom]
 
-private lemma divergenceVertex_mem_left [DecidableEq α] (p q : SimplePath α)
+lemma divergenceVertex_mem_left [DecidableEq α] (p q : SimplePath α)
     (hhead : p.head = q.head) (htail : p.tail = q.tail)
     (hne : p.vertices ≠ q.vertices) :
     divergenceVertex p q hhead ∈ p.vertices :=
   (divergenceVertex_core p q hhead htail hne).1
 
-private lemma divergenceVertex_mem_right [DecidableEq α] (p q : SimplePath α)
+lemma divergenceVertex_mem_right [DecidableEq α] (p q : SimplePath α)
     (hhead : p.head = q.head) (htail : p.tail = q.tail)
     (hne : p.vertices ≠ q.vertices) :
     divergenceVertex p q hhead ∈ q.vertices :=
   (divergenceVertex_core p q hhead htail hne).2.1
 
-private def firstRejoinVertex [DecidableEq α] (a : α) (p q : SimplePath α)
+def firstRejoinVertex [DecidableEq α] (a : α) (p q : SimplePath α)
     (hwit : ∃ z ∈ p.vertices.toList, ¬(z = a ∨ z ∉ q.vertices)) : α :=
   (p.vertices.dropWhile (fun z => z = a ∨ z ∉ q.vertices) hwit).head
 
-private lemma firstRejoinVertex_spec [DecidableEq α] (a : α) (p q : SimplePath α)
+lemma firstRejoinVertex_spec [DecidableEq α] (a : α) (p q : SimplePath α)
     (hpa : p.head = a) (hqa : q.head = a)
     (hsecond : p.vertices.dropHead.head ≠ q.vertices.dropHead.head)
     (hwit : ∃ z ∈ p.vertices.toList, ¬(z = a ∨ z ∉ q.vertices)) :
@@ -398,7 +403,7 @@ private lemma firstRejoinVertex_spec [DecidableEq α] (a : α) (p q : SimplePath
   · intro z hzP hzQ
     have hzQ' : z ∈ q.vertices := VertexSeq.prefixUntil_subset q.vertices b hbQ z hzQ
     have hzFirst := VertexSeq.eq_head_dropWhile_or_pred_of_mem_prefixUntil
-      p.vertices pred hwit (z := z) (by simpa [P, b, r, pred] using hzP)
+      p.vertices pred hwit (z := z) (by simpa [P, b, r, pred, firstRejoinVertex] using hzP)
     rcases hzFirst with hzb | hza | hznot
     · exact Or.inr (hzb.trans hPtail.symm)
     · exact Or.inl (hza.trans hPhead.symm)
@@ -411,14 +416,14 @@ private lemma firstRejoinVertex_spec [DecidableEq α] (a : α) (p q : SimplePath
       ((VertexSeq.head_dropHead_prefixUntil_of_length_one p.vertices b hbP hP1).trans
         (VertexSeq.head_dropHead_prefixUntil_of_length_one q.vertices b hbQ hQ1).symm)
 
-private lemma firstRejoinVertex_mem_left [DecidableEq α] (a : α)
+lemma firstRejoinVertex_mem_left [DecidableEq α] (a : α)
     (p q : SimplePath α)
     (hwit : ∃ z ∈ p.vertices.toList, ¬(z = a ∨ z ∉ q.vertices)) :
     firstRejoinVertex a p q hwit ∈ p.vertices := by
   exact VertexSeq.dropWhile_subset p.vertices (fun z => z = a ∨ z ∉ q.vertices)
     hwit _ (VertexSeq.head_mem _)
 
-private lemma firstRejoinVertex_mem_right [DecidableEq α] (a : α)
+lemma firstRejoinVertex_mem_right [DecidableEq α] (a : α)
     (p q : SimplePath α)
     (hwit : ∃ z ∈ p.vertices.toList, ¬(z = a ∨ z ∉ q.vertices)) :
     firstRejoinVertex a p q hwit ∈ q.vertices := by
@@ -427,13 +432,13 @@ private lemma firstRejoinVertex_mem_right [DecidableEq α] (a : α)
   by_contra h
   exact hnot (Or.inr h)
 
-private structure OfTwoPathsData (p q : SimplePath α) where
+structure OfTwoPathsData (p q : SimplePath α) where
   cycle : SimpleCycle α
   length_le : cycle.length ≤ p.length + q.length
   head_mem_left : cycle.head ∈ p.vertices
   edges_subset : ∀ e ∈ cycle.edges, e ∈ p.edges ∨ e ∈ q.edges
 
-private def buildOfTwoPaths [DecidableEq α] (p q : SimplePath α)
+def buildOfTwoPaths [DecidableEq α] (p q : SimplePath α)
     (hhead : p.head = q.head) (htail : p.tail = q.tail)
     (hne : p.vertices ≠ q.vertices) : OfTwoPathsData p q := by
   let a := divergenceVertex p q hhead
@@ -522,14 +527,14 @@ lemma edges_ofTwoPaths_subset [DecidableEq α] (p q : SimplePath α)
 /-! ## reroot -/
 
 /-- The suffix rooted at a cycle vertex can be glued to the preceding prefix. -/
-private lemma tail_suffixFrom_eq_head_prefixUntil [DecidableEq α] (c : SimpleCycle α)
+lemma tail_suffixFrom_eq_head_prefixUntil [DecidableEq α] (c : SimpleCycle α)
     (u : α) (hu : u ∈ vertices c) :
     (c.val.suffixFrom u hu).val.tail = (c.val.prefixUntil u hu).val.head := by
   simpa using (closed c).symm
 
 /-- Re-rooting the underlying walk of a simple cycle at a non-head vertex
 preserves the cycle property. -/
-private lemma isCycle_reroot_glue [DecidableEq α] (c : SimpleCycle α) (u : α)
+lemma isCycle_reroot_glue [DecidableEq α] (c : SimpleCycle α) (u : α)
     (hu : u ∈ vertices c) (hhead : u ≠ head c) :
     SimpleWalk.IsCycle
       ((c.val.suffixFrom u hu).glue (c.val.prefixUntil u hu)
